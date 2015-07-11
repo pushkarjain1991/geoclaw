@@ -12,6 +12,8 @@ import remove_file
 import obs
 import mesh_interpol
 import cmdir
+import ensemble_class 
+import geoclaw_input_format as gcif
 
 
 # First will try running using qinit.
@@ -38,9 +40,6 @@ def main():
     xupper = 50.e0
     yupper = 50.e0
     ylower = -50.e0
-    geoclaw_input = "hump.xyz"     
-    radialbowl_files = ["bowl.topotype2", "Makefile", "setrun.py"]
-    radialbowl_path = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw/examples/tsunami/bowl-radial/"
     
     #DA parameters
     num_ens = 9
@@ -50,7 +49,12 @@ def main():
     dyobs = 4
     firsttime = True
     PDAF_executable = "./PDAF_offline"
+    geoclaw_exec = "./xgeoclaw"
 
+    geoclaw_input = "hump.xyz"     
+    radialbowl_files = ["bowl.topotype2", "Makefile", "setrun.py", geoclaw_exec]
+    radialbowl_path = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw/examples/tsunami/bowl-radial/"
+   
     x = np.linspace(xlower,xupper,nxpoints)
     y = np.linspace(yupper,ylower,nypoints)
     xv,yv = np.meshgrid(x,y)
@@ -81,7 +85,11 @@ def main():
 
         #Prepare qinit files for geoclaw
         if firsttime:
-            pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_input, geoclaw_input)
+            #pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_input, geoclaw_input)
+            #This is an unnecessary step. Indiavidual z vetors
+            # are already calculated by makeinitens. 
+            z_ind = np.loadtxt(pdaf_input)
+            gcif.geoclaw_input_format(xv, yv, z_ind,pdaf_input)
             #firsttime = False
         else:
             pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_output, geoclaw_input)
@@ -94,10 +102,16 @@ def main():
         ########        FORECAST       ##########
         #---------------------------------------#
         #Run Geoclaw forecast step
-        subprocess.call(["make",".output"])
+        #subprocess.call(["make",".output"])
+        hello = ensemble_class.ensemble()
+        hello.rundata.clawdata.t0 = 3.0
+        hello.rundata.qinit_data.qinitfiles[-1]=[1,2,"../ens_"+str(i)+".txt"]
+        print hello.rundata.qinit_data.qinitfiles
+        hello.rundata.write()
+        subprocess.call(geoclaw_exec)
 
         #Extract water surface elevation from geoclaw fort.q file
-        eta = np.loadtxt("_output/fort.q00" + str(obs_t_interval), skiprows=9, usecols = [3])
+        eta = np.loadtxt("fort.q00" + str(obs_t_interval), skiprows=9, usecols = [3])
         #np.savetxt("../ens_"+str(i)+".txt_new", eta)
 
         
