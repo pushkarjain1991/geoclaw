@@ -47,6 +47,8 @@ def main():
     stddev_obs = 0.5
     dxobs = 5
     dyobs = 4
+    #dtobs = [2.0, 4.0, 6.0, 8.0]
+    dtobs = [2.0, 4.0, 6.0, 8.0]
     firsttime = True
     PDAF_executable = "./PDAF_offline"
     geoclaw_exec = "./xgeoclaw"
@@ -63,78 +65,89 @@ def main():
     #Create hump.xyz
     mean_init_z = make_init.makeinit(xv, yv, geoclaw_input)
 
-    #Create observation data
-    obs.make_obs(nxpoints, nypoints, dxobs, dyobs,stddev_obs,mean_init_z)
-
     #Create ensemble members based on the mean value vector
     make_init_ens.makeinitens(mean_init_z,num_ens, "ens_")
     
-    #Convert format of ensemble to data input format of Geoclaw qinit
-    for i in range(1, num_ens+1):
-        
-        #Check if path exists and create subfolders to run individual geoclaw
-        subdir_name = "ens_"+str(i)
-        cmdir.take(subdir_name)
+    for j in range(np.size(dtobs)-1):
+    #for j in range(2):
+        #Create observation data
+        obs.make_obs(nxpoints, nypoints, dxobs, dyobs,stddev_obs,mean_init_z)
 
-        #Change to subdirectory
-        os.chdir(subdir_name)
+    
+        #Convert format of ensemble to data input format of Geoclaw qinit
+        for i in range(1, num_ens+1):
 
-        #Define pdaf input and output file names
-        pdaf_input = "../ens_" + str(i) + ".txt"
-        pdaf_output = "../../ens_0"+str(i)+"_ana.txt"
+            print "##########################################################"
+            print "----------------------" + str(i) + "----------------------" 
+            print "##########################################################"
+         
+            #Check if path exists and create subfolders to run individual geoclaw
+            subdir_name = "ens_"+str(i)
+            cmdir.take(subdir_name)
 
-        #Prepare qinit files for geoclaw
-        if firsttime:
-            #pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_input, geoclaw_input)
-            #This is an unnecessary step. Indiavidual z vetors
-            # are already calculated by makeinitens. 
-            z_ind = np.loadtxt(pdaf_input)
-            gcif.geoclaw_input_format(xv, yv, z_ind,pdaf_input)
-            #firsttime = False
-        else:
-            pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_output, geoclaw_input)
+            #Change to subdirectory
+            os.chdir(subdir_name)
 
-        #Copy the radial bowl test case files to every sub directory
-        for files in radialbowl_files:
-            shutil.copy2(os.path.join(radialbowl_path,files),os.getcwd())
-        
-        #---------------------------------------#
-        ########        FORECAST       ##########
-        #---------------------------------------#
-        #Run Geoclaw forecast step
-        #subprocess.call(["make",".output"])
-        hello = ensemble_class.ensemble()
-        hello.rundata.clawdata.t0 = 3.0
-        hello.rundata.qinit_data.qinitfiles[-1]=[1,2,"../ens_"+str(i)+".txt"]
-        print hello.rundata.qinit_data.qinitfiles
-        hello.rundata.write()
-        subprocess.call(geoclaw_exec)
+            #Define pdaf input and output file names
+            pdaf_input = "../ens_" + str(i) + ".txt"
+            pdaf_output = "../ens_0"+str(i)+"_ana.txt"
 
-        #Extract water surface elevation from geoclaw fort.q file
-        eta = np.loadtxt("fort.q00" + str(obs_t_interval), skiprows=9, usecols = [3])
-        #np.savetxt("../ens_"+str(i)+".txt_new", eta)
+            #Prepare qinit files for geoclaw
+            if firsttime:
+                #pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_input, geoclaw_input)
+                #This is an unnecessary step. Indiavidual z vetors
+                # are already calculated by makeinitens. 
+                z_ind = np.loadtxt(pdaf_input)
+                print z_ind
+                gcif.geoclaw_input_format(xv, yv, z_ind,pdaf_input)
+                #firsttime = False
+            else:
+                pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_output, geoclaw_input)
+
+            #Copy the radial bowl test case files to every sub directory
+            for files in radialbowl_files:
+                shutil.copy2(os.path.join(radialbowl_path,files),os.getcwd())
+        
+            #---------------------------------------#
+            ########        FORECAST       ##########
+            #---------------------------------------#
+            #Run Geoclaw forecast step
+            #subprocess.call(["make",".output"])
+            hello = ensemble_class.ensemble()
+            hello.rundata.clawdata.t0 = dtobs[j]
+            hello.rundata.clawdata.tfinal = dtobs[j+1]
+            hello.rundata.qinit_data.qinitfiles[-1]=[1,2,"../ens_"+str(i)+".txt"]
+            #print hello.rundata.qinit_data.qinitfiles
+            hello.rundata.write()
+            subprocess.call(geoclaw_exec)
+
+            #Extract water surface elevation from geoclaw fort.q file
+            eta = np.loadtxt("fort.q00" + str(obs_t_interval), skiprows=9, usecols = [3])
+            #np.savetxt("../ens_"+str(i)+".txt_new", eta)
 
         
-        #Write new ensembles into PDAF input format
-        reshaped_eta = np.reshape(eta,(mx,my))
-        #print np.shape(eta)
-        #Interpolate eta values from cell centers to nodes. interp_eta will be of size nx*ny
-        interp_eta = mesh_interpol.interpol(reshaped_eta)
-        #print np.shape(interp_eta)
+            #Write new ensembles into PDAF input format
+            reshaped_eta = np.reshape(eta,(mx,my))
+            #print np.shape(eta)
+            #Interpolate eta values from cell centers to nodes. interp_eta will be of size nx*ny
+            interp_eta = mesh_interpol.interpol(reshaped_eta)
+            #print np.shape(interp_eta)
         
-        #Go back one directory  
-        os.chdir("../")
+            #Go back one directory  
+            os.chdir("../")
         
-        np.savetxt("../ens_"+str(i)+".txt",interp_eta)
-        #np.savetxt("../ens_"+str(i)+".txt_new_reshaped",interp_eta)
+            np.savetxt("../ens_"+str(i)+".txt",interp_eta)
+            #np.savetxt("../ens_"+str(i)+".txt_new_reshaped",interp_eta)
         
-    #Run PDAF assimilation step
-    #-------------------------------------------#
-    ########        ASSIMILATION       ##########
-    #-------------------------------------------#
-    subprocess.call([PDAF_executable])
+        #Run PDAF assimilation step
+        #-------------------------------------------#
+        ########        ASSIMILATION       ##########
+        #-------------------------------------------#
+        subprocess.call([PDAF_executable])
         
-    # Run Geoclaw forecast step for all the ensemble members
+        # Run Geoclaw forecast step for all the ensemble members
+        
+        firsttime=False
 
 
  
