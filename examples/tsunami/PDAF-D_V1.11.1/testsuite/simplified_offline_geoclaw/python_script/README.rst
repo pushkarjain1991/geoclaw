@@ -38,5 +38,8 @@ GeoClaw input format
 .. note:: 
    #. Define the model parameters and the DA parameters and run the script 
    #. Make sure that the num_ens in Python script matches the num_ens in python script
-   #. Compiler PDAF and copy the executable in your current folder
+   #. Compile PDAF and copy the executable in your current folder
 
+Plotting
+++++++++
+python $CLAW/visclaw/src/python/visclaw/plotclaw.py ./ ./ setplot.py

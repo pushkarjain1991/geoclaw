@@ -17,7 +17,7 @@ def interpol(in_2d_array):
     return inter_value
 
 if __name__=='__main__':
-    input_array = np.array([[1,2],[3,4]])
+    input_array = np.array([[1,2,3],[3,4,5],[2,4,4],[8,6,5]])
     print "input array is"
     print input_array
     output_array = interpol(input_array)

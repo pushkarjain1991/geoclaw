@@ -15,6 +15,7 @@ import cmdir
 import ensemble_class 
 import geoclaw_input_format as gcif
 import maketopo
+import plotmap 
 
 
 def main():
@@ -32,7 +33,7 @@ def main():
     ylower = -50.e0
     
     #DA parameters
-    num_ens = 9
+    num_ens = 3
     #obs_t_interval = 10 Taken as last value in num_output_times
     stddev_obs = 0.5
     dxobs = 5
@@ -89,7 +90,7 @@ def main():
         for i in range(1, num_ens+1):
             #Define pdaf input and output file names
             pdaf_input = "../ens_" + str(i) + ".txt"
-            geoclaw_input = "hump_+ens_" + str(i) + ".txt"
+            geoclaw_input = "hump_ens_" + str(i) + ".txt"
             pdaf_output = "../ens_0"+str(i)+"_ana.txt"
             first_ensemble = "../first_ens_" + str(i) + ".txt"
             topo_path = "../bowl.topotype2"
@@ -159,7 +160,9 @@ def main():
         
         firsttime=False
 
-
+        #Plot
+        state_ana = np.loadtxt("state_ana.txt")
+        plotmap.docontour(xv,yv,state_ana)
 #Just end everything and move on ahead in life
 
 

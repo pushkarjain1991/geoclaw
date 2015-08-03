@@ -1,8 +1,11 @@
 import numpy as np
 
-def make_obs(dimx, dimy, dxobs, dyobs,stddev_obs,truefield):
+def make_obs(dimx, dimy, dxobs, dyobs,stddev_obs,truefield, testing = False):
 
-    obs_error = stddev_obs*np.random.randn(dimx,dimy)
+    if testing:
+        obs_error = 0.0
+    else:
+        obs_error = stddev_obs*np.random.randn(dimx,dimy)
     
     full_obs = truefield + obs_error
     obs = np.zeros_like(truefield)- 999
