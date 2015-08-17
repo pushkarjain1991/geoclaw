@@ -29,22 +29,28 @@ def main():
     mx = nxpoints-1
     nypoints = 51
     my = nypoints-1
-    xlower = -50.e0
-    xupper = 50.e0
-    yupper = 50.e0
-    ylower = -50.e0
+    #xlower = -50.e0
+    #xupper = 50.e0
+    #yupper = 50.e0
+    #ylower = -50.e0
+    xlower = -100.e0
+    xupper = 100.e0
+    yupper = 100.e0
+    ylower = -100.e0
     geoclaw_exec = "../xgeoclaw"
+    amr = False
     
     #DA parameters
     DA = False
-    num_ens = 9
+    num_ens = 1
     stddev_obs = 0.5
     dxobs = 5
     dyobs = 4
     #dtobs = [2.0, 4.0, 6.0, 8.0]
     #dtobs = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
     #dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
-    dtobs = [0.0,4.0, 8.0]
+    dtobs = [0.0, 4.0, 8.0]
+    #dtobs = [0.0, 4.0]
     PDAF_executable = "./PDAF_offline"
    
     x = np.linspace(xlower,xupper,nxpoints)
@@ -87,13 +93,15 @@ def main():
     print "Creating the first ensemble members ...\n"
     make_init_ens.makeinitens(mean_init_z,num_ens, "first_ens_")
     
-    for j in range(np.size(dtobs)-1):
+    #for j in range(np.size(dtobs)-1):
+    for k,j in enumerate(dtobs[:-1]):
+        print k,j
         print "yoyoyoy3\n\n\n"
 
         if DA == True:
             print "Data assimilation is on ...\n\n\n"
             print "##########################################################"
-            print "----------------------Recevied observation at " + str(dtobs[j]) +"----------------------" 
+            print "----------------------Recevied observation at " + str(j) +"----------------------" 
             print "##########################################################"
         
         
@@ -111,7 +119,7 @@ def main():
             topo_path = "../bowl.topotype2"
 
             print "##########################################################"
-            print "------------- ensemble unit number " + str(i) + " at " + str(dtobs[j]) + " secs ----------" 
+            print "------------- ensemble unit number " + str(i) + " at " + str(j) + " secs ----------" 
             print "##########################################################"
          
             #Check if path exists and create subfolders to run individual geoclaw
@@ -147,12 +155,18 @@ def main():
             # Prepare individual geoclaw input
             #subprocess.call(["make",".output"])
             hello = ensemble_class.ensemble()
-            hello.rundata.clawdata.t0 = dtobs[j]
-            hello.rundata.clawdata.tfinal = dtobs[j+1]
-            hello.rundata.qinit_data.qinitfiles[-1]=[1,2,geoclaw_input]
-            hello.rundata.topo_data.topofiles[-1]=[2, 1, 1, 0., 1.e10, topo_path]
+            hello.rundata.clawdata.t0 = dtobs[k]
+            hello.rundata.clawdata.tfinal = dtobs[k+1]
+            hello.rundata.qinit_data.qinitfiles[-1][-1]=geoclaw_input
+            #hello.rundata.qinit_data.qinitfiles[-1]=[1,2,geoclaw_input]
+            #hello.rundata.topo_data.topofiles[-1]=[2, 1, 1, 0., 1.e10, topo_path]
+            hello.rundata.topo_data.topofiles[-1][-1]=topo_path
             hello.rundata.clawdata.num_output_times = 12
             #hello.rundata.clawdata.num_output_times = 24
+            if amr == False:
+                hello.rundata.amrdata.amr_levels_max=1
+            else:
+                hello.rundata.amrdata.amr_levels_max=2
             hello.rundata.write()
             subprocess.call(geoclaw_exec)
 
@@ -213,10 +227,13 @@ def main():
         #-------------------------------------------#
         ###########     POST-PROCESSING    ##########
         #-------------------------------------------#
-    plotmap.docontour(x_cell,y_cell,reshaped_eta)
-    plotmap.docontour(xv,yv,interp_eta)
+    #plotmap.docontour(x_cell,y_cell,reshaped_eta)
+    #plotmap.docontour(xv,yv,interp_eta)
         #plot_ens2.plot_ens(xv,yv,num_ens)
         #plot_ens2.plot_ens(xv,yv,num_ens, initial_state = "True", analysis_state = "False")
+    #plotmap.docontour(x_cell,y_cell,reshaped_eta)
+    plotmap.docontour(np.linspace(-100.0 + 1.0, 100.0 - 1.0, mx),np.linspace(-100.0 + 1.0, 100.0 - 1.0, my),reshaped_eta)
+    plotmap.docontour(np.linspace(-100.0, 100.0, nxpoints),np.linspace(-100.0,100.0,nypoints),interp_eta)
     
 
 
