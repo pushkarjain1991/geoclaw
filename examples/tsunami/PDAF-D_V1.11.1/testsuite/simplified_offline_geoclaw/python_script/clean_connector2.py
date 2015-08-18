@@ -18,6 +18,7 @@ import scipy_interpol
 import plotmap
 from scipy import interpolate
 import matplotlib.pyplot as plt
+import read_amr as ramr
 
 
 def main():
@@ -38,7 +39,7 @@ def main():
     yupper = 100.e0
     ylower = -100.e0
     geoclaw_exec = "../xgeoclaw"
-    amr = False
+    amr = True
     
     #DA parameters
     DA = False
@@ -173,7 +174,19 @@ def main():
             #Extract water surface elevation from geoclaw fort.q file
                 #Extract land nodes
             read_geoclaw_output = "fort.q00" + str(hello.rundata.clawdata.num_output_times)
-            total_height, eta = np.loadtxt(read_geoclaw_output, skiprows=9, usecols = (0,3), unpack=True)
+
+            amrread = ramr.ReadAmr(read_geoclaw_output)
+            amrframe = amrread.amrdataframe()
+            #print amrframe
+            ramr.print_full(amrframe)
+
+            #total_height, eta = np.loadtxt(read_geoclaw_output, skiprows=9, usecols = (0,3), unpack=True)
+            total_height1 = amrframe["height"][amrframe.amrlevel == 1.0] 
+            eta1 = amrframe["eta"][amrframe.amrlevel == 1.0] 
+            #print eta1
+            eta = eta1.as_matrix()
+            #print eta
+            total_height = total_height1.as_matrix()
             if (i == (num_ens+1)/2):
                 np.savetxt("../eta_with_land_" + str(j) + ".txt", eta)
             getland = [total_height == 0.0]
