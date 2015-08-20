@@ -49,12 +49,12 @@ if __name__=='__main__':
     if np.shape(z) == (50*50,):
         np.reshape(z, (50,50))
         print z
-        x = np.linspace(-50,50,50)
-        y = np.linspace(-50,50,50)
+        x = np.linspace(-98,98,50)
+        y = np.linspace(-98,98,50)
         xv,yv = np.meshgrid(x,y)
     else:
-        x = np.linspace(-50,50,51)
-        y = np.linspace(-50,50,51)
+        x = np.linspace(-100,100,51)
+        y = np.linspace(-100,100,51)
         xv,yv = np.meshgrid(x,y)        
         np.reshape(z, (51,51))
     fig = plt.figure()

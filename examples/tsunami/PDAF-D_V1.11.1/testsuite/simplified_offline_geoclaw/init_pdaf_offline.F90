@@ -78,7 +78,7 @@ SUBROUTINE init_pdaf()
                     !   (5) LETKF
                     !   (6) ESTKF
                     !   (7) LESTKF
-  dim_ens = 1       ! Size of ensemble for all ensemble filters
+  dim_ens = 9       ! Size of ensemble for all ensemble filters
                     ! Number of EOFs to be used for SEEK
   subtype = 5       ! (5) Offline mode
   type_trans = 0    ! Type of ensemble transformation

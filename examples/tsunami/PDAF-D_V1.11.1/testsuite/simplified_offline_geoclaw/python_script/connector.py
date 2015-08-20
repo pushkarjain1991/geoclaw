@@ -7,13 +7,12 @@ import os
 import sys
 import make_init_ens
 import pdaf_to_geoclaw
-import remove_file
 import obs
 import mesh_interpol
 import cmdir
 import ensemble_class 
 import maketopo
-import plot_ens2
+import plot_ens
 import scipy_interpol
 import plotmap
 from scipy import interpolate
@@ -30,28 +29,24 @@ def main():
     mx = nxpoints-1
     nypoints = 51
     my = nypoints-1
-    #xlower = -50.e0
-    #xupper = 50.e0
-    #yupper = 50.e0
-    #ylower = -50.e0
     xlower = -100.e0
     xupper = 100.e0
     yupper = 100.e0
     ylower = -100.e0
     geoclaw_exec = "../xgeoclaw"
-    amr = True
+    amr_max_level = 1
     
     #DA parameters
-    DA = False
-    num_ens = 1
+    DA = True
+    num_ens = 9
     stddev_obs = 0.5
     dxobs = 5
     dyobs = 4
     #dtobs = [2.0, 4.0, 6.0, 8.0]
     #dtobs = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
     #dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
+    #dtobs = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0]
     dtobs = [0.0, 4.0, 8.0]
-    #dtobs = [0.0, 4.0]
     PDAF_executable = "./PDAF_offline"
    
     x = np.linspace(xlower,xupper,nxpoints)
@@ -96,8 +91,6 @@ def main():
     
     #for j in range(np.size(dtobs)-1):
     for k,j in enumerate(dtobs[:-1]):
-        print k,j
-        print "yoyoyoy3\n\n\n"
 
         if DA == True:
             print "Data assimilation is on ...\n\n\n"
@@ -111,7 +104,6 @@ def main():
             obs.make_obs(nxpoints, nypoints, dxobs, dyobs,stddev_obs,mean_init_z)
     
         for i in range(1, num_ens+1):
-            print "yoyoyoy5\n\n\n"
             #Define pdaf input and output file names
             pdaf_input = "../ens_" + str(i) + ".txt"
             geoclaw_input = "hump_ens_" + str(i) + ".txt"
@@ -133,7 +125,6 @@ def main():
             #Prepare qinit files for geoclaw
             #Convert format of ensemble to data input format of Geoclaw qinit
             if firsttime == True:
-                #print "yoyoyoy6\n\n\n"
                 #pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_input, geoclaw_input)
                 #This is an unnecessary step. Individual z vectors
                 # are already calculated by makeinitens. 
@@ -141,14 +132,11 @@ def main():
                 pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, first_ensemble, geoclaw_input)
             else:
                 if DA == True:
-                    #print "yoyoyoy7\n\n\n"
                     pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_output, geoclaw_input)
                 else:
-                    #print "yoyoyoy8\n\n\n"
                     print "\n\n\n\n\nSecond time is executed\n\n\n\n\n" 
                     pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_input, geoclaw_input)
             
-            #print "yoyoyoy9\n\n\n"
             #Run Geoclaw forecast step
             #---------------------------------------#
             ########        FORECAST       ##########
@@ -164,44 +152,33 @@ def main():
             hello.rundata.topo_data.topofiles[-1][-1]=topo_path
             hello.rundata.clawdata.num_output_times = 12
             #hello.rundata.clawdata.num_output_times = 24
-            if amr == False:
-                hello.rundata.amrdata.amr_levels_max=1
-            else:
-                hello.rundata.amrdata.amr_levels_max=2
+            hello.rundata.amrdata.amr_levels_max=amr_max_level
             hello.rundata.write()
             subprocess.call(geoclaw_exec)
 
+            #---------------------------------------------------------------#
+            ########        GEOCLAW OUTPUT TO PDAF INPUT I/O       ##########
+            #---------------------------------------------------------------#
             #Extract water surface elevation from geoclaw fort.q file
-                #Extract land nodes
             read_geoclaw_output = "fort.q00" + str(hello.rundata.clawdata.num_output_times)
 
             amrread = ramr.ReadAmr(read_geoclaw_output)
             amrframe = amrread.amrdataframe()
-            #print amrframe
-            ramr.print_full(amrframe)
 
             #total_height, eta = np.loadtxt(read_geoclaw_output, skiprows=9, usecols = (0,3), unpack=True)
             total_height1 = amrframe["height"][amrframe.amrlevel == 1.0] 
             eta1 = amrframe["eta"][amrframe.amrlevel == 1.0] 
-            #print eta1
-            eta = eta1.as_matrix()
-            #print eta
-            total_height = total_height1.as_matrix()
             if (i == (num_ens+1)/2):
-                np.savetxt("../eta_with_land_" + str(j) + ".txt", eta)
-            getland = [total_height == 0.0]
-            eta[getland]= 0.0
-            #np.savetxt("myeta" + str(j),eta)
+                #np.savetxt("../eta_with_land_" + str(j) + ".txt", eta)
+                eta1.to_csv("../eta_with_land_" + str(j) + ".txt", sep=' ', index=False)
+            eta1[total_height1 == 0.0] = 0.0
             if (i == (num_ens+1)/2):
-                np.savetxt("../eta_before_interp_" + str(j) + ".txt", eta)
-                #z1 = np.loadtxt("../yoyohoney", unpack=True, usecols=[0])
-                #print z1
-                #np.reshape(z1, (50,50))
-                #print z1
+                #np.savetxt("../eta_before_interp_" + str(j) + ".txt", eta)
+                eta1.to_csv("../eta_before_interp_" + str(j) + ".txt", sep=' ', index=False)
         
+            eta = eta1.as_matrix()
             #Write new ensembles into PDAF input format
             reshaped_eta = np.reshape(eta,(mx,my))
-            print reshaped_eta
             #sys.exit(0)
             #Interpolate eta values from cell centers to nodes. interp_eta will be of size nx*ny
             #Will be a problem if AMR starts. 
@@ -229,24 +206,21 @@ def main():
         #-------------------------------------------#
         ########        ASSIMILATION       ##########
         #-------------------------------------------#
-        print "yoyoyoy10\n\n\n"
         if DA == True:
-            print "yoyoyoy11\n\n\n"
             subprocess.call([PDAF_executable])
         
         firsttime = False
-        print "yoyoyoy12\n\n\n"
 
         #-------------------------------------------#
         ###########     POST-PROCESSING    ##########
         #-------------------------------------------#
     #plotmap.docontour(x_cell,y_cell,reshaped_eta)
     #plotmap.docontour(xv,yv,interp_eta)
-        #plot_ens2.plot_ens(xv,yv,num_ens)
-        #plot_ens2.plot_ens(xv,yv,num_ens, initial_state = "True", analysis_state = "False")
-    #plotmap.docontour(x_cell,y_cell,reshaped_eta)
-    plotmap.docontour(np.linspace(-100.0 + 1.0, 100.0 - 1.0, mx),np.linspace(-100.0 + 1.0, 100.0 - 1.0, my),reshaped_eta)
-    plotmap.docontour(np.linspace(-100.0, 100.0, nxpoints),np.linspace(-100.0,100.0,nypoints),interp_eta)
+    #plotmap.docontour(x,y,interp_eta)
+    plot_ens.plot_ens(xv,yv,num_ens)
+    plot_ens.plot_ens(xv,yv,num_ens, initial_state = "True", analysis_state = "False")
+    plotmap.docontour(mxv,myv,reshaped_eta)
+    plotmap.docontour(xv,yv,interp_eta)
     
 
 

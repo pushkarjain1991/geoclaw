@@ -13,7 +13,7 @@ include $(CLAW2MAKE)
 .PHONY: cleanall clean
 
 das: $(EXE)
-	python clean_connector2.py
+	python connector.py
 
 cleanmy:
 	$(MAKE) clean
