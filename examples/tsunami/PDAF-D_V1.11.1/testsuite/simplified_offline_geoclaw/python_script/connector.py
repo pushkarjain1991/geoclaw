@@ -24,6 +24,13 @@ def main():
     """
     Performs forecast and assimilation steps of geoclaw
     """
+    amr_max_level = 1
+    output_times = 12
+    DA = False
+    num_ens = 1
+    dtobs = [0.0, 4.0, 8.0]
+    
+    
     #Model Parameters
     nxpoints = 51
     mx = nxpoints-1
@@ -34,19 +41,11 @@ def main():
     yupper = 100.e0
     ylower = -100.e0
     geoclaw_exec = "../xgeoclaw"
-    amr_max_level = 1
     
     #DA parameters
-    DA = True
-    num_ens = 9
     stddev_obs = 0.5
-    dxobs = 5
-    dyobs = 4
-    #dtobs = [2.0, 4.0, 6.0, 8.0]
-    #dtobs = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
-    #dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
-    #dtobs = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0]
-    dtobs = [0.0, 4.0, 8.0]
+    dxobs = 10
+    dyobs = 10
     PDAF_executable = "./PDAF_offline"
    
     x = np.linspace(xlower,xupper,nxpoints)
@@ -55,6 +54,7 @@ def main():
     
     dx = (xupper-xlower)/(nxpoints-1)
     dy = (yupper-ylower)/(nypoints-1)
+    
     x_cell = np.linspace(xlower + dx/2.0, xupper - dx/2.0, mx)
     y_cell = np.linspace(ylower + dy/2.0, yupper - dy/2.0, my)
     mxv, myv = np.meshgrid(x_cell,y_cell)
@@ -74,7 +74,8 @@ def main():
     #mean_init_z = make_init.makeinit(xv, yv, geoclaw_first) #My own function to generate the gaussian hump
     #If bowltopo not found, then use - 
     print "Creating the initial Gaussian hump ...\n"
-    mean_init_z = maketopo.qinit(xv, yv)
+    #mean_init_z = maketopo.qinit(xv, yv)
+    mean_init_z = maketopo.qinit(xv/2.0, yv/2.0)
 
     #Create ensemble members based on the mean value vector
     #Ensemble data format
@@ -92,7 +93,7 @@ def main():
     #for j in range(np.size(dtobs)-1):
     for k,j in enumerate(dtobs[:-1]):
 
-        if DA == True:
+        if DA:
             print "Data assimilation is on ...\n\n\n"
             print "##########################################################"
             print "----------------------Recevied observation at " + str(j) +"----------------------" 
@@ -101,7 +102,7 @@ def main():
         
             #Create observation data
             print "Creating observation data ...\n"
-            obs.make_obs(nxpoints, nypoints, dxobs, dyobs,stddev_obs,mean_init_z)
+            observation = obs.make_obs(nxpoints, nypoints, dxobs, dyobs,stddev_obs,mean_init_z, testing=False)
     
         for i in range(1, num_ens+1):
             #Define pdaf input and output file names
@@ -124,14 +125,15 @@ def main():
 
             #Prepare qinit files for geoclaw
             #Convert format of ensemble to data input format of Geoclaw qinit
-            if firsttime == True:
+            if firsttime:
                 #pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_input, geoclaw_input)
                 #This is an unnecessary step. Individual z vectors
                 # are already calculated by makeinitens. 
                 print "\n\n\n\n\nFirst time is executed\n\n\n\n\n" 
-                pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, first_ensemble, geoclaw_input)
+                #pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, first_ensemble, geoclaw_input)
+                pdaf_to_geoclaw.pdaf_to_geoclaw(xv/2.0, yv/2.0, first_ensemble, geoclaw_input)
             else:
-                if DA == True:
+                if DA:
                     pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_output, geoclaw_input)
                 else:
                     print "\n\n\n\n\nSecond time is executed\n\n\n\n\n" 
@@ -150,8 +152,7 @@ def main():
             #hello.rundata.qinit_data.qinitfiles[-1]=[1,2,geoclaw_input]
             #hello.rundata.topo_data.topofiles[-1]=[2, 1, 1, 0., 1.e10, topo_path]
             hello.rundata.topo_data.topofiles[-1][-1]=topo_path
-            hello.rundata.clawdata.num_output_times = 12
-            #hello.rundata.clawdata.num_output_times = 24
+            hello.rundata.clawdata.num_output_times = output_times
             hello.rundata.amrdata.amr_levels_max=amr_max_level
             hello.rundata.write()
             subprocess.call(geoclaw_exec)
@@ -160,7 +161,7 @@ def main():
             ########        GEOCLAW OUTPUT TO PDAF INPUT I/O       ##########
             #---------------------------------------------------------------#
             #Extract water surface elevation from geoclaw fort.q file
-            read_geoclaw_output = "fort.q00" + str(hello.rundata.clawdata.num_output_times)
+            read_geoclaw_output = "fort.q00" + str(output_times)
 
             amrread = ramr.ReadAmr(read_geoclaw_output)
             amrframe = amrread.amrdataframe()
@@ -197,7 +198,12 @@ def main():
             
             #print np.shape(interp_eta)
             np.savetxt(pdaf_input,interp_eta)
-        
+            
+            # Very dangerous
+            if not (j == dtobs[-2]):
+                print j
+                shutil.copy2("fort.q0012","../")
+
             #Go back one directory  
             os.chdir("../")
         
@@ -206,7 +212,7 @@ def main():
         #-------------------------------------------#
         ########        ASSIMILATION       ##########
         #-------------------------------------------#
-        if DA == True:
+        if DA:
             subprocess.call([PDAF_executable])
         
         firsttime = False
@@ -217,10 +223,13 @@ def main():
     #plotmap.docontour(x_cell,y_cell,reshaped_eta)
     #plotmap.docontour(xv,yv,interp_eta)
     #plotmap.docontour(x,y,interp_eta)
-    plot_ens.plot_ens(xv,yv,num_ens)
-    plot_ens.plot_ens(xv,yv,num_ens, initial_state = "True", analysis_state = "False")
+    #plot_ens.plot_ens(xv,yv,num_ens)
+    #plot_ens.plot_ens(xv,yv,num_ens, initial_state = True, analysis_state = False)
     plotmap.docontour(mxv,myv,reshaped_eta)
     plotmap.docontour(xv,yv,interp_eta)
+    if DA:
+        plotmap.docontour(xv,yv,observation)
+        plotmap.docontour(xv,yv,np.loadtxt("state_ana.txt"))
     
 
 

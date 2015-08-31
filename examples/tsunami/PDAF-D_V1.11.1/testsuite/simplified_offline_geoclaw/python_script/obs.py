@@ -9,10 +9,10 @@ def make_obs(dimx, dimy, dxobs, dyobs,stddev_obs,truefield, testing = False):
     
     full_obs = truefield + obs_error
     obs = np.zeros_like(truefield)- 999
-    obs[dxobs:dimx:dxobs,dyobs:dimy:dyobs]=full_obs[dxobs:dimx:dxobs,dyobs:dimy:dyobs]
+    obs[dxobs:dimx-1:dxobs,dyobs:dimy-1:dyobs]=full_obs[dxobs:dimx-1:dxobs,dyobs:dimy-1:dyobs]
 
-    print obs
     np.savetxt("obs.txt",obs)
+    return obs
 
 if __name__=='__main__':
     make_obs(np.zeros((51,51)))

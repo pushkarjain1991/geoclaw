@@ -217,5 +217,55 @@ contains
         close(unit)
         
     end subroutine read_qinit
+    
+    subroutine add_momentum(meqn,mbc,mx,my,xlower,ylower,dx,dy,q,maux,aux)
+    
+        !use geoclaw_module, only: sea_level, coordinate_system
+        !use amr_module, only: mcapa
+    
+        implicit none
+    
+        ! Subroutine arguments
+        logical there
+        integer, intent(in) :: meqn,mbc,mx,my,maux
+        real(kind=8), intent(in) :: xlower,ylower,dx,dy
+        real(kind=8), intent(inout) :: q(meqn,1-mbc:mx+mbc,1-mbc:my+mbc)
+        real(kind=8), intent(inout) :: aux(maux,1-mbc:mx+mbc,1-mbc:my+mbc)
+        real(kind=8) :: height, xveldata, yveldata, etadata
+        ! Local
+        integer :: i,j, p
+        real(kind=8) :: xim,x,xip,yjm,y,yjp
+        character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw&
+        /examples/tsunami/PDAF-D_V1.11.1/testsuite/&
+        simplified_offline_geoclaw/python_script/"
+        inquire(file=fileplace//"fort.q0012", exist=there)
+        PRINT *,"FILE IS",there
+        if ( there ) then
+            open(unit=2, FILE=fileplace//"fort.q0012")
+            do p=1,8
+                read(2,*)
+            enddo
+        
+            if (qinit_type > 0) then
+                do i=1-mbc,mx+mbc
+                    x = xlower + (i-0.5d0)*dx
+                    xim = x - 0.5d0*dx
+                    xip = x + 0.5d0*dx
+                    do j=1-mbc,my+mbc
+                        y = ylower + (j-0.5d0)*dy
+                        yjm = y - 0.5d0*dy
+                        yjp = y + 0.5d0*dy
+                    ! Check to see if we are in the qinit region at this grid point
+                        if ((xip > x_low_qinit).and.(xim < x_hi_qinit).and.  &
+                            (yjp > y_low_qinit).and.(yjm < y_hi_qinit)) then
+                            read(2,*) etadata,q(3,i,j), q(2,i,j), height
+                        endif
+                    enddo
+                enddo
+            endif
+            close(2)
+        endif
+        
+    end subroutine add_momentum
 
 end module qinit_module

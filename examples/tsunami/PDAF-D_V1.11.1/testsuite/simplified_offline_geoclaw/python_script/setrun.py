@@ -1,9 +1,7 @@
 """
 Module to set up run time parameters for Clawpack.
-
 The values set in the function setrun are then written out to data files
 that will be read in by the Fortran code.
-
 """
 
 import os
@@ -16,13 +14,10 @@ def setrun(claw_pkg='geoclaw'):
 
     """
     Define the parameters used for running Clawpack.
-
     INPUT:
         claw_pkg expected to be "geoclaw" for this setrun.
-
     OUTPUT:
         rundata - object of class ClawRunData
-
     """
 
     from clawpack.clawutil import data
@@ -98,7 +93,7 @@ def setrun(claw_pkg='geoclaw'):
     # restart_file 'fort.chkNNNNN' specified below should be in 
     # the OUTDIR indicated in Makefile.
 
-    clawdata.restart = False                 # True to restart from prior results
+    clawdata.restart = False               # True to restart from prior results
     clawdata.restart_file = 'fort.chk00006'  # File to use for restart data
 
     # -------------
@@ -233,7 +228,7 @@ def setrun(claw_pkg='geoclaw'):
     # Specify when checkpoint files should be created that can be
     # used to restart a computation.
 
-    clawdata.checkpt_style = 1
+    clawdata.checkpt_style = 0
 
     if clawdata.checkpt_style == 0:
         # Do not checkpoint at all
@@ -261,9 +256,9 @@ def setrun(claw_pkg='geoclaw'):
     amrdata.amr_levels_max = 1
 
     # List of refinement ratios at each level (length at least mxnest-1)
-    amrdata.refinement_ratios_x = [4,4,4]
-    amrdata.refinement_ratios_y = [4,4,4]
-    amrdata.refinement_ratios_t = [4,4,4]
+    amrdata.refinement_ratios_x = [2,4,4]
+    amrdata.refinement_ratios_y = [2,4,4]
+    amrdata.refinement_ratios_t = [2,4,4]
 
 
     # Specify type of each aux variable in amrdata.auxtype.
@@ -416,4 +411,3 @@ if __name__ == '__main__':
     import sys
     rundata = setrun(*sys.argv[1:])
     rundata.write()
-

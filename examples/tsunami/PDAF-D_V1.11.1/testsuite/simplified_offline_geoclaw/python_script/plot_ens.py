@@ -6,10 +6,10 @@ import matplotlib.cm as cm
 import numpy as np
 
 
-def plot_ens(x,y, numens, initial_state = "False", analysis_state = "True"):
+def plot_ens(x,y, numens, initial_state = False, analysis_state = True):
     numrows = 3
     numcols = 3
-    fig,axarray = plt.subplots(numrows,numcols)
+    fig,axarray = plt.subplots(numrows,numcols, figsize=(15,15))
     origin = 'lower'
     #fig = plt.figure()
     #grid = ImageGrid(fig,111,nrows_ncols=(numrows,numcols),axes_pad=0.1)
@@ -22,10 +22,10 @@ def plot_ens(x,y, numens, initial_state = "False", analysis_state = "True"):
         vmin = z.min()
 
         #For radial bowl test case, use the following vmin and vmax. This will be automated in future.
-        vmax = 0.6
-        vmin = -0.002
+        #vmax = 0.6
+        #vmin = -0.002
 
-        levels = np.arange(vmin, vmax, (vmax-vmin)/10)
+        levels = np.arange(vmin, vmax, (vmax-vmin)/100)
         norm = cm.colors.Normalize(vmax=vmax,vmin=vmin)
         #cs = plotmap.docontour(x,y,z)
         cs = a.contourf(x,y,z,levels, norm = norm, cmap = plt.get_cmap('bwr'), origin=origin, vmin=vmin, vmax=vmax)
