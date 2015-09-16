@@ -233,20 +233,23 @@ contains
         real(kind=8), intent(inout) :: aux(maux,1-mbc:mx+mbc,1-mbc:my+mbc)
         real(kind=8) :: height, xveldata, yveldata, etadata
         ! Local
-        integer :: i,j, p
+        integer :: i,j, p, Reason
         real(kind=8) :: xim,x,xip,yjm,y,yjp
         character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw&
         /examples/tsunami/PDAF-D_V1.11.1/testsuite/&
         simplified_offline_geoclaw/python_script/"
+        character(100) :: totallength
         inquire(file=fileplace//"fort.q0012", exist=there)
         PRINT *,"FILE IS",there
         if ( there ) then
             open(unit=2, FILE=fileplace//"fort.q0012")
-            do p=1,8
+            do p=1,9
                 read(2,*)
-            enddo
+             enddo
         
             if (qinit_type > 0) then
+                print *,x_low_qinit, x_hi_qinit, y_low_qinit, y_hi_qinit
+                print *,xlower, ylower
                 do i=1-mbc,mx+mbc
                     x = xlower + (i-0.5d0)*dx
                     xim = x - 0.5d0*dx
@@ -259,11 +262,33 @@ contains
                         if ((xip > x_low_qinit).and.(xim < x_hi_qinit).and.  &
                             (yjp > y_low_qinit).and.(yjm < y_hi_qinit)) then
                             read(2,*) etadata,q(3,i,j), q(2,i,j), height
+                            print *,xip,xim,yjp,yjm,height
                         endif
                     enddo
                 enddo
             endif
+         ! Write rest of data to dummy file
+         open(unit=3,FILE=fileplace//"dummy")
+         READ(2,"(A)",IOSTAT=Reason)totallength
+         DO
+             READ(2,"(A)",IOSTAT=Reason)totallength
+             
+             IF (Reason > 0) THEN
+                 print *,"something went wrong"
+             ELSE IF (Reason < 0) THEN
+                 print *, "END OF FILE REACHED"
+                 close(3)
+                 exit
+             ELSE
+                 !print *,totallength
+                 write(3,*)totallength
+             ENDIF
+         ENDDO
+            !close(2,status='delete')
             close(2)
+        CALL RENAME(fileplace//"fort.q0012",fileplace//"fort.orig")
+        close(3)
+        CALL RENAME(fileplace//"dummy",fileplace//"fort.q0012")
         endif
         
     end subroutine add_momentum

@@ -17,5 +17,5 @@ das: $(EXE)
 
 cleanmy:
 	$(MAKE) clean
-	rm -f *.pyc *.txt *.data *.xyz
+	rm -f *.pyc *.txt *.data *.xyz fort.q0012
 	rm -rf `find . -type d -name 'ens_*'`

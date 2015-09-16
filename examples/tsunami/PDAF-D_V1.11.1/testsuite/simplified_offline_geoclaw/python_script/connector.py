@@ -27,8 +27,8 @@ def main():
     amr_max_level = 1
     output_times = 12
     DA = False
-    num_ens = 1
-    dtobs = [0.0, 4.0, 8.0]
+    num_ens = 9
+    dtobs = [0.0,4.0, 8.0]
     
     
     #Model Parameters
@@ -155,6 +155,7 @@ def main():
             hello.rundata.clawdata.num_output_times = output_times
             hello.rundata.amrdata.amr_levels_max=amr_max_level
             hello.rundata.write()
+            print "yoyoyoyo\n\n\n"
             subprocess.call(geoclaw_exec)
 
             #---------------------------------------------------------------#
