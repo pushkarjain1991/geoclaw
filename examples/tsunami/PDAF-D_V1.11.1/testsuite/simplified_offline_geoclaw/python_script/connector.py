@@ -26,9 +26,10 @@ def main():
     """
     amr_max_level = 1
     output_times = 12
-    DA = False
+    DA = True
     num_ens = 9
-    dtobs = [0.0,4.0, 8.0]
+    dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
+    #dtobs = [0.0, 2.0, 8.0]
     
     
     #Model Parameters
@@ -43,7 +44,7 @@ def main():
     geoclaw_exec = "../xgeoclaw"
     
     #DA parameters
-    stddev_obs = 0.5
+    stddev_obs = 0.1
     dxobs = 10
     dyobs = 10
     PDAF_executable = "./PDAF_offline"
@@ -56,7 +57,8 @@ def main():
     dy = (yupper-ylower)/(nypoints-1)
     
     x_cell = np.linspace(xlower + dx/2.0, xupper - dx/2.0, mx)
-    y_cell = np.linspace(ylower + dy/2.0, yupper - dy/2.0, my)
+    #y_cell = np.linspace(ylower + dy/2.0, yupper - dy/2.0, my)
+    y_cell = np.linspace(yupper - dy/2.0, ylower + dy/2.0,my)
     mxv, myv = np.meshgrid(x_cell,y_cell)
 
 
@@ -102,7 +104,14 @@ def main():
         
             #Create observation data
             print "Creating observation data ...\n"
+            if not firsttime:
+                mean_init_z = np.loadtxt("ens_"+str((num_ens+1)/2)+".txt")
             observation = obs.make_obs(nxpoints, nypoints, dxobs, dyobs,stddev_obs,mean_init_z, testing=False)
+            
+        #Write ensemble_tracker
+        # For every forward run, Fortran reads the ensemble number from ens_tracker.
+        with open("ens_tracker","w") as ens_tracker:
+            ens_tracker.write("1")
     
         for i in range(1, num_ens+1):
             #Define pdaf input and output file names
@@ -155,7 +164,7 @@ def main():
             hello.rundata.clawdata.num_output_times = output_times
             hello.rundata.amrdata.amr_levels_max=amr_max_level
             hello.rundata.write()
-            print "yoyoyoyo\n\n\n"
+            #print "yoyoyoyo\n\n\n"
             subprocess.call(geoclaw_exec)
 
             #---------------------------------------------------------------#
@@ -202,8 +211,8 @@ def main():
             
             # Very dangerous
             if not (j == dtobs[-2]):
-                print j
-                shutil.copy2("fort.q0012","../")
+                #print j
+                shutil.copy2("fort.q0012","../fort.q0012_" + subdir_name)
 
             #Go back one directory  
             os.chdir("../")
@@ -218,19 +227,16 @@ def main():
         
         firsttime = False
 
-        #-------------------------------------------#
-        ###########     POST-PROCESSING    ##########
-        #-------------------------------------------#
-    #plotmap.docontour(x_cell,y_cell,reshaped_eta)
-    #plotmap.docontour(xv,yv,interp_eta)
-    #plotmap.docontour(x,y,interp_eta)
+    #-------------------------------------------#
+    ###########     POST-PROCESSING    ##########
+    #-------------------------------------------#
     #plot_ens.plot_ens(xv,yv,num_ens)
-    #plot_ens.plot_ens(xv,yv,num_ens, initial_state = True, analysis_state = False)
-    plotmap.docontour(mxv,myv,reshaped_eta)
-    plotmap.docontour(xv,yv,interp_eta)
+    plot_ens.plot_ens(xv,yv,num_ens, initial_state = True, analysis_state = False)
+    plotmap.docontour(mxv,myv,reshaped_eta, "Reshaped WSE")
+    plotmap.docontour(xv,yv,interp_eta, "Interpolated WSE")
     if DA:
-        plotmap.docontour(xv,yv,observation)
-        plotmap.docontour(xv,yv,np.loadtxt("state_ana.txt"))
+        plotmap.docontour(xv,yv,observation, "Observation data")
+        plotmap.docontour(xv,yv,np.loadtxt("state_ana.txt"), "Final state at last assimilation")
     
 
 

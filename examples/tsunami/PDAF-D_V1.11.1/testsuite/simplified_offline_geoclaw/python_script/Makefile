@@ -16,6 +16,6 @@ das: $(EXE)
 	python connector.py
 
 cleanmy:
-	$(MAKE) clean
+	$(MAKE) clean clobber
 	rm -f *.pyc *.txt *.data *.xyz fort.q0012
 	rm -rf `find . -type d -name 'ens_*'`

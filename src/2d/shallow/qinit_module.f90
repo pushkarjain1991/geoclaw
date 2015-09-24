@@ -235,14 +235,37 @@ contains
         ! Local
         integer :: i,j, p, Reason
         real(kind=8) :: xim,x,xip,yjm,y,yjp
+        integer next_ens_number, ens_number
         character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw&
         /examples/tsunami/PDAF-D_V1.11.1/testsuite/&
         simplified_offline_geoclaw/python_script/"
+        character(144) :: fileplace2
         character(100) :: totallength
-        inquire(file=fileplace//"fort.q0012", exist=there)
-        PRINT *,"FILE IS",there
+        character(1) :: str_ens_number
+
+        !Open and read ens_tracker
+        open(unit = 45, FILE=fileplace//"ens_tracker")
+        read(45,*)ens_number
+        print *, "ens_number read by geoclaw is ", ens_number
+        close(45)
+
+        ! Calculate next ensemble number
+        next_ens_number = ens_number + 1
+
+        ! Overwrite ens_tracker with next ensemble number
+        open(unit = 46, FILE=fileplace//"ens_tracker", status='replace')
+        write(46,*)next_ens_number
+        close(46)
+
+        write(str_ens_number,'(I1)')ens_number
+        fileplace2 = adjustl(fileplace//"fort.q0012"//"_ens_"//str_ens_number)
+        !open(unit=2, FILE=fileplace2)
+        !close(2)
+      
+        inquire(file=fileplace2, exist=there)
+        PRINT *,fileplace2,"FILE IS",there
         if ( there ) then
-            open(unit=2, FILE=fileplace//"fort.q0012")
+            open(unit=2, FILE=fileplace2)
             do p=1,9
                 read(2,*)
              enddo

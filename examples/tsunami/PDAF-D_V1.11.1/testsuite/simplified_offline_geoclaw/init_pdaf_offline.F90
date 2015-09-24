@@ -66,7 +66,7 @@ SUBROUTINE init_pdaf()
 
 ! *** specifications for observations ***
   ! avg. observation error (used for assimilation)
-  rms_obs = 0.5    ! This error is the standard deviation 
+  rms_obs = 0.1    ! This error is the standard deviation 
                    ! for the Gaussian distribution 
 
 ! *** Filter specific variables
