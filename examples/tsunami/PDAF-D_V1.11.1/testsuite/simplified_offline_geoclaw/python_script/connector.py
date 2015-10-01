@@ -26,10 +26,11 @@ def main():
     """
     amr_max_level = 1
     output_times = 12
-    DA = True
-    num_ens = 9
+    DA = False
+    num_ens = 1
     dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
-    #dtobs = [0.0, 2.0, 8.0]
+    #dtobs = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+    dtobs = [0.0,4.0,8.0]
     
     
     #Model Parameters
@@ -57,7 +58,6 @@ def main():
     dy = (yupper-ylower)/(nypoints-1)
     
     x_cell = np.linspace(xlower + dx/2.0, xupper - dx/2.0, mx)
-    #y_cell = np.linspace(ylower + dy/2.0, yupper - dy/2.0, my)
     y_cell = np.linspace(yupper - dy/2.0, ylower + dy/2.0,my)
     mxv, myv = np.meshgrid(x_cell,y_cell)
 
@@ -106,7 +106,8 @@ def main():
             print "Creating observation data ...\n"
             if not firsttime:
                 mean_init_z = np.loadtxt("ens_"+str((num_ens+1)/2)+".txt")
-            observation = obs.make_obs(nxpoints, nypoints, dxobs, dyobs,stddev_obs,mean_init_z, testing=False)
+            #observation = obs.make_obs(nxpoints, nypoints, dxobs, dyobs,stddev_obs,mean_init_z, testing=False)
+            observation = obs.make_obs(mx, my, dxobs, dyobs,stddev_obs,mean_init_z, testing=False)
             
         #Write ensemble_tracker
         # For every forward run, Fortran reads the ensemble number from ens_tracker.
@@ -143,10 +144,10 @@ def main():
                 pdaf_to_geoclaw.pdaf_to_geoclaw(xv/2.0, yv/2.0, first_ensemble, geoclaw_input)
             else:
                 if DA:
-                    pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_output, geoclaw_input)
+                    pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, pdaf_output, geoclaw_input)
                 else:
                     print "\n\n\n\n\nSecond time is executed\n\n\n\n\n" 
-                    pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, pdaf_input, geoclaw_input)
+                    pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, pdaf_input, geoclaw_input)
             
             #Run Geoclaw forecast step
             #---------------------------------------#
@@ -164,7 +165,6 @@ def main():
             hello.rundata.clawdata.num_output_times = output_times
             hello.rundata.amrdata.amr_levels_max=amr_max_level
             hello.rundata.write()
-            #print "yoyoyoyo\n\n\n"
             subprocess.call(geoclaw_exec)
 
             #---------------------------------------------------------------#
@@ -174,27 +174,71 @@ def main():
             read_geoclaw_output = "fort.q00" + str(output_times)
 
             amrread = ramr.ReadAmr(read_geoclaw_output)
-            amrframe = amrread.amrdataframe()
+            #amrframe = amrread.amrdataframe()
 
             #total_height, eta = np.loadtxt(read_geoclaw_output, skiprows=9, usecols = (0,3), unpack=True)
-            total_height1 = amrframe["height"][amrframe.amrlevel == 1.0] 
-            eta1 = amrframe["eta"][amrframe.amrlevel == 1.0] 
-            if (i == (num_ens+1)/2):
-                #np.savetxt("../eta_with_land_" + str(j) + ".txt", eta)
-                eta1.to_csv("../eta_with_land_" + str(j) + ".txt", sep=' ', index=False)
+            #total_height1 = amrframe["height"][amrframe.amrlevel == 1.0] 
+            total_height1 = amrread.get_mycolumn("height",amrl=1.0)
+            momx = amrread.get_mycolumn("xvel",amrl=1.0)
+            eta1 = amrread.get_mycolumn("eta",amrl=1.0)
+            #momx = amrframe["xvel"][amrframe.amrlevel == 1.0]
+            #eta1 = amrframe["eta"][amrframe.amrlevel == 1.0] 
             eta1[total_height1 == 0.0] = 0.0
-            if (i == (num_ens+1)/2):
-                #np.savetxt("../eta_before_interp_" + str(j) + ".txt", eta)
-                eta1.to_csv("../eta_before_interp_" + str(j) + ".txt", sep=' ', index=False)
-        
             eta = eta1.as_matrix()
-            #Write new ensembles into PDAF input format
             reshaped_eta = np.reshape(eta,(mx,my))
+            
+            #Land
+            masked_eta_land = np.ma.array(total_height1, momx!=0.0E0)
+            reshaped_masked_eta_land = np.reshape(masked_eta_land,(mx,my))
+            #np.savetxt("../land",reshaped_masked_eta_land)
+            
+            #Water
+            masked_eta_water = np.ma.array(eta1,mask=total_height1==0.0E0)
+            reshaped_masked_eta_water = np.reshape(masked_eta_water,(mx,my))
+            #np.savetxt("../water",reshaped_masked_eta_water)
+
+            #-----------------------------------------------------------------------
+            #Verify with original data
+            #-----------------------------------------------------------------------
+            original_fortq_file = str(2*output_times*int(dtobs[k+1])/int(dtobs[-1])).zfill(2)
+            print "Original file read is fort.q00" + original_fortq_file
+            original_read = ramr.ReadAmr("../original_radial_bowl/fort.q00" + original_fortq_file)
+            #original_amrframe = original_read.amrdataframe()
+            original_total_height1 = original_read.get_mycolumn("height", amrl=1.0) 
+            original_momx = original_read.get_mycolumn("xvel", amrl = 1.0)
+            original_eta1 = original_read.get_mycolumn("eta",amrl=1.0)
+            #original_total_height1 = original_amrframe["height"][original_amrframe.amrlevel == 1.0] 
+            #original_momx = original_amrframe["xvel"][original_amrframe.amrlevel == 1.0]
+            #original_eta1 = original_amrframe["eta"][original_amrframe.amrlevel == 1.0] 
+            original_eta1[original_total_height1 == 0.0] = 0.0
+            original_eta = original_eta1.as_matrix()
+            reshaped_original_eta = np.reshape(original_eta,(mx,my))
+
+            error_eta_percent = (eta - original_eta)*100.0/original_eta
+            error_reshaped_eta_percent = np.reshape(error_eta_percent,(mx,my))
+
+            error_eta = (eta - original_eta) 
+            error_reshaped_eta = np.reshape(error_eta,(mx,my))
+
+            #Land _Original
+            error_masked_eta_land = np.ma.array(original_total_height1, original_momx!=0.0E0)
+            error_reshaped_masked_eta_land = np.reshape(error_masked_eta_land,(mx,my))
+            #np.savetxt("../land",reshaped_masked_eta_land)
+            
+            #Water _Original
+            error_masked_eta_water = np.ma.array(error_eta,mask=original_total_height1==0.0E0)
+            error_masked_eta_water_percent = np.ma.array(error_eta_percent,mask=original_total_height1==0.0E0)
+            error_reshaped_masked_eta_water = np.reshape(error_masked_eta_water,(mx,my))
+            error_reshaped_masked_eta_water_percent = np.reshape(error_masked_eta_water_percent,(mx,my))
+            #np.savetxt("../water",reshaped_masked_eta_water)
+
+
+
             #sys.exit(0)
             #Interpolate eta values from cell centers to nodes. interp_eta will be of size nx*ny
             #Will be a problem if AMR starts. 
             #Option 1
-            interp_eta = mesh_interpol.interpol(reshaped_eta)
+            #interp_eta = mesh_interpol.interpol(reshaped_eta)
 
             #Option 2
             #f = interpolate.interp2d(mxv, myv, reshaped_eta)
@@ -204,10 +248,13 @@ def main():
            #interp_eta = scipy_interpol.interpol(mxv,myv,reshaped_eta)
 
             if (i == (num_ens+1)/2):
-                np.savetxt("../eta_after_interp_" + str(j) + ".txt", np.reshape(interp_eta, (nxpoints*nypoints,1)))
+                 plotmap.docontour(mxv,myv,reshaped_masked_eta_water, reshaped_masked_eta_land, "WSE: ens_number = "+str(i)+"; num_ens = " + str(num_ens)+"; time = " + str(dtobs[k+1]), -0.9, 0.9)
+                 plotmap.docontour(mxv,myv,error_reshaped_masked_eta_water, error_reshaped_masked_eta_land, "WSE error: ens_number = "+str(i)+"; num_ens = " + str(num_ens)+"; time = " + str(dtobs[k+1]), -0.9,0.9)
+                 plotmap.docontour(mxv,myv,error_reshaped_masked_eta_water_percent, error_reshaped_masked_eta_land, "WSE error %: ens_number = "+str(i)+"; num_ens = " + str(num_ens)+"; time = " + str(dtobs[k+1]), -200.0,200.0)
+                 #plotmap.docontour(mxv,myv,error_reshaped_masked_eta_water, error_reshaped_masked_eta_land, "WSE error: ens_number = "+str(i)+"; num_ens = " + str(num_ens)+"; time = " + str(dtobs[k+1]), -0.25,0.17)
             
             #print np.shape(interp_eta)
-            np.savetxt(pdaf_input,interp_eta)
+            np.savetxt(pdaf_input,reshaped_eta)
             
             # Very dangerous
             if not (j == dtobs[-2]):
@@ -231,9 +278,10 @@ def main():
     ###########     POST-PROCESSING    ##########
     #-------------------------------------------#
     #plot_ens.plot_ens(xv,yv,num_ens)
-    plot_ens.plot_ens(xv,yv,num_ens, initial_state = True, analysis_state = False)
-    plotmap.docontour(mxv,myv,reshaped_eta, "Reshaped WSE")
-    plotmap.docontour(xv,yv,interp_eta, "Interpolated WSE")
+    if (num_ens != 1):
+        plot_ens.plot_ens(xv,yv,num_ens, initial_state = True, analysis_state = False)
+        
+    #plotmap.docontour(xv,yv,interp_eta, "Interpolated WSE")
     if DA:
         plotmap.docontour(xv,yv,observation, "Observation data")
         plotmap.docontour(xv,yv,np.loadtxt("state_ana.txt"), "Final state at last assimilation")

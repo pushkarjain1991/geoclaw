@@ -17,5 +17,5 @@ das: $(EXE)
 
 cleanmy:
 	$(MAKE) clean clobber
-	rm -f *.pyc *.txt *.data *.xyz fort.q0012
+	rm -f *.pyc *.txt *.data *.xyz fort.q0012 ens_tracker
 	rm -rf `find . -type d -name 'ens_*'`

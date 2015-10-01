@@ -16,10 +16,12 @@ def plot_ens(x,y, numens, initial_state = False, analysis_state = True):
             z = np.loadtxt("ens_0" + str(i+1) + "_ana.txt")
         else: 
             z = np.loadtxt("first_ens_" + str(i+1) + ".txt")
-        vmax = z.max()
-        vmin = z.min()
+        #vmax = z.max()
+        #vmin = z.min()
+        vmax = 40.0
+        vmin = -5.0
 
-        levels = np.arange(vmin, vmax, (vmax-vmin)/100)
+        levels = np.linspace(vmin, vmax, 100)
         norm = cm.colors.Normalize(vmax=vmax,vmin=vmin)
         #cs = plotmap.docontour(x,y,z)
         cs = a.contourf(x,y,z,levels, norm = norm, cmap = plt.get_cmap('bwr'), origin=origin, vmin=vmin, vmax=vmax)

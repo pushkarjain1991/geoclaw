@@ -15,6 +15,14 @@ class ReadAmr(object):
         self.y_low, self.y_low_lines = self.capture_data("ylow")
         self.dx, self.dx_lines = self.capture_data("dx")
         self.dy, self.dy_lines = self.capture_data("dy")
+        self.pandas_dataframe = self.amrdataframe()
+
+    def get_mycolumn(self, column,amrl):
+        mycolumn_data = self.pandas_dataframe[column][self.pandas_dataframe.amrlevel==amrl]
+        return mycolumn_data
+
+    #def get_land(self):
+    #    masked_eta_land = np.ma.array(
 
     def capture_data(self, data_string):
         value_list = []
@@ -31,9 +39,6 @@ class ReadAmr(object):
         return value_list, line_number_list
 
     def amrdataframe(self):
-        # read level 1 grid
-        #data = pd.read_table("fort.q0012", nrows = (self.mx[0]+1)*self.my[0], header=None, names = ["height","xvel","yvel","eta"], skiprows=9, index_col=False, sep=r"\s+", dtype=np.float64)
-        #data = pd.read_table("fort.q0012", nrows = self.mx[0]*self.my[0], header=None, names = ["height","xvel","yvel","eta"], skiprows=9, index_col=False, skipinitialspace=True, sep=r"\s+", dtype=np.float64)
         # Read all levels grid
         data = pd.read_table(self.filename, header=None, names = ["height","xvel","yvel","eta"], index_col=False, sep=r"\s+")
         data = data.dropna()
@@ -77,11 +82,11 @@ class ReadAmr(object):
         data = pd.concat([data,xseries,yseries], axis=1) 
         return data
      
-def print_full(x):
+def print_full(x, filename):
     pd.set_option('display.max_rows', len(x))
-    print(x)
+    #print(x)
     pd.reset_option('display.max_rows')
-    x.to_csv('tests',sep='\t')
+    x.to_csv(filename,sep='\t')
 
 if __name__=="__main__":
     hello = ReadAmr("./ens_1/fort.q0012")
@@ -96,7 +101,6 @@ if __name__=="__main__":
 
     # In the most refined mesh, for a category, check 
     #print yoyo["eta"][(yoyo.xcoord == 72.5) & (yoyo.ycoord == -17.5)] 
-    #print yoyo["eta"][yoyo.amrlevel == 1.0] 
     mama = yoyo["eta"][yoyo.amrlevel == 1.0]
     mama2 = mama.as_matrix()
     print mama2
