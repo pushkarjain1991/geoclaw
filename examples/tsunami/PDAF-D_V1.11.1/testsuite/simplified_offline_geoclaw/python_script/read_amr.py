@@ -21,8 +21,6 @@ class ReadAmr(object):
         mycolumn_data = self.pandas_dataframe[column][self.pandas_dataframe.amrlevel==amrl]
         return mycolumn_data
 
-    #def get_land(self):
-    #    masked_eta_land = np.ma.array(
 
     def capture_data(self, data_string):
         value_list = []
@@ -52,7 +50,6 @@ class ReadAmr(object):
             else:
                 firstpoint = firstpoint + self.mx[num-1]*self.my[num-1]
             secondpoint = firstpoint + self.mx[num]*self.my[num]
-            #data['amrlevel'] = levelnum 
             data.loc[firstpoint:secondpoint, 'amrlevel'] = levelnum 
             x_left = self.x_low[num] + self.dx[num]/2.0
             x_right = self.x_low[num] + self.dx[num]*self.mx[num] - self.dx[num]/2.0
@@ -60,23 +57,9 @@ class ReadAmr(object):
             y_up = self.y_low[num] + self.dy[num]*self.my[num] - self.dy[num]/2.0
             xrow = np.linspace(x_left , x_right, num = self.mx[num])
             yrow = np.linspace(y_down , y_up, num = self.my[num])
-            #yrow = np.linspace( self.y_low[num] + self.dy[num]*self.my[num], self.y_low[num], num = self.my[num]+1)
             xmesh,ymesh = np.meshgrid(xrow,yrow)
-            #flatx = np.ravel(xmesh)
-            #flaty = np.ravel(ymesh)
-            #print np.shape(flatx)
-            #data.insert(firstpoint, 'xcoord',np.ravel(xmesh))
             xmain = np.append(xmain, np.ravel(xmesh))
             ymain = np.append(ymain, np.ravel(ymesh))
-            #xseries = pd.Series(np.ravel(xmesh), name='xcoord')
-            #yseries = pd.Series(np.ravel(ymesh), name='ycoord')
-            #print xrow
-            #print yrow
-            #print xseries
-            #print yseries
-            #data = data.append(xseries, ignore_index=True) 
-            #data.ix[firstpoint:secondpoint, 'xcoord'] = xseries
-            #data['xcoord'][firstpoint:lastpoint] = xseries
         xseries = pd.Series(xmain, name='xcoord')
         yseries = pd.Series(ymain, name='ycoord')
         data = pd.concat([data,xseries,yseries], axis=1) 
