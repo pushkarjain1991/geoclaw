@@ -83,7 +83,7 @@ def setrun(claw_pkg='geoclaw'):
     # Initial time:
     # -------------
 
-    clawdata.t0 = 0.0
+    clawdata.t0 = 4.0
 
 
     # Restart from checkpoint file of a previous run?

@@ -31,18 +31,7 @@ subroutine qinit(meqn,mbc,mx,my,xlower,ylower,dx,dy,q,maux,aux)
         call add_perturbation(meqn,mbc,mx,my,xlower,ylower,dx,dy,q,maux,aux)
         !***********************************************************************
         ! Call initial_momentum #PKJ
-        !call initial_momentum()
-       ! inquire(file=fileplace//"fort.q0012", exist=there)
-       ! PRINT *,"FILE IS",there
-       ! if ( there ) then
-       !     open(unit=2, FILE=fileplace//"fort.q0012")
-       !     do p=1,8
-       !         read(2,*)
-       !     enddo
-
         call add_momentum(meqn,mbc,mx,my,xlower,ylower,dx,dy,q,maux,aux)
-        !close(2)
-        !endif
         !***********************************************************************
         
     endif

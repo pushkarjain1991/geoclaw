@@ -29,9 +29,9 @@ def main():
     output_times = 12
     DA = False
     num_ens = 1
-    #dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
+    dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
     #dtobs = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
-    dtobs = [0.0,4.0,8.0]
+    #dtobs = [0.0,4.0,8.0]
     
     
     #Model Parameters
@@ -198,11 +198,12 @@ def main():
             #-----------------------------------------------------------------------
             #Verify with original data
             #-----------------------------------------------------------------------
+            #original_fortq_file = str(4*output_times*int(dtobs[k+1])/int(dtobs[-1])).zfill(2)
             original_fortq_file = str(2*output_times*int(dtobs[k+1])/int(dtobs[-1])).zfill(2)
-            #original_fortq_file = str(2*output_times*int(dtobs[k+1])/int(dtobs[-1])).zfill(2)
             print "Original file read is fort.q00" + original_fortq_file
             
-            original_case = ramr.ReadAmrForLevel("../original_radial_bowl/fort.q00" + original_fortq_file, 1.0)
+            #original_case = ramr.ReadAmrForLevel("../original_radial_bowl/fort.q00" + original_fortq_file, 1.0)
+            original_case = ramr.ReadAmrForLevel("../original_radial_bowl_48/fort.q00" + original_fortq_file, 1.0)
             
             #original_read = ramr.ReadAmr("../original_radial_bowl/fort.q00" + original_fortq_file)
             ##original_read = ramr.ReadAmr("../original_radial_bowl_48/fort.q00" + original_fortq_file)

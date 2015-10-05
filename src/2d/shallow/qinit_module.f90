@@ -83,6 +83,7 @@ contains
                             endif
                         else if (qinit_type == 4) then
                             q(1,i,j) = max(dq-aux(1,i,j),0.d0)
+                            print *,q(1,i,j) !PKJ
                         endif
                     endif
                 enddo
@@ -271,8 +272,8 @@ contains
              enddo
         
             if (qinit_type > 0) then
-                print *,x_low_qinit, x_hi_qinit, y_low_qinit, y_hi_qinit
-                print *,xlower, ylower
+                !print *,x_low_qinit, x_hi_qinit, y_low_qinit, y_hi_qinit, mbc
+                !print *,xlower, ylower
                 do i=1-mbc,mx+mbc
                     x = xlower + (i-0.5d0)*dx
                     xim = x - 0.5d0*dx
@@ -284,8 +285,10 @@ contains
                     ! Check to see if we are in the qinit region at this grid point
                         if ((xip > x_low_qinit).and.(xim < x_hi_qinit).and.  &
                             (yjp > y_low_qinit).and.(yjm < y_hi_qinit)) then
-                            read(2,*) etadata,q(3,i,j), q(2,i,j), height
-                            print *,xip,xim,yjp,yjm,height
+                            read(2,*) q(1,i,j),q(3,i,j), q(2,i,j), height
+                            !read(2,*) height,q(3,i,j), q(2,i,j), etadata
+                            print *,etadata, height
+                            !print *,xip,xim,yjp,yjm,height
                         endif
                     enddo
                 enddo
