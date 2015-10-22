@@ -83,7 +83,6 @@ contains
                             endif
                         else if (qinit_type == 4) then
                             q(1,i,j) = max(dq-aux(1,i,j),0.d0)
-                            print *,q(1,i,j) !PKJ
                         endif
                     endif
                 enddo
@@ -127,8 +126,8 @@ contains
         read(unit,*) qinit_fname
         read(unit,"(2i2)") min_level_qinit, max_level_qinit
 
-        write(GEO_PARM_UNIT,*) '   min_level, max_level, qinit_fname:'
-        write(GEO_PARM_UNIT,*)  min_level_qinit, max_level_qinit, qinit_fname
+        !write(GEO_PARM_UNIT,*) '   min_level, max_level, qinit_fname:'
+        !write(GEO_PARM_UNIT,*)  min_level_qinit, max_level_qinit, qinit_fname
         
         call read_qinit(qinit_fname)
     
@@ -228,6 +227,7 @@ contains
     
         ! Subroutine arguments
         logical there
+        logical ens_tracker_exist
         integer, intent(in) :: meqn,mbc,mx,my,maux
         real(kind=8), intent(in) :: xlower,ylower,dx,dy
         real(kind=8), intent(inout) :: q(meqn,1-mbc:mx+mbc,1-mbc:my+mbc)
@@ -243,16 +243,19 @@ contains
         character(144) :: fileplace2
         character(100) :: totallength
         character(1) :: str_ens_number
-
+        !--------------------------------------------------------------!
+        !ENSEMBLE TRACKER
+        !--------------------------------------------------------------!
         !Open and read ens_tracker
+        inquire(file=fileplace//"ens_tracker", exist=ens_tracker_exist)
+        if(.NOT. ens_tracker_exist) then
+          return
+        endif
         open(unit = 45, FILE=fileplace//"ens_tracker")
         read(45,*)ens_number
         print *, "ens_number read by geoclaw is ", ens_number
         close(45)
-
-        ! Calculate next ensemble number
-        next_ens_number = ens_number + 1
-
+        next_ens_number = ens_number + 1 ! Calculate next ensemble number
         ! Overwrite ens_tracker with next ensemble number
         open(unit = 46, FILE=fileplace//"ens_tracker", status='replace')
         write(46,*)next_ens_number
@@ -260,7 +263,7 @@ contains
 
         write(str_ens_number,'(I1)')ens_number
         fileplace2 = adjustl(fileplace//"fort.q0012"//"_ens_"//str_ens_number)
-        !open(unit=2, FILE=fileplace2)
+        !open(unit=2, FILE=fileplace2!)
         !close(2)
       
         inquire(file=fileplace2, exist=there)
@@ -287,7 +290,7 @@ contains
                             (yjp > y_low_qinit).and.(yjm < y_hi_qinit)) then
                             read(2,*) q(1,i,j),q(3,i,j), q(2,i,j), height
                             !read(2,*) height,q(3,i,j), q(2,i,j), etadata
-                            print *,etadata, height
+                            !print *,etadata, height
                             !print *,xip,xim,yjp,yjm,height
                         endif
                     enddo
@@ -318,5 +321,95 @@ contains
         endif
         
     end subroutine add_momentum
+    
+
+    subroutine add_momentum2(meqn,mbc,mx,my,xlower,ylower,dx,dy,q,maux,aux)
+    
+        !use geoclaw_module, only: sea_level, coordinate_system
+        !use amr_module, only: mcapa
+    
+        implicit none
+    
+        ! Subroutine arguments
+        logical there
+        logical ens_tracker_exist
+        integer, intent(in) :: meqn,mbc,mx,my,maux
+        real(kind=8), intent(in) :: xlower,ylower,dx,dy
+        real(kind=8), intent(inout) :: q(meqn,1-mbc:mx+mbc,1-mbc:my+mbc)
+        real(kind=8), intent(inout) :: aux(maux,1-mbc:mx+mbc,1-mbc:my+mbc)
+        real(kind=8) :: height, xveldata, yveldata, etadata
+        ! Local
+        integer :: i,j, p, Reason
+        real(kind=8) :: xim,x,xip,yjm,y,yjp
+        integer next_ens_number, ens_number
+        character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw&
+        /examples/tsunami/PDAF-D_V1.11.1/testsuite/&
+        simplified_offline_geoclaw/python_script/"
+        character(144) :: fileplace2
+        character(100) :: totallength
+        character(1) :: str_ens_number
+        character(LEN=*), PARAMETER :: FMT1 = "(E26.16, E26.16, E26.16, E26.16)"
+        !--------------------------------------------------------------!
+        !ENSEMBLE TRACKER
+        !--------------------------------------------------------------!
+        !Open and read ens_tracker
+        inquire(file=fileplace//"ens_tracker", exist=ens_tracker_exist)
+        if(.NOT. ens_tracker_exist) then
+          return
+        endif
+        open(unit = 45, FILE=fileplace//"ens_tracker")
+        read(45,*)ens_number
+        print *, "ens_number read by geoclaw is ", ens_number
+        close(45)
+        next_ens_number = ens_number + 1 ! Calculate next ensemble number
+        ! Overwrite ens_tracker with next ensemble number
+        open(unit = 46, FILE=fileplace//"ens_tracker", status='replace')
+        write(46,*)next_ens_number
+        close(46)
+
+        write(str_ens_number,'(I1)')ens_number
+        !fileplace2 = adjustl(fileplace//"fort.q0012"//"_ens_"//str_ens_number)
+        fileplace2 = adjustl(fileplace//"fort.q0012last")
+        !open(unit=2, FILE=fileplace2)
+        !close(2)
+      
+        inquire(file=fileplace2, exist=there)
+        PRINT *,fileplace2,"FILE IS",there
+        if ( .NOT. there ) then
+            return
+        else
+            open(unit=2, FILE=fileplace2)
+            open(unit=21, FILE=fileplace//"yoyo"//str_ens_number)
+            do p=1,9
+                read(2,*)
+             enddo
+        
+            if (qinit_type > 0) then
+                !print *,x_low_qinit, x_hi_qinit, y_low_qinit, y_hi_qinit, mbc
+                !print *,xlower, ylower
+                do i=1-mbc,mx+mbc
+                    x = xlower + (i-0.5d0)*dx
+                    xim = x - 0.5d0*dx
+                    xip = x + 0.5d0*dx
+                    do j=1-mbc,my+mbc
+                        y = ylower + (j-0.5d0)*dy
+                        yjm = y - 0.5d0*dy
+                        yjp = y + 0.5d0*dy
+                    ! Check to see if we are in the qinit region at this grid point
+                        if ((xip > x_low_qinit).and.(xim < x_hi_qinit).and.  &
+                            (yjp > y_low_qinit).and.(yjm < y_hi_qinit)) then
+                                
+                                read(2,*) q(1,i,j),q(3,i,j), q(2,i,j), height                           
+                                write(21,FMT1) q(1,i,j),q(3,i,j), q(2,i,j), height                           
+                                !print *, q(1,i,j),q(3,i,j), q(2,i,j), height
+                        endif
+                    enddo
+                enddo
+            endif
+            close(2)
+            close(21)
+         endif
+         
+    end subroutine add_momentum2
 
 end module qinit_module

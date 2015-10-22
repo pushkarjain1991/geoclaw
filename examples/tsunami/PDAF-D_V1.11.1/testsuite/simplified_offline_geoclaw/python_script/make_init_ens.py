@@ -10,5 +10,6 @@ def makeinitens(z1, num_ens, outfile_ens):
         perturb_value = i-(num_ens + 1)/2
         z2 = np.where(z1==0.0, 0, z1 + perturb_value)
         #z2 = z1 + *(i-(num_ens + 1.0)/2.0)
-        np.savetxt(filename, z2, fmt='%-7.5f')
+        #np.savetxt(filename, z2, fmt='%-7.5f')
+        np.savetxt(filename, z2)
 

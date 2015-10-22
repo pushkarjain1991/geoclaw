@@ -34,8 +34,10 @@ SUBROUTINE initialize()
 ! *** Model specifications ***
 !  Integer, intent(in) :: nx = 51    ! Number of nodes in x direction
 !  Integer, intent(in) :: ny = 51    ! Number of nodes in y direction
-  nx = 51    ! Number of nodes in x direction
-  ny = 51    ! Number of nodes in y direction
+!  nx = 51    ! Number of nodes in x direction
+!  ny = 51    ! Number of nodes in y direction
+  nx = 50    ! Number of nodes in x direction
+  ny = 50    ! Number of nodes in y direction
 
   dim_state_p   = nx * ny ! State dimension (shared via MOD_OFFLINE)
 

@@ -19,3 +19,4 @@ cleanmy:
 	$(MAKE) clean clobber
 	rm -f *.pyc *.txt *.data *.xyz fort.q0012 ens_tracker
 	rm -rf `find . -type d -name 'ens_*'`
+	rm -rf original_geoclaw

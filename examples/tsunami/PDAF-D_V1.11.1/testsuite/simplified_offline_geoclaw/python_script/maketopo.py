@@ -51,6 +51,11 @@ def qinit(x,y):
     z = where(ze>-10., 40.e0*exp(ze), 0.)
     return z
 
+def qinit0(x,y):
+    from numpy import where
+    z = (x*0) + (y*0)
+    return z
+
 if __name__=='__main__':
     maketopo()
     makeqinit()

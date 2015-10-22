@@ -3,9 +3,8 @@ import matplotlib.cm as cm
 import numpy as np
 
 def docontour(x,y,z_water, z_land, plot_title, vmin, vmax):
-    from clawpack.visclaw import colormaps, geoplot
-    
-    #plotData = ClawPlotData()
+    #from clawpack.visclaw import colormaps, geoplot
+    from clawpack.visclaw import geoplot
     
     #water
     pcolor_cmap_water = geoplot.tsunami_colormap
@@ -13,22 +12,9 @@ def docontour(x,y,z_water, z_land, plot_title, vmin, vmax):
     #Land
     pcolor_cmap_land = geoplot.land_colors
 
-    origin = 'lower'
-    #vmax = z.max()
-    #vmin = z.min()
-    #vmax = 0.9
-    #vmin = -0.9
     levels=np.linspace(vmin,vmax,100)
-    #levels=np.arange(vmin,vmax,0.01)
-    #norm = cm.colors.Normalize(vmax = vmax, vmin = vmin)
-    #cs = plt.contourf(x,y,z,levels, norm = norm,origin=origin, vmin =vmin, vmax = vmax, cmap = plt.get_cmap(pcolor_cmap))
     plt.contourf(x,y,z_land,cmap = plt.get_cmap(pcolor_cmap_land))
-    #plt.contourf(x,y,land,cmap = plt.get_cmap(pcolor_cmap_land), vmin = 0.0, vmax = 100.0)
     cs = plt.contourf(x,y,z_water,levels, vmin =vmin, vmax = vmax, cmap = plt.get_cmap(pcolor_cmap_water))
-    #cs = plt.contourf(x,y,z,levels, origin=origin, cmap = plt.get_cmap('bwr'))
-    #cs = plt.contourf(x,y,z,10,origin=origin, vmin = -0.05, vmax = 0.1, cmap = plt.get_cmap('summer'))
-    #cs = plt.contourf(x,y,z,10,cmap = plt.cm.rainbow,origin=origin, vmin=-50, vmax = 90)
-    #cs2 = plt.contour(cs, levels = cs.levels[::2], colors='r', origin=origin, hold='on')
     plt.xlabel('X')
     plt.ylabel('Y')
     cbar = plt.colorbar(cs, shrink = 0.9)
@@ -38,6 +24,18 @@ def docontour(x,y,z_water, z_land, plot_title, vmin, vmax):
     plt.show()
     return cs
 
+def class_contour(test_case, plot_title, vmin, vmax):
+    #from clawpack.visclaw import colormaps, geoplot
+    from clawpack.visclaw import geoplot
+    
+    x = test_case.mxv
+    y = test_case.myv
+    z_water = test_case.water
+    z_land = test_case.land
+   
+    docontour(x,y,z_water, z_land, plot_title, vmin, vmax)
+
+ 
 
 if __name__=='__main__':
     #plotdata.clearfigures()

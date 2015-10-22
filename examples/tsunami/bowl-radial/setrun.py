@@ -83,7 +83,7 @@ def setrun(claw_pkg='geoclaw'):
     # Initial time:
     # -------------
 
-    clawdata.t0 = 4.0
+    clawdata.t0 = 0.0
 
 
     # Restart from checkpoint file of a previous run?
@@ -109,7 +109,7 @@ def setrun(claw_pkg='geoclaw'):
     if clawdata.output_style==1:
         # Output nout frames at equally spaced times up to tfinal:
         clawdata.num_output_times = 24
-        clawdata.tfinal = 8.0
+        clawdata.tfinal = 1.0
         clawdata.output_t0 = True  # output at initial (or restart) time?
 
     elif clawdata.output_style == 2:

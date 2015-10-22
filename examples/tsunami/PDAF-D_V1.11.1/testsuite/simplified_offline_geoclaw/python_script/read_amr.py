@@ -17,6 +17,7 @@ class ReadAmr(object):
         self.dy, self.dy_lines = self.capture_data("dy")
         self.pandas_dataframe = self.amrdataframe()
 
+
     def get_mycolumn(self, column,amrl):
         mycolumn_data = self.pandas_dataframe[column][self.pandas_dataframe.amrlevel==amrl]
         return mycolumn_data
