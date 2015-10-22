@@ -1,7 +1,7 @@
 
 subroutine qinit(meqn,mbc,mx,my,xlower,ylower,dx,dy,q,maux,aux)
     
-    use qinit_module, only: qinit_type,add_perturbation, add_momentum
+    use qinit_module, only: qinit_type,add_perturbation, add_momentum,add_momentum2
     use geoclaw_module, only: sea_level
     
     implicit none

@@ -51,6 +51,12 @@ def qinit(x,y):
     z = where(ze>-10., 40.e0*exp(ze), 0.)
     return z
 
+def qinit_planewave(x,y):
+    import numpy as np
+    k = 5*np.pi/100.0
+    z = 0.8*np.sin(k * (x+10.0))
+    return z
+
 def qinit0(x,y):
     from numpy import where
     z = (x*0) + (y*0)

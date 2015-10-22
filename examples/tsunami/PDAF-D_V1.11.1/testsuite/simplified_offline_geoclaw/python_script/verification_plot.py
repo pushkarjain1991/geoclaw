@@ -22,6 +22,8 @@ def verify_das(dtobs, ens_number, output_times, num_ens):
         
         error_class = finderror.error_between_geoclaw(test_case, original_case, type = "relative")
         error_percent_class = finderror.error_between_geoclaw(test_case, original_case, type = "percent")
+        
+        plotmap.class_contour(original_case, "Original WSE: ens_number = "+str(ens_number)+"; num_ens = " + str(num_ens)+"; time = " + str(dtobs[k+1]), -0.9, 0.9)
 
         plotmap.class_contour(test_case, "WSE: ens_number = "+str(ens_number)+"; num_ens = " + str(num_ens)+"; time = " + str(dtobs[k+1]), -0.9, 0.9)
         plotmap.class_contour(error_class, "WSE error: ens_number = "+str(ens_number)+"; num_ens = " + str(num_ens)+"; time = " + str(dtobs[k+1]), -0.9,0.9)

@@ -243,6 +243,7 @@ contains
         character(144) :: fileplace2
         character(100) :: totallength
         character(1) :: str_ens_number
+        character(LEN=*), PARAMETER :: FMT1 = "(E26.16, E26.16, E26.16, E26.16)"
         !--------------------------------------------------------------!
         !ENSEMBLE TRACKER
         !--------------------------------------------------------------!
@@ -277,18 +278,26 @@ contains
             if (qinit_type > 0) then
                 !print *,x_low_qinit, x_hi_qinit, y_low_qinit, y_hi_qinit, mbc
                 !print *,xlower, ylower
-                do i=1-mbc,mx+mbc
-                    x = xlower + (i-0.5d0)*dx
-                    xim = x - 0.5d0*dx
-                    xip = x + 0.5d0*dx
-                    do j=1-mbc,my+mbc
-                        y = ylower + (j-0.5d0)*dy
-                        yjm = y - 0.5d0*dy
-                        yjp = y + 0.5d0*dy
+                !do i=1-mbc,mx+mbc
+                !    x = xlower + (i-0.5d0)*dx
+                !    xim = x - 0.5d0*dx
+                !    xip = x + 0.5d0*dx
+                !    do j=1-mbc,my+mbc
+                !        y = ylower + (j-0.5d0)*dy
+                !        yjm = y - 0.5d0*dy
+                !        yjp = y + 0.5d0*dy
+                do j=1-mbc,my+mbc
+                    y = ylower + (j-0.5d0)*dy
+                    yjm = y - 0.5d0*dy
+                    yjp = y + 0.5d0*dy
+                    do i=1-mbc,mx+mbc
+                        x = xlower + (i-0.5d0)*dx
+                        xim = x - 0.5d0*dx
+                        xip = x + 0.5d0*dx
                     ! Check to see if we are in the qinit region at this grid point
                         if ((xip > x_low_qinit).and.(xim < x_hi_qinit).and.  &
                             (yjp > y_low_qinit).and.(yjm < y_hi_qinit)) then
-                            read(2,*) q(1,i,j),q(3,i,j), q(2,i,j), height
+                            read(2,*) q(1,i,j),q(2,i,j), q(3,i,j), height
                             !read(2,*) height,q(3,i,j), q(2,i,j), etadata
                             !print *,etadata, height
                             !print *,xip,xim,yjp,yjm,height
@@ -387,21 +396,29 @@ contains
             if (qinit_type > 0) then
                 !print *,x_low_qinit, x_hi_qinit, y_low_qinit, y_hi_qinit, mbc
                 !print *,xlower, ylower
-                do i=1-mbc,mx+mbc
-                    x = xlower + (i-0.5d0)*dx
-                    xim = x - 0.5d0*dx
-                    xip = x + 0.5d0*dx
-                    do j=1-mbc,my+mbc
-                        y = ylower + (j-0.5d0)*dy
-                        yjm = y - 0.5d0*dy
-                        yjp = y + 0.5d0*dy
+                !do i=1-mbc,mx+mbc
+                !    x = xlower + (i-0.5d0)*dx
+                !    xim = x - 0.5d0*dx
+                !    xip = x + 0.5d0*dx
+                !    do j=1-mbc,my+mbc
+                !        y = ylower + (j-0.5d0)*dy
+                !        yjm = y - 0.5d0*dy
+                !        yjp = y + 0.5d0*dy
+                do j=1-mbc,my+mbc
+                    y = ylower + (j-0.5d0)*dy
+                    yjm = y - 0.5d0*dy
+                    yjp = y + 0.5d0*dy
+                    do i=1-mbc,mx+mbc
+                        x = xlower + (i-0.5d0)*dx
+                        xim = x - 0.5d0*dx
+                        xip = x + 0.5d0*dx
                     ! Check to see if we are in the qinit region at this grid point
                         if ((xip > x_low_qinit).and.(xim < x_hi_qinit).and.  &
                             (yjp > y_low_qinit).and.(yjm < y_hi_qinit)) then
                                 
-                                read(2,*) q(1,i,j),q(3,i,j), q(2,i,j), height                           
-                                write(21,FMT1) q(1,i,j),q(3,i,j), q(2,i,j), height                           
-                                !print *, q(1,i,j),q(3,i,j), q(2,i,j), height
+                                read(2,*) q(1,i,j),q(2,i,j), q(3,i,j), height                           
+                                !write(21,FMT1) q(1,i,j),q(3,i,j), q(2,i,j), height                           
+                                print *, q(1,i,j),q(2,i,j), q(3,i,j), height
                         endif
                     enddo
                 enddo

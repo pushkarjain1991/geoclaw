@@ -57,7 +57,8 @@ class ReadAmr(object):
             y_down = self.y_low[num] + self.dy[num]/2.0
             y_up = self.y_low[num] + self.dy[num]*self.my[num] - self.dy[num]/2.0
             xrow = np.linspace(x_left , x_right, num = self.mx[num])
-            yrow = np.linspace(y_down , y_up, num = self.my[num])
+            yrow = np.linspace(y_up , y_down, num = self.my[num])
+            #yrow = np.linspace(y_down , y_up, num = self.my[num])
             xmesh,ymesh = np.meshgrid(xrow,yrow)
             xmain = np.append(xmain, np.ravel(xmesh))
             ymain = np.append(ymain, np.ravel(ymesh))
@@ -73,10 +74,11 @@ def print_full(x, filename):
     x.to_csv(filename,sep='\t')
 
 if __name__=="__main__":
-    hello = ReadAmr("./ens_1/fort.q0012")
+    hello = ReadAmr("./ens_1_1/fort.q0012")
     #print hello.AMR_level
     #print hello.x_low
     yoyo = hello.amrdataframe()
+    print yoyo.dtypes
     #print yoyo.keys()
     #print yoyo["eta"]
     #print yoyo["amrlevel"]
@@ -85,9 +87,10 @@ if __name__=="__main__":
 
     # In the most refined mesh, for a category, check 
     #print yoyo["eta"][(yoyo.xcoord == 72.5) & (yoyo.ycoord == -17.5)] 
-    mama = yoyo["eta"][yoyo.amrlevel == 1.0]
+    mama = yoyo["xvel"][yoyo.amrlevel == 1.0]
     mama2 = mama.as_matrix()
-    print mama2
+    print_full(mama,"yoyo")
+    print np.shape(mama2)
 
 
 

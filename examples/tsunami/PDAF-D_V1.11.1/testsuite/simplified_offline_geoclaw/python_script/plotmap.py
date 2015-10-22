@@ -13,7 +13,7 @@ def docontour(x,y,z_water, z_land, plot_title, vmin, vmax):
     pcolor_cmap_land = geoplot.land_colors
 
     levels=np.linspace(vmin,vmax,100)
-    plt.contourf(x,y,z_land,cmap = plt.get_cmap(pcolor_cmap_land))
+    ax = plt.contourf(x,y,z_land,cmap = plt.get_cmap(pcolor_cmap_land))
     cs = plt.contourf(x,y,z_water,levels, vmin =vmin, vmax = vmax, cmap = plt.get_cmap(pcolor_cmap_water))
     plt.xlabel('X')
     plt.ylabel('Y')
@@ -23,6 +23,8 @@ def docontour(x,y,z_water, z_land, plot_title, vmin, vmax):
     #cbar.add_lines
     plt.show()
     return cs
+
+
 
 def class_contour(test_case, plot_title, vmin, vmax):
     #from clawpack.visclaw import colormaps, geoplot

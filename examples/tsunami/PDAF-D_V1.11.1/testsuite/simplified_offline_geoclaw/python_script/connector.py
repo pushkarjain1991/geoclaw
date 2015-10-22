@@ -29,7 +29,7 @@ def main():
     amr_max_level = 1
     output_times = 12
     DA = False
-    num_ens = 9
+    num_ens = 1
     dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
     #dtobs = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
     #dtobs = [0.0,8.0]
@@ -134,7 +134,7 @@ def main():
     
         for i in range(1, num_ens+1):
             #Define pdaf input and output file names
-            pdaf_input = "../ens_" + str(i) + ".txt"
+            #pdaf_input = "../ens_" + str(i) + ".txt"
             geoclaw_input = "hump_ens_" + str(i) + ".txt"
             pdaf_output = "../ens_0"+str(i)+"_ana.txt"
             #first_ensemble = "../first_ens_" + str(i) + ".txt"

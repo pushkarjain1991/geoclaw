@@ -57,7 +57,8 @@ class ReadAmrForLevel(read_amr.ReadAmr):
     def get_eta_with_land0(self):
         eta2 = self.eta
         eta2[self.total_height == 0.0] = 0.0
-        eta_with_land_matrix = eta2.as_matrix()
+        #eta_with_land_matrix = eta2.as_matrix()
+        eta_with_land_matrix = eta2.values
         reshaped_eta_with_land0 = np.reshape(eta_with_land_matrix, (self.mx[0], self.my[0]))
         return reshaped_eta_with_land0
 
