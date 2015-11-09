@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
+from pylab import *
 
 def docontour(x,y,z_water, z_land, plot_title, vmin, vmax):
     #from clawpack.visclaw import colormaps, geoplot
@@ -20,6 +21,9 @@ def docontour(x,y,z_water, z_land, plot_title, vmin, vmax):
     cbar = plt.colorbar(cs, shrink = 0.9)
     cbar.ax.set_ylabel("WSE")
     plt.title(plot_title)
+    gca().set_position((0.1, .15, .6, .7))
+    #plt.figtext(0.35, 0.001, "Max: " + str(np.max(z_water)),color='black',weight='roman',fontsize=12,bbox={'facecolor':'white'}, style='italic')
+    plt.figtext(0.4, 0.025, "Max: " + str(np.max(np.abs(z_water))),color='black',weight='roman',fontsize=12,bbox={'facecolor':'white'}, style='italic',horizontalalignment='center')
     #cbar.add_lines
     plt.show()
     return cs
@@ -42,30 +46,18 @@ def class_contour(test_case, plot_title, vmin, vmax):
 if __name__=='__main__':
     #plotdata.clearfigures()
     #drytol = 1.e-2
+    import ReadAmrForLevel as ramr
+    read_geoclaw_output = "./ens_5_1/fort.q0012"
+    stop_case = ramr.ReadAmrForLevel(read_geoclaw_output, 1.0)
 
-    #Water
-    #z = np.loadtxt("state_ana.txt")
-    z = np.loadtxt("eta_with_land_0.txt", unpack=True, usecols=[0])
-    #z = np.loadtxt("eta_after_interp_6.0.txt", unpack=True, usecols=[0])
-    print z
-    np.reshape(z, (50,50))
-    print z
-    #z.reshape((-1,50))
-    print np.shape(z)
-    print z[1:5]
-    if np.shape(z) == (50*50,):
-        np.reshape(z, (50,50))
-        print z
-        x = np.linspace(-98,98,50)
-        y = np.linspace(-98,98,50)
-        xv,yv = np.meshgrid(x,y)
-    else:
-        x = np.linspace(-100,100,51)
-        y = np.linspace(-100,100,51)
-        xv,yv = np.meshgrid(x,y)        
-        np.reshape(z, (51,51))
-    fig = plt.figure()
-    docontour(x,y,z)
-    plt.savefig("eta_before_interp_0")
-    plt.show()
-
+    x = np.linspace(-98,98,50)
+    y = np.linspace(-98,98,50)
+    mxv,myv = np.meshgrid(x,y)
+    assimilated_state = np.loadtxt("state_ana.txt")
+    print assimilated_state
+    assimilated_water = np.ma.array(assimilated_state,mask = stop_case.land==0.0)
+    print assimilated_water
+    #print stop_case.land
+    #print stop_case.water
+    assimilated_land = stop_case.land
+    docontour(mxv,myv,assimilated_water, assimilated_land, "Final state at last assimilation", -0.9, 0.9)
