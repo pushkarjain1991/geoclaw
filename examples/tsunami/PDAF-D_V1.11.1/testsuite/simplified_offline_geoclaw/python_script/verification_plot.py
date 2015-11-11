@@ -17,12 +17,13 @@ def verify_das(dtobs, ens_number, output_times, num_ens):
         original_fortq_time = str((np.size(dtobs)-1) * output_times *
                                   int(dtobs[k+1])/int(dtobs[-1])).zfill(2)
         original_fortq_file = "./original_geoclaw/fort.q00"+original_fortq_time
-        print "\nOriginal file read is " + original_fortq_file
+        print "Original file read is " + original_fortq_file
         original_case = ramr.ReadAmrForLevel(original_fortq_file, 1.0)
 
         error_class = finderror.error_between_geoclaw(test_case,
                                                       original_case,
                                                       type="relative")
+        #np.savetxt("hum1", error_class.get_water())
         error_percent_class = finderror.error_between_geoclaw(test_case,
                                                               original_case,
                                                               type="percent")
@@ -36,7 +37,7 @@ def verify_das(dtobs, ens_number, output_times, num_ens):
                               str(num_ens) + "; time = " + str(dtobs[k+1]),
                               -0.9, 0.9)
         plotmap.class_contour(error_class, "WSE error: ens_number = " +
-                              str(ens_number) + "; num_ens = " + str(num_ens) +
+                              str(num_ens) + "; num_ens = " + str(num_ens) +
                               "; time = " + str(dtobs[k+1]), -0.01, 0.01)
         plotmap.class_contour(error_percent_class, "WSE error %: \
                               ens_number = " + str(ens_number)+"; num_ens = \

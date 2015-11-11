@@ -27,7 +27,7 @@ def main():
     amr_max_level = 1
     output_times = 12
     DA = False
-    num_ens = 1
+    num_ens = 9
     #  dtobs = [0.0, 8.0]
     #  dtobs = [0.0, 4.0, 8.0]
     #  dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
@@ -66,16 +66,25 @@ def main():
 
     firsttime = True
 
+    # Create main initial data file in format of the Geoclaw input
+    # Geoclaw input format
+    #  ___ ___ ___
+    #  ___ ___ ___
+    #  ___ ___ ___
+    #  ___ ___ ___
+    #  ___ ___ ___
+    #  ___ ___ ___
+    print "Creating the initial Gaussian hump ..."
+    mean_init_z = maketopo.qinit(xv, yv)
+    np.savetxt("first_ensemble_main", mean_init_z)
+    
     #  Original Geoclaw
     print "Running original geoclaw ..."
     cmdir.take("original_geoclaw")
     os.chdir("original_geoclaw")
-    #  mean_init_z = maketopo.qinit(xv/2.0, yv/2.0)
-    #  make_init_ens.makeinitens(mean_init_z, 1, "first_ens_")
-    #  pdaf_to_geoclaw.pdaf_to_geoclaw(xv/2.0, yv/2.0, infile="first_ens_1.txt"
-    # outfile="hump_ens_1.txt")
-    topotools.topo1writer("hump.xyz", maketopo.qinit, xlower, xupper, ylower,
-                          yupper, nxpoints, nypoints)
+    pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, "../first_ensemble_main", "hump.xyz")
+    #topotools.topo1writer("hump.xyz", maketopo.qinit, xlower, xupper, ylower,
+    #                      yupper, nxpoints, nypoints)
     original_timeinterval = [dtobs[0], dtobs[-1]]
     original_output_times = output_times*(np.size(dtobs)-1)
     run_geoclaw.run_geoclaw(0, dtobs=original_timeinterval, mx=mx, my=my,
@@ -85,22 +94,6 @@ def main():
                             max_amr=amr_max_level,
                             geoclaw_exec=geoclaw_exec)
     os.chdir("../")
-
-    # Create main initial data file in format of the Geoclaw input
-    # Create hump.xyz
-    # Geoclaw input format
-    #  ___ ___ ___
-    #  ___ ___ ___
-    #  ___ ___ ___
-    #  ___ ___ ___
-    #  ___ ___ ___
-    #  ___ ___ ___
-    # mean_init_z = make_init.makeinit(xv, yv, geoclaw_first)
-    # My own function to generate the gaussian hump
-    # If bowltopo not found, then use -
-    print "Creating the initial Gaussian hump ...\n"
-    # mean_init_z = maketopo.qinit(xv, yv)
-    mean_init_z = maketopo.qinit(xv/2.0, yv/2.0)
 
     # Create ensemble members based on the mean value vector
     # Ensemble data format
@@ -112,34 +105,10 @@ def main():
     #  __ __ __ __ __ __ __ ... __
     #  __ __ __ __ __ __ __ ... __
     #  __ __ __ __ __ __ __ ... __
-    print "Creating the first ensemble members ...\n"
+    print "Creating the first ensemble members ..."
     make_init_ens.makeinitens(mean_init_z, num_ens, "first_ens_")
 
-    # for j in range(np.size(dtobs)-1):
     for k, j in enumerate(dtobs[:-1]):
-
-        if DA:
-            print "Data assimilation is on ...\n"
-            print "# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\
-            # # # # # # # # # # # # # # # # # # # # # # # # # # # # "
-            print "----------------------Recevied observation at \
-            " + str(j) + "----------------------"
-            print "# # # # # # # # # # # # # # # # # # # # # # # # # # # # # \
-            # # # # # # # # # # # # # # # # # # # # # # # # # # # # # "
-
-            # Create observation data
-            print "Creating observation data ...\n"
-            # if not firsttime:
-            # mean_init_z = np.loadtxt("ens_"+str((num_ens+1)/2)+".txt")
-            observation = obs.make_obs(mx, my, dxobs, dyobs, stddev_obs,
-                                       maketopo.qinit(mxv, myv), testing=False)
-            # original_fortq_time=str((np.size(dtobs)-1)*output_times*
-            # int(dtobs[k+1])/int(dtobs[-1])).zfill(2)
-            # original_fortq_file = "./original_geoclaw/fort.q00"+
-            # original_fortq_time
-            # original_case = ramr.ReadAmrForLevel(original_fortq_file, 1.0)
-            # observation = obs.make_obs(mx, my, dxobs, dyobs, stddev_obs,
-            # original_case.water, testing=False)
 
         # Write ensemble_tracker
         # For every forward run, Fortran reads the ensemble number
@@ -152,17 +121,14 @@ def main():
             geoclaw_input = "hump_ens_" + str(i) + ".txt"
             pdaf_output = "../ens_0"+str(i)+"_ana.txt"
             subdir_name = "ens_"+str(i)
-            # first_ensemble = "../first_ens_" + str(i) + ".txt"
+            first_ensemble = "../first_ens_" + str(i) + ".txt"
             if DA:
                 pdaf_input = "../ens_" + str(i) + ".txt"
                 read_geoclaw_output = "fort.q00" + str(output_times)
 
-            print "\n# # # # # # # # # # # # # # # # # # # # # # # # # # # # \
-            # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # "
-            print "------------- ensemble unit number " + str(i) + " \
-            at " + str(j) + " secs ----------"
-            print "# # # # # # # # # # # # # # # # # # # # # # # # # # # # # \
-            # # # # # # # # # # # # # # # # # # # # # # # # # # # # # "
+            #print "\n# # # # # # # # # # # # # # # # # # # # # # # # # # # # #"
+            print "\nEnsemble unit " + str(i) + " at " + str(j) + " secs"
+            #print "# # # # # # # # # # # # # # # # # # # # # # # # # # # # #"
 
             # Check if path exists and create subfolders to run
             # individual geoclaw
@@ -174,22 +140,18 @@ def main():
             # Prepare qinit files for geoclaw
             # Convert format of ensemble to data input format of Geoclaw qinit
             if firsttime:
-                print "First time is executed\n"
-                # pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, first_ensemble, \
-                # geoclaw_input)
-                # pdaf_to_geoclaw.pdaf_to_geoclaw(xv/2.0, yv/2.0, \
-                # first_ensemble, geoclaw_input)
-                topotools.topo1writer(geoclaw_input, maketopo.qinit,
-                                      xlower, xupper, ylower, yupper,
-                                      nxpoints, nypoints)
+                print "Input read from initial condition"
+                pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, first_ensemble, \
+                        geoclaw_input)
+                #topotools.topo1writer(geoclaw_input, maketopo.qinit_ens,
+                                      #xlower, xupper, ylower, yupper,
+                                      #nxpoints, nypoints)
             else:
                 if DA:
+                    print "Input read from previous state"
                     pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, pdaf_output,
                                                     geoclaw_input)
                 else:
-                    print "Second time is executed\n"
-                    # pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, pdaf_input\
-                    # , geoclaw_input)
                     np.savetxt("dummy1", np.zeros((mx, my)))
                     pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, "dummy1",
                                                     geoclaw_input)
@@ -199,13 +161,14 @@ def main():
             # # # # # # # #         FORECAST       # # # # # # # # # #
             # ---------------------------------------#
             #  Prepare individual geoclaw input
-            print "Executing forecast step for ens_number" + str(k)
+            print "Executing forecast step for ens_number " + str(i)
             run_geoclaw.run_geoclaw(k, dtobs=dtobs, mx=mx, my=my,
                                     geoclaw_input=geoclaw_input,
                                     topography=topo_path,
                                     output_times=output_times,
                                     max_amr=amr_max_level,
                                     geoclaw_exec=geoclaw_exec)
+            print "Forecast completed for ens_number " + str(i)
 
             # ---------------------------------------------------------------#
             # # # # # # # #         GEOCLAW OUTPUT TO PDAF INPUT I/O       # \
@@ -226,12 +189,31 @@ def main():
         firsttime = False
         os.remove("ens_tracker")
 
+        if DA:
+            print "Data assimilation is on ...\n"
+            print "Recevied observation at " + str(dtobs[k+1]) 
+
+            # Create observation data
+            print "Creating observation data ...\n"
+            # mean_init_z = np.loadtxt("ens_"+str((num_ens+1)/2)+".txt")
+            original_fortq_time = str((np.size(dtobs)-1) * output_times *
+                                  int(dtobs[k+1])/int(dtobs[-1])).zfill(2)
+            original_fortq_file = "./original_geoclaw/fort.q00"+original_fortq_time
+            print "\nTrue state read is " + original_fortq_file
+            original_case = ramr.ReadAmrForLevel(original_fortq_file, 1.0)
+
+            truefield = original_case.get_water()
+            observation = obs.make_obs(mx, my, dxobs, dyobs, stddev_obs,
+                                       truefield)
         # Run PDAF assimilation step
         # -------------------------------------------#
         # # # # # # # #         ASSIMILATION       # # # # # # # # # #
         # -------------------------------------------#
-        if DA:
-            subprocess.call([PDAF_executable])
+            print "Executing assimilation step ..."
+            subprocess.call(PDAF_executable, stdout=open(os.devnull,'w'),
+                            stderr=subprocess.STDOUT)
+            print "Assimilation completed at time " + str(dtobs[k+1]) + " secs"
+            print "# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n"
 
     # -------------------------------------------#
     # # # # # # # # # # #      POST-PROCESSING    # # # # # # # # # #
@@ -265,8 +247,8 @@ def main():
         original_fortq_time = str((np.size(dtobs)-1)*output_times).zfill(2)
         original_fortq_file = "./original_geoclaw/fort.q00"+original_fortq_time
         original_case = ramr.ReadAmrForLevel(original_fortq_file, 1.0)
-        np.savetxt("ha2", original_case.eta_with_land)
         error_eta_water = assimilated_water - original_case.eta_with_land
+        np.savetxt("ha2", error_eta_water)
         error_eta_water_percent = (assimilated_water -
                                    original_case.eta_with_land) * 100.0 / \
                                    original_case.eta_with_land
@@ -275,7 +257,7 @@ def main():
         plotmap.docontour(mxv, myv, error_eta_water, original_case.land,
                           "Assimilated state error", -0.01, 0.01)
         plotmap.docontour(mxv, myv, error_eta_water_percent,
-                          original_case.land, "Assimilated state error",
+                          original_case.land, "Assimilated state error %",
                           -100.0, 100.0)
 
 if __name__ == '__main__':

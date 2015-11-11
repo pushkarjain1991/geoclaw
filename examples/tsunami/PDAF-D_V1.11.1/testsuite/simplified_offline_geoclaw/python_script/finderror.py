@@ -26,6 +26,5 @@ class error_between_geoclaw(object):
         else:
             print "Type not consistent"
         error_reshaped_masked_eta_water = np.ma.array(error_eta, mask=self.original_class.total_height == 0.0E0)
-        print "Maximum error = ", np.max(error_reshaped_masked_eta_water)
-
+        #print "Maximum error = ", np.max(error_reshaped_masked_eta_water)
         return error_reshaped_masked_eta_water

@@ -11,7 +11,6 @@ def run_geoclaw(k, dtobs, mx, my, geoclaw_input, topography,
     hello.rundata.clawdata.tfinal = dtobs[k+1]
     hello.rundata.clawdata.num_cells[0] = mx
     hello.rundata.clawdata.num_cells[1] = my
-    print mx, my
     hello.rundata.qinit_data.qinitfiles[-1][-1] = geoclaw_input
     # hello.rundata.qinit_data.qinitfiles[-1]=[1,2,geoclaw_input]
     # hello.rundata.topo_data.topofiles[-1]=[2, 1, 1, 0., 1.e10, topo_path]
@@ -20,5 +19,5 @@ def run_geoclaw(k, dtobs, mx, my, geoclaw_input, topography,
     hello.rundata.amrdata.amr_levels_max = max_amr
     hello.rundata.write()
     FNULL = open(os.devnull,'w')
-    subprocess.call(geoclaw_exec)
-    # subprocess.call(geoclaw_exec, stdout=FNULL, stderr=subprocess.STDOUT)
+    # subprocess.call(geoclaw_exec)
+    subprocess.call(geoclaw_exec, stdout=FNULL, stderr=subprocess.STDOUT)
