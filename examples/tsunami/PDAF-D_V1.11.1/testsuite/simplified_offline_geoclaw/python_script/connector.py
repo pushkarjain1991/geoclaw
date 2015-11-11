@@ -146,15 +146,19 @@ def main():
                 #topotools.topo1writer(geoclaw_input, maketopo.qinit_ens,
                                       #xlower, xupper, ylower, yupper,
                                       #nxpoints, nypoints)
+            #else:
+            #    if DA:
+            #        print "Input read from previous state"
+            #        pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, pdaf_output,
+            #                                        geoclaw_input)
+            #    else:
+            #        np.savetxt("dummy1", np.zeros((mx, my)))
+            #        pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, "dummy1",
+            #                                        geoclaw_input)
             else:
-                if DA:
-                    print "Input read from previous state"
-                    pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, pdaf_output,
-                                                    geoclaw_input)
-                else:
-                    np.savetxt("dummy1", np.zeros((mx, my)))
-                    pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, "dummy1",
-                                                    geoclaw_input)
+                np.savetxt("dummy1", np.zeros((mx, my)))
+                pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, "dummy1",
+                                               geoclaw_input)
 
             # Run Geoclaw forecast step
             # ---------------------------------------#
@@ -180,14 +184,13 @@ def main():
                 np.savetxt(pdaf_input, stop_case.eta_with_land)
 
             #  Very dangerous
-            if not (j == dtobs[-2]):
+            #if not (j == dtobs[-2]):
+            if not DA:
                 shutil.copy2("fort.q0012", "../fort.q0012_" + subdir_name)
                 # pdb.set_trace()
             # Go back one directory
             os.chdir("../")
 
-        firsttime = False
-        os.remove("ens_tracker")
 
         if DA:
             print "Data assimilation is on ...\n"
@@ -205,15 +208,27 @@ def main():
             truefield = original_case.get_water()
             observation = obs.make_obs(mx, my, dxobs, dyobs, stddev_obs,
                                        truefield)
-        # Run PDAF assimilation step
-        # -------------------------------------------#
-        # # # # # # # #         ASSIMILATION       # # # # # # # # # #
-        # -------------------------------------------#
+
+
+            # Run PDAF assimilation step
+            # -------------------------------------------#
+            # # # # # # # #         ASSIMILATION       # # # # # # # # # #
+            # -------------------------------------------#
             print "Executing assimilation step ..."
             subprocess.call(PDAF_executable, stdout=open(os.devnull,'w'),
                             stderr=subprocess.STDOUT)
             print "Assimilation completed at time " + str(dtobs[k+1]) + " secs"
             print "# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n"
+
+            for i in range(1, num_ens+1):
+                subdir_name = "ens_"+str(i)
+                #shutil.copy2(subdir_name + "_" + str(k) + "/fort.q0012", "fort.q0012_" + subdir_name)
+                
+                # THIS HAS TO BE MODIFIED. ANA FILE HAS TO CONVERTED TO ACCEPTABLE FORMAT OF GEOCLAW
+                shutil.copy2("ens_0" + str(i) + "_ana.txt", "fort.q0012_" + subdir_name)
+        
+        firsttime = False
+        os.remove("ens_tracker")
 
     # -------------------------------------------#
     # # # # # # # # # # #      POST-PROCESSING    # # # # # # # # # #
