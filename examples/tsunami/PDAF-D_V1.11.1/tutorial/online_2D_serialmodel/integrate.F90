@@ -52,6 +52,7 @@ SUBROUTINE integrate()
         END DO
 
         field(1, j) = store
+
      END DO
 
 ! *** Write new field into file ***
@@ -62,7 +63,7 @@ SUBROUTINE integrate()
         WRITE (11, *) field(i, :)
      END DO
 
-     CLOSE(11)     
+     CLOSE(11)
 
   END DO stepping
 
