@@ -14,6 +14,7 @@ class ReadAmrForLevel(read_amr.ReadAmr):
         # Read raw columns
         self.total_height = self.get_mycolumn("height", amrlevel=amrl)
         self.momx = self.get_mycolumn("xvel", amrlevel=amrl)
+        self.momy = self.get_mycolumn("yvel", amrlevel=amrl)
         self.eta = self.get_mycolumn("eta", amrlevel=amrl)
 
         # Get eta with value in land = 0
@@ -42,6 +43,8 @@ class ReadAmrForLevel(read_amr.ReadAmr):
     def get_land(self):
         masked_eta_land = np.ma.array(self.total_height,
                                       mask=self.momx == 0.0E0)
+        #masked_eta_land = np.ma.array(self.total_height,
+        #                              mask=self.total_height != 0.0E0)
         reshaped_masked_eta_land = np.reshape(masked_eta_land, (self.mx[0],
                                                                 self.my[0]))
         return reshaped_masked_eta_land
@@ -68,6 +71,7 @@ class ReadAmrForLevel(read_amr.ReadAmr):
 
 
 if __name__ == "__main__":
-    read_verification_output = "./ens_1_0/fort.q0012"
+    read_verification_output = "./ens_9_3/fort.q0012"
     test_case = ReadAmrForLevel(read_verification_output, 1)
-    print test_case.mx[0]
+    #np.savetxt("ali123", test_case.total_height)
+    print test_case.water

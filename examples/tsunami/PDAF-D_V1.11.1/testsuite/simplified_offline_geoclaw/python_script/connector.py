@@ -13,8 +13,9 @@ import plotmap
 import ReadAmrForLevel as ramr
 import run_geoclaw
 import verification_plot
+import make_fortq
 from clawpack.geoclaw import topotools
-#import myplots
+import myplots
 # import ensemble_class
 # import matplotlib.pyplot as plt
 # import read_amr
@@ -26,14 +27,16 @@ def main():
     """
     amr_max_level = 1
     output_times = 12
-    DA = False
+    DA = True
     num_ens = 9
     #  dtobs = [0.0, 8.0]
     #  dtobs = [0.0, 4.0, 8.0]
     #  dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
     #  dtobs = [0.0, 2.0, 4.0, 6.0, 8.0]
     #  dtobs = [0.0, 4.0, 8.0, 12.0, 16.0]
-    dtobs = np.linspace(0.0, 16.0, 5)
+    #dtobs = np.linspace(0.0, 16.0, 5)
+    #dtobs = np.linspace(0.0, 64.0, 9)
+    dtobs = np.linspace(0.0, 8.0, 5)
 
     #  Model Parameters
     nxpoints = 51
@@ -49,8 +52,8 @@ def main():
 
     #  DA parameters
     stddev_obs = 0.1
-    dxobs = 10
-    dyobs = 10
+    dxobs = 5
+    dyobs = 5
     PDAF_executable = "./PDAF_offline"
 
     x = np.linspace(xlower, xupper, nxpoints)
@@ -76,12 +79,12 @@ def main():
     #  ___ ___ ___
     print "Creating the initial Gaussian hump ..."
     mean_init_z = maketopo.qinit(xv, yv)
-    np.savetxt("first_ensemble_main", mean_init_z)
     
     #  Original Geoclaw
     print "Running original geoclaw ..."
     cmdir.take("original_geoclaw")
     os.chdir("original_geoclaw")
+    np.savetxt("first_ensemble_main", mean_init_z)
     pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, "../first_ensemble_main", "hump.xyz")
     #topotools.topo1writer("hump.xyz", maketopo.qinit, xlower, xupper, ylower,
     #                      yupper, nxpoints, nypoints)
@@ -126,9 +129,9 @@ def main():
                 pdaf_input = "../ens_" + str(i) + ".txt"
                 read_geoclaw_output = "fort.q00" + str(output_times)
 
-            #print "\n# # # # # # # # # # # # # # # # # # # # # # # # # # # # #"
+            # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
             print "\nEnsemble unit " + str(i) + " at " + str(j) + " secs"
-            #print "# # # # # # # # # # # # # # # # # # # # # # # # # # # # #"
+            # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
             # Check if path exists and create subfolders to run
             # individual geoclaw
@@ -141,20 +144,11 @@ def main():
             # Convert format of ensemble to data input format of Geoclaw qinit
             if firsttime:
                 print "Input read from initial condition"
-                pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, first_ensemble, \
-                        geoclaw_input)
+                pdaf_to_geoclaw.pdaf_to_geoclaw(xv, yv, first_ensemble,
+                                                geoclaw_input)
                 #topotools.topo1writer(geoclaw_input, maketopo.qinit_ens,
                                       #xlower, xupper, ylower, yupper,
                                       #nxpoints, nypoints)
-            #else:
-            #    if DA:
-            #        print "Input read from previous state"
-            #        pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, pdaf_output,
-            #                                        geoclaw_input)
-            #    else:
-            #        np.savetxt("dummy1", np.zeros((mx, my)))
-            #        pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, "dummy1",
-            #                                        geoclaw_input)
             else:
                 np.savetxt("dummy1", np.zeros((mx, my)))
                 pdaf_to_geoclaw.pdaf_to_geoclaw(mxv, myv, "dummy1",
@@ -175,17 +169,14 @@ def main():
             print "Forecast completed for ens_number " + str(i)
 
             # ---------------------------------------------------------------#
-            # # # # # # # #         GEOCLAW OUTPUT TO PDAF INPUT I/O       # \
-# # # # # # # # #
+            # # # # # # #     GEOCLAW OUTPUT TO PDAF INPUT I/O     # # # # # # 
             # ---------------------------------------------------------------#
-            # np.savetxt(pdaf_input, reshaped_eta)
             if DA:
                 stop_case = ramr.ReadAmrForLevel(read_geoclaw_output, 1.0)
                 np.savetxt(pdaf_input, stop_case.eta_with_land)
 
-            #  Very dangerous
             #if not (j == dtobs[-2]):
-            if not DA:
+            else:
                 shutil.copy2("fort.q0012", "../fort.q0012_" + subdir_name)
                 # pdb.set_trace()
             # Go back one directory
@@ -205,7 +196,8 @@ def main():
             print "\nTrue state read is " + original_fortq_file
             original_case = ramr.ReadAmrForLevel(original_fortq_file, 1.0)
 
-            truefield = original_case.get_water()
+            truefield = original_case.eta_with_land
+            #truefield = original_case.get_water()
             observation = obs.make_obs(mx, my, dxobs, dyobs, stddev_obs,
                                        truefield)
 
@@ -215,17 +207,38 @@ def main():
             # # # # # # # #         ASSIMILATION       # # # # # # # # # #
             # -------------------------------------------#
             print "Executing assimilation step ..."
-            subprocess.call(PDAF_executable, stdout=open(os.devnull,'w'),
-                            stderr=subprocess.STDOUT)
+            #subprocess.call(PDAF_executable, stdout=open(os.devnull,'w'),
+            #                stderr=subprocess.STDOUT)
+            subprocess.call(PDAF_executable)
+            shutil.copy2("state_ana.txt", "state_ana_"+str(dtobs[k+1])+".txt")
             print "Assimilation completed at time " + str(dtobs[k+1]) + " secs"
             print "# # # # # # # # # # # # # # # # # # # # # # # # # # # # # #\n"
 
+            # Modify restart files generated by PDAF to GeoCLAW input format
             for i in range(1, num_ens+1):
                 subdir_name = "ens_"+str(i)
                 #shutil.copy2(subdir_name + "_" + str(k) + "/fort.q0012", "fort.q0012_" + subdir_name)
                 
-                # THIS HAS TO BE MODIFIED. ANA FILE HAS TO CONVERTED TO ACCEPTABLE FORMAT OF GEOCLAW
-                shutil.copy2("ens_0" + str(i) + "_ana.txt", "fort.q0012_" + subdir_name)
+                #new_height = np.ravel(np.loadtxt("ens_0"+str(i)+"_ana.txt"))
+                new_height = np.ravel(np.loadtxt("ens_"+str(i).zfill(2)+"_ana.txt"))
+                read_height_for = ramr.ReadAmrForLevel("ens_"+str(i)+"_"+str(k)+"/fort.q00"+str(output_times), 1.0)
+                #print read_height_for.water
+                old_height = np.ravel(read_height_for.eta_with_land)
+               
+                #print "new_height"
+                #print new_height
+                #print "old_height"
+                #print old_height
+                #np.savetxt("ali1_"+str(i)+"_"+str(k),new_height)
+                #np.savetxt("ali2_"+str(i)+"_"+str(k),old_height)
+                #np.savetxt("ali3_"+str(i)+"_"+str(k), read_height_for.eta_with_land)
+                diff_height = old_height-new_height
+                updated_totalheight = read_height_for.total_height + diff_height
+                read_height_for.pandas_dataframe["height"] = updated_totalheight
+                make_fortq.make_fortq2(read_height_for, "./fort.q0012_" + str(subdir_name))
+                #np.savetxt("updated_total_height"+str(i)+"_"+str(k), updated_totalheight)
+
+                #shutil.copy2("ens_0" + str(i) + "_ana.txt", "fort.q0012_" + subdir_name)
         
         firsttime = False
         os.remove("ens_tracker")
@@ -234,46 +247,48 @@ def main():
     # # # # # # # # # # #      POST-PROCESSING    # # # # # # # # # #
     # -------------------------------------------#
     # Verification of geoclaw restart
-    verification_plot.verify_das(dtobs, (num_ens+1)/2, output_times, num_ens)
+    if DA is False:
+        verification_plot.verify_das(dtobs, (num_ens+1)/2, output_times, num_ens)
 
     # Plotting ensemble states
-    if (num_ens != 1):
-        plot_ens.plot_ens(xv, yv, num_ens, initial_state=True,
-                          analysis_state=False)
+    #if (num_ens != 1):
+    #    plot_ens.plot_ens(xv, yv, num_ens, initial_state=True,
+    #                      analysis_state=False)
 
     if DA:
         # Plotting observation data
-        plotmap.docontour(mxv, myv, observation, stop_case.land,
-                          "Observation data", -1000., 500)
+        #plotmap.docontour(mxv, myv, observation, stop_case.land,
+        #                  "Observation data", -1000., 500)
+        
         # Plotting assimilated state
         assimilated_state = np.loadtxt("state_ana.txt")
         assimilated_water = np.ma.array(assimilated_state,
                                         mask=stop_case.land == 0.0)
-        np.savetxt("ha1", assimilated_water)
-        # print stop_case.land
-        # print stop_case.water
         assimilated_land = stop_case.land
         plotmap.docontour(mxv, myv, assimilated_water,
                           assimilated_land, "Assimilation state", -0.9, 0.9)
 
-        # Error between assimilated state and original
-        # original_fortq_time=str((np.size(dtobs)-1)*output_times*\
-        # int(dtobs[k+1])/int(dtobs[-1])).zfill(2)
+        #Final State of original geoclaw run
         original_fortq_time = str((np.size(dtobs)-1)*output_times).zfill(2)
         original_fortq_file = "./original_geoclaw/fort.q00"+original_fortq_time
         original_case = ramr.ReadAmrForLevel(original_fortq_file, 1.0)
-        error_eta_water = assimilated_water - original_case.eta_with_land
-        np.savetxt("ha2", error_eta_water)
+        
+        # Error between assimilated state and original
+        error_eta_water = assimilated_water - original_case.water
         error_eta_water_percent = (assimilated_water -
-                                   original_case.eta_with_land) * 100.0 / \
-                                   original_case.eta_with_land
-        # error_eta_water_percent = (assimilated_water - \
-        # original_case.eta_with_land)*100.0/original_case.eta_with_land
+                                   original_case.water) * 100.0 / \
+                                   original_case.water
+        #error_eta_water = assimilated_water - original_case.eta_with_land
+        #error_eta_water_percent = (assimilated_water -
+        #                           original_case.eta_with_land) * 100.0 / \
+        #                           original_case.eta_with_land
+        
+        #Plot wse error between original state and assimilated state
         plotmap.docontour(mxv, myv, error_eta_water, original_case.land,
                           "Assimilated state error", -0.01, 0.01)
         plotmap.docontour(mxv, myv, error_eta_water_percent,
-                          original_case.land, "Assimilated state error %",
-                          -100.0, 100.0)
+                          original_case.land, r"Assimilated state error \%",
+                          -20, 20.0)
 
 if __name__ == '__main__':
     # subprocess.call("make cleanmy")

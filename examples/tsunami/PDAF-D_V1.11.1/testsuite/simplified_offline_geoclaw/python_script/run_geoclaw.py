@@ -19,5 +19,5 @@ def run_geoclaw(k, dtobs, mx, my, geoclaw_input, topography,
     hello.rundata.amrdata.amr_levels_max = max_amr
     hello.rundata.write()
     FNULL = open(os.devnull,'w')
-    # subprocess.call(geoclaw_exec)
-    subprocess.call(geoclaw_exec, stdout=FNULL, stderr=subprocess.STDOUT)
+    subprocess.call(geoclaw_exec)
+    #subprocess.call(geoclaw_exec, stdout=FNULL, stderr=subprocess.STDOUT)

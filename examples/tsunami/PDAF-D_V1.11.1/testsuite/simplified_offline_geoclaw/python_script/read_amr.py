@@ -40,6 +40,7 @@ class ReadAmr(object):
     def amrdataframe(self):
         # Read all levels grid
         data = pd.read_table(self.filename, header=None, names = ["height","xvel","yvel","eta"], index_col=False, sep=r"\s+")
+        #data = pd.read_table(self.filename, header=None, names = ["height","xvel","yvel","eta"], index_col=False, sep=r"\s+", dtype=object)
         data = data.dropna()
         data=data.reset_index(drop=True)
         xmain = np.array([])
@@ -65,6 +66,9 @@ class ReadAmr(object):
         xseries = pd.Series(xmain, name='xcoord')
         yseries = pd.Series(ymain, name='ycoord')
         data = pd.concat([data,xseries,yseries], axis=1) 
+        #data = data.astype(float)
+        #data["eta"] = data["eta"].convert_objects(convert_numeric=True)
+        #pd.set_option('display.float_format', '{:.16g}'.format)
         return data
      
 def print_full(x, filename):
@@ -79,6 +83,7 @@ if __name__=="__main__":
     #print hello.x_low
     yoyo = hello.amrdataframe()
     print yoyo.dtypes
+    print yoyo
     #print yoyo.keys()
     #print yoyo["eta"]
     #print yoyo["amrlevel"]
@@ -87,10 +92,10 @@ if __name__=="__main__":
 
     # In the most refined mesh, for a category, check 
     #print yoyo["eta"][(yoyo.xcoord == 72.5) & (yoyo.ycoord == -17.5)] 
-    mama = yoyo["xvel"][yoyo.amrlevel == 1.0]
-    mama2 = mama.as_matrix()
-    print_full(mama,"yoyo")
-    print np.shape(mama2)
+    #mama = yoyo["xvel"][yoyo.amrlevel == 1.0]
+    #mama2 = mama.as_matrix()
+    #print_full(mama,"yoyo")
+    #print np.shape(mama2)
 
 
 

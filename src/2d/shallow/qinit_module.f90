@@ -240,9 +240,9 @@ contains
         character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw&
         /examples/tsunami/PDAF-D_V1.11.1/testsuite/&
         simplified_offline_geoclaw/python_script/"
-        character(144) :: fileplace2
+        character(145) :: fileplace2
         character(100) :: totallength
-        character(1) :: str_ens_number
+        character(2) :: str_ens_number
         character(LEN=*), PARAMETER :: FMT1 = "(E26.16, E26.16, E26.16, E26.16)"
         !--------------------------------------------------------------!
         !ENSEMBLE TRACKER
@@ -262,8 +262,8 @@ contains
         write(46,*)next_ens_number
         close(46)
 
-        write(str_ens_number,'(I1)')ens_number
-        fileplace2 = adjustl(fileplace//"fort.q0012"//"_ens_"//str_ens_number)
+        write(str_ens_number,'(I2)')ens_number
+        fileplace2 = adjustl(fileplace//"fort.q0012"//"_ens_"//TRIM(ADJUSTL(str_ens_number)))
         !open(unit=2, FILE=fileplace2!)
         !close(2)
       
@@ -306,27 +306,27 @@ contains
                 enddo
             endif
          ! Write rest of data to dummy file
-         open(unit=3,FILE=fileplace//"dummy")
-         READ(2,"(A)",IOSTAT=Reason)totallength
-         DO
-             READ(2,"(A)",IOSTAT=Reason)totallength
-             
-             IF (Reason > 0) THEN
-                 print *,"something went wrong"
-             ELSE IF (Reason < 0) THEN
-                 print *, "END OF FILE REACHED"
-                 close(3)
-                 exit
-             ELSE
-                 !print *,totallength
-                 write(3,*)totallength
-             ENDIF
-         ENDDO
-            !close(2,status='delete')
-            close(2)
-        CALL RENAME(fileplace//"fort.q0012",fileplace//"fort.orig")
-        close(3)
-        CALL RENAME(fileplace//"dummy",fileplace//"fort.q0012")
+         !open(unit=3,FILE=fileplace//"dummy")
+         !READ(2,"(A)",IOSTAT=Reason)totallength
+         !DO
+         !    READ(2,"(A)",IOSTAT=Reason)totallength
+         !    
+         !    IF (Reason > 0) THEN
+         !        print *,"something went wrong"
+         !    ELSE IF (Reason < 0) THEN
+         !        print *, "END OF FILE REACHED"
+         !        close(3)
+         !        exit
+         !    ELSE
+         !        !print *,totallength
+         !        write(3,*)totallength
+         !    ENDIF
+         !ENDDO
+         !   !close(2,status='delete')
+         !   close(2)
+        !CALL RENAME(fileplace//"fort.q0012",fileplace//"fort.orig")
+        !close(3)
+        !CALL RENAME(fileplace//"dummy",fileplace//"fort.q0012")
         endif
         
     end subroutine add_momentum
@@ -355,7 +355,7 @@ contains
         /examples/tsunami/PDAF-D_V1.11.1/testsuite/&
         simplified_offline_geoclaw/python_script/"
         character(144) :: fileplace2
-        character(100) :: totallength
+        !character(100) :: totallength
         character(1) :: str_ens_number
         character(LEN=*), PARAMETER :: FMT1 = "(E26.16, E26.16, E26.16, E26.16)"
         !--------------------------------------------------------------!
@@ -376,7 +376,7 @@ contains
         write(46,*)next_ens_number
         close(46)
 
-        write(str_ens_number,'(I1)')ens_number
+        write(str_ens_number,'(I2)')ens_number
         !fileplace2 = adjustl(fileplace//"fort.q0012"//"_ens_"//str_ens_number)
         fileplace2 = adjustl(fileplace//"fort.q0012last")
         !open(unit=2, FILE=fileplace2)
@@ -388,7 +388,7 @@ contains
             return
         else
             open(unit=2, FILE=fileplace2)
-            open(unit=21, FILE=fileplace//"yoyo"//str_ens_number)
+            !open(unit=21, FILE=fileplace//"yoyo"//str_ens_number)
             do p=1,9
                 read(2,*)
              enddo
