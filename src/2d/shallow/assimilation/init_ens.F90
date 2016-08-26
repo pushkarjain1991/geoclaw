@@ -78,12 +78,12 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
      WRITE (ensstr, '(i2)') member
      OPEN(24, file = '../ens_'//TRIM(ADJUSTL(ensstr))//'.txt', status='old')
      !do i=1,4
-     !    !do j =1,nx*ny
+         !do j =1,nx*ny
      !    do j = 1,nx1*ny1
      !        read(24,*) field((i-1)*nx1*ny1 + j)
      !    enddo
      !enddo
-     !read(24,*)field
+     read(24,*)field
      !print *,field
      CLOSE(24)
      ens_p(:,member) = field(:)
