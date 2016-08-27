@@ -140,48 +140,6 @@ contains
         
     end subroutine add_perturbation
 
-    subroutine set_qinit(fname)
-    
-        use geoclaw_module, only: GEO_PARM_UNIT
-    
-        implicit none
-        
-        ! Subroutine arguments
-        character(len=*), optional, intent(in) :: fname
-        
-        ! File handling
-        integer, parameter :: unit = 7
-        character(len=150) :: qinit_fname
-        
-        write(GEO_PARM_UNIT,*) ' '
-        write(GEO_PARM_UNIT,*) '--------------------------------------------'
-        write(GEO_PARM_UNIT,*) 'SETQINIT:'
-        write(GEO_PARM_UNIT,*) '-------------'
-        
-        ! Open the data file
-        if (present(fname)) then
-            call opendatafile(unit,fname)
-        else
-            call opendatafile(unit,"qinit.data")
-        endif
-        
-        read(unit,"(i1)") qinit_type
-        if (qinit_type == 0) then
-            ! No perturbation specified
-            write(GEO_PARM_UNIT,*)  '  qinit_type = 0, no perturbation'
-            print *,'  qinit_type = 0, no perturbation'
-            return
-        endif
-        read(unit,*) qinit_fname
-        read(unit,"(2i2)") min_level_qinit, max_level_qinit
-
-        !write(GEO_PARM_UNIT,*) '   min_level, max_level, qinit_fname:'
-        !write(GEO_PARM_UNIT,*)  min_level_qinit, max_level_qinit, qinit_fname
-        
-        call read_qinit(qinit_fname)
-    
-    end subroutine set_qinit
-
         
     ! currently only supports one file type:
     ! x,y,z values, one per line in standard order from NW corner to SE
