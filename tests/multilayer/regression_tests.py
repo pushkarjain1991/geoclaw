@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-r"""Bowl-Slosh regression test for GeoClaw
+r"""Multilayer Shallow Water Test Case
 
 To create new regression data use
     `python regression_tests.py True`
@@ -12,7 +12,7 @@ import unittest
 
 import numpy
 
-import clawpack.geoclaw.tests as tests
+import clawpack.geoclaw.test as test
 import clawpack.geoclaw.topotools as topotools
 
 
@@ -27,7 +27,7 @@ def bathy_step(x, y, location=0.15, angle=0.0, left=-1.0, right=-0.2):
           + (x_c >  0.0) * right)
 
 
-class MultilayerTest(tests.GeoClawTest):
+class MultilayerTest(test.GeoClawRegressionTest):
 
     r"""Multilayer plane-wave regression test for GeoClaw
 
@@ -60,7 +60,11 @@ class MultilayerTest(tests.GeoClawTest):
 
         # Run code and check
         self.run_code()
-        self.check_gauges(save=save, indices=(3, 6))
+        self.check_gauges(save=save, gauge_id=0, indices=(3, 6))
+        self.check_gauges(save=save, gauge_id=1, indices=(3, 6))
+        self.check_gauges(save=save, gauge_id=2, indices=(3, 6))
+        self.check_gauges(save=save, gauge_id=3, indices=(3, 6))
+        self.check_gauges(save=save, gauge_id=4, indices=(3, 6))
 
         # If we have gotten here then we do not need to copy the run results
         self.success = True

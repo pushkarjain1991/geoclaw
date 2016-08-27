@@ -8,7 +8,9 @@ but now they are explicit below.
 Call functions with makeplots==True to create plots of topo, slip, and dtopo.
 """
 
-import os,sys
+import os
+
+import clawpack.clawutil.data
 
 try:
     CLAW = os.environ['CLAW']
@@ -22,15 +24,15 @@ def get_topo(makeplots=False):
     """
     Retrieve the topo file from the GeoClaw repository.
     """
-    from clawpack.geoclaw import topotools, util
+    from clawpack.geoclaw import topotools
     topo_fname = 'etopo10min120W60W60S0S.asc'
     url = 'http://www.geoclaw.org/topo/etopo/' + topo_fname
-    util.get_remote_file(url, output_dir=scratch_dir, file_name=topo_fname,
-            verbose=True)
+    clawpack.clawutil.data.get_remote_file(url, output_dir=scratch_dir, 
+            file_name=topo_fname, verbose=True)
 
     if makeplots:
         from matplotlib import pyplot as plt
-        topo = topotools.Topography(topo_fname, topo_type=2)
+        topo = topotools.Topography(os.path.join(scratch_dir,topo_fname), topo_type=2)
         topo.plot()
         fname = os.path.splitext(topo_fname)[0] + '.png'
         plt.savefig(fname)
@@ -98,8 +100,8 @@ def make_dtopo(makeplots=False):
         fault.plot_subfaults(axes=ax1,slip_color=True)
         ax1.set_xlim(x.min(),x.max())
         ax1.set_ylim(y.min(),y.max())
-        dtopo.plot_dz_colors(1.,axes=ax2)
-        fname = os.path.splitext(dtopo_fname)[0] + '.png'
+        dtopo.plot_dZ_colors(1.,axes=ax2)
+        fname = os.path.splitext(os.path.split(dtopo_fname)[-1])[0] + '.png'
         plt.savefig(fname)
         print "Created ",fname
 

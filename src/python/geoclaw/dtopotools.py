@@ -123,10 +123,6 @@ def plot_dZ_contours(x, y, dZ, axes=None, dZ_interval=0.5, verbose=False,
     r"""For plotting seafloor deformation dZ"""
     import matplotlib.pyplot as plt
 
-    if axes is None:
-        fig = plt.figure(**fig_kwargs)
-        axes = fig.add_subplot(1, 1, 1)
-
     dZ_max = max(dZ.max(), -dZ.min()) + dZ_interval
     clines1 = numpy.arange(dZ_interval, dZ_max, dZ_interval)
     clines = list(-numpy.flipud(clines1)) + list(clines1)
@@ -561,7 +557,7 @@ class DTopography(object):
         Interpolate self.dZ to specified time t and then call module function
         plot_dZ_contours.
         """
-        axes = plot_dZ_contours(self.X, self.Y, self.dZ_at_t(t), 
+        axes = plot_dZ_contours(self.X, self.Y, self.dZ_at_t(t), axes=axes,
                                 dZ_interval=dZ_interval)
         return axes
 
@@ -585,7 +581,8 @@ class Fault(object):
 
     """
 
-    def __init__(self, subfaults=None, input_units={}):
+    def __init__(self, subfaults=None, input_units={},
+                 coordinate_specification=None):
         r"""Fault initialization routine.
         
         See :class:`Fault` for more info.
@@ -598,8 +595,11 @@ class Fault(object):
         self.dtopo = None
 
         # Default units of each parameter type
-        self.input_units = standard_units
+        self.input_units = standard_units.copy()
         self.input_units.update(input_units)
+
+        # Set the coordinate specification, e.g. 'top center':
+        self.coordinate_specification = coordinate_specification
         
         if subfaults is not None:
             if not isinstance(subfaults, list):
@@ -607,6 +607,11 @@ class Fault(object):
             self.subfaults = subfaults
             for subfault in self.subfaults:
                 subfault.convert_to_standard_units(self.input_units)
+                if subfault.coordinate_specification is None:
+                    subfault.coordinate_specification = coordinate_specification
+                if subfault.coordinate_specification is None:
+                    raise ValueError("Must specify coordinate_specification, " + \
+                            "either for fault or for each subfault")
 
 
     def read(self, path, column_map, coordinate_specification="centroid",
@@ -644,12 +649,12 @@ class Fault(object):
         # Read in rest of data
         # (Use genfromtxt to deal with files containing strings, e.g. unit
         # source name, in some column)
-        data = numpy.genfromtxt(path, skiprows=skiprows, delimiter=delimiter)
+        data = numpy.genfromtxt(path, skip_header=skiprows, delimiter=delimiter)
         if len(data.shape) == 1:
             data = numpy.array([data])
 
         self.coordinate_specification = coordinate_specification
-        self.input_units = standard_units
+        self.input_units = standard_units.copy()
         self.input_units.update(input_units)
         self.subfaults = []
         for n in xrange(data.shape[0]):
@@ -703,11 +708,11 @@ class Fault(object):
 
         """
 
-        self.output_units = standard_units
+        self.output_units = standard_units.copy()
         self.output_units.update(output_units)
 
         if style is not None:
-            msg =  "style option not yet implemented, use column_map"
+            msg =  "style option not yet implemented, use column_list"
             raise NotImplementedError(msg)
 
         if column_list is None:
@@ -725,13 +730,18 @@ class Fault(object):
         format['slip'] = '%15.8e'
 
         with open(path, 'w') as data_file:
+            c_s_list = set([s.coordinate_specification for s in self.subfaults])
+            if (len(c_s_list) >= 1) and \
+                    (c_s_list.pop() != self.coordinate_specification):
+                raise ValueError("Subfaults do not have common " +
+                    "coordinate_specification that agrees with fault attribute")
             # write header:
             data_file.write('Subfaults file with coordinate_specification:  ')
             data_file.write('%s, \n' % self.coordinate_specification)
             data_file.write('Units: %s, \n' % str(output_units))
             s = ""
             for param in column_list:
-                s = s + delimiter + param.rjust(15)
+                s = s + param.rjust(15) + delimiter
             data_file.write(s + '\n')
             for subfault in self.subfaults:
                 s = ""
@@ -740,7 +750,7 @@ class Fault(object):
                     if output_units.has_key(param):
                         converted_value = convert_units(value, 
                                     self.output_units[param], direction=2)
-                    s = s + delimiter + format[param] % value
+                    s = s + format[param] % value + delimiter 
                 data_file.write(s + '\n')
                 
 
@@ -846,7 +856,7 @@ class Fault(object):
     def plot_subfaults(self, axes=None, plot_centerline=False, slip_color=False,
                              cmap_slip=None, cmin_slip=None, cmax_slip=None,
                              slip_time=None, plot_rake=False, xylim=None, 
-                             plot_box=True, verbose=False):
+                             plot_box=True, colorbar_shrink=1, verbose=False):
         """
         Plot each subfault projected onto the surface.
 
@@ -972,8 +982,9 @@ class Fault(object):
             label.set_rotation(20)
         
 
-        if slip_color:
-            cax,kw = matplotlib.colorbar.make_axes(slipax)
+        if slip_color and (colorbar_shrink > 0):
+            cax,kw = matplotlib.colorbar.make_axes(slipax, 
+                     shrink=colorbar_shrink)
             norm = matplotlib.colors.Normalize(vmin=cmin_slip,vmax=cmax_slip)
             cb1 = matplotlib.colorbar.ColorbarBase(cax, cmap=cmap_slip, norm=norm)
             cb1.set_label("Slip (m)")
@@ -1179,7 +1190,7 @@ class SubFault(object):
         r"""Latitutde of the subfault based on *coordinate_specification*."""
         self.longitude = None
         r"""Longitude of the subfault based on *coordinate_specification*."""
-        self.coordinate_specification = "top center"
+        self.coordinate_specification = None
         r"""Specifies where the latitude, longitude and depth are measured from."""
 
         # default value for rigidity = shear modulus
@@ -1214,7 +1225,7 @@ class SubFault(object):
         Returns in units of N-m and assumes mu is in Pascals. 
         """
 
-        total_slip = self.length * self.width * self.slip
+        total_slip = self.length * self.width * abs(self.slip)
         Mo = self.mu * total_slip
         return Mo
 
