@@ -33,6 +33,11 @@ def setrun(claw_pkg='geoclaw'):
     rundata = setgeo(rundata)
 
     #------------------------------------------------------------------
+    # PDAF specific parameters:
+    #------------------------------------------------------------------
+    rundata = set_PDAF(rundata)
+    
+    #------------------------------------------------------------------
     # Standard Clawpack parameters to be written to claw.data:
     #   (or to amr2ez.data for AMR)
     #------------------------------------------------------------------
@@ -60,8 +65,8 @@ def setrun(claw_pkg='geoclaw'):
 
 
     # Number of grid cells: Coarsest grid
-    clawdata.num_cells[0] = 50
-    clawdata.num_cells[1] = 50
+    clawdata.num_cells[0] = 100
+    clawdata.num_cells[1] = 100
 
 
     # ---------------
@@ -104,22 +109,25 @@ def setrun(claw_pkg='geoclaw'):
     # Note that the time integration stops after the final output time.
     # The solution at initial time t0 is always written in addition.
 
-    clawdata.output_style = 1
+    #clawdata.output_style = 1 #Original Kyle kept with dt_variable
+    clawdata.output_style = 3
 
     if clawdata.output_style==1:
         # Output nout frames at equally spaced times up to tfinal:
         clawdata.num_output_times = 24
-        clawdata.tfinal = 1.0
+        clawdata.tfinal = 0.8
         clawdata.output_t0 = True  # output at initial (or restart) time?
 
     elif clawdata.output_style == 2:
         # Specify a list of output times.
-        clawdata.output_times = [0.5, 1.0]
+        clawdata.output_times = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
 
     elif clawdata.output_style == 3:
         # Output every iout timesteps with a total of ntot time steps:
-        clawdata.output_step_interval = 1
-        clawdata.total_steps = 1
+        #clawdata.output_step_interval = 10
+        #clawdata.total_steps = 50
+        clawdata.output_step_interval = 20
+        clawdata.total_steps = 200
         clawdata.output_t0 = True
         
 
@@ -148,7 +156,8 @@ def setrun(claw_pkg='geoclaw'):
 
     # if dt_variable==1: variable time steps used based on cfl_desired,
     # if dt_variable==0: fixed time steps dt = dt_initial will always be used.
-    clawdata.dt_variable = True
+    #clawdata.dt_variable = True #Original code by Kyle had it true
+    clawdata.dt_variable = False 
 
     # Initial time step for variable dt.
     # If dt_variable==0 then dt=dt_initial for all steps:
@@ -324,6 +333,10 @@ def setrun(claw_pkg='geoclaw'):
         x = r + .001  # shift a bit away from cell corners
         y = .001
         rundata.gaugedata.gauges.append([gaugeno, x, y, 0., 1e10])
+    
+    #Gauge set by PKJ
+    gaugeno = 12
+    rundata.gaugedata.gauges.append([gaugeno, 0.0, 0.0, 0, 1e10])
 
     # gauges along diagonal:
     gaugeno = 100
@@ -393,6 +406,7 @@ def setgeo(rundata):
     # for qinit perturbations, append lines of the form: (<= 1 allowed for now!)
     #   [minlev, maxlev, fname]
     rundata.qinit_data.qinitfiles.append([1, 2, 'hump.xyz'])
+    #rundata.qinit_data.qinitfiles.append([1, 2, 'planewave.xyz'])
 
     # == setfixedgrids.data values ==
     fixedgrids = rundata.fixed_grid_data.fixedgrids
@@ -404,10 +418,18 @@ def setgeo(rundata):
     # end of function setgeo
     # ----------------------
 
-
+def set_PDAF(rundata):
+    import clawpack.geoclaw.data
+    rundata.add_data(clawpack.geoclaw.data.PDAFData(), 'pdaf_data')
+    rundata.pdaf_data.filtertype = 2
+    rundata.pdaf_data.num_ensembles = 1
+    rundata.pdaf_data.rms_obs = 0.000001
+    rundata.pdaf_data.delt_obs = 20
+    return rundata
 
 if __name__ == '__main__':
     # Set up run-time parameters and write all data files.
     import sys
     rundata = setrun(*sys.argv[1:])
+    #rundata = set_PDAF(rundata)
     rundata.write()

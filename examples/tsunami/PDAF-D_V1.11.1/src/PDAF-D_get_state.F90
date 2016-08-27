@@ -51,7 +51,7 @@ SUBROUTINE PDAF_get_state(steps, time, doexit, U_next_observation, U_distribute_
   USE PDAF_timer, &
        ONLY: PDAF_timeit, PDAF_time_temp
   USE PDAF_mod_filter, &
-       ONLY: dim_p, dim_eof, dim_ens, local_dim_ens, dim_obs, nsteps, &
+       ONLY: dim_p, dim_eof, dim_ens, local_dim_ens, dim_obs, nsteps_pdaf, &
        step_obs, step, member, filterstr, subtype_filter, &
        ensemblefilter, initevol, epsilon, state, eofV, eofU, &
        firsttime, end_forecast, screen, flag, dim_lag, sens, &
@@ -159,7 +159,7 @@ SUBROUTINE PDAF_get_state(steps, time, doexit, U_next_observation, U_distribute_
      ! For offline mode of PDAF skip initialization
      ! of forecast and loop through ensemble states
      initevol = 0
-     nsteps   = 0
+     nsteps_pdaf   = 0
      step_obs = 0
      step     = 0
   END IF
@@ -176,9 +176,9 @@ SUBROUTINE PDAF_get_state(steps, time, doexit, U_next_observation, U_distribute_
      ! *** Get information on next observations ***
      ! ********************************************
 
-     CALL U_next_observation(step_obs, nsteps, end_forecast, time)
+     CALL U_next_observation(step_obs, nsteps_pdaf, end_forecast, time)
      ! *** Set time step of next observation ***
-     step_obs = step + nsteps - 1
+     step_obs = step + nsteps_pdaf - 1
      ! *** Initialize ensemble of error states for SEEK ***
      SEEK1: IF ((.NOT.ensemblefilter) .AND. filterpe &
          .AND. (subtype_filter == 0 .OR. subtype_filter ==1)) THEN
@@ -194,7 +194,7 @@ SUBROUTINE PDAF_get_state(steps, time, doexit, U_next_observation, U_distribute_
      ! *** Shift states in ensemble array in case of smoother ***
      ! **********************************************************
 
-     IF (nsteps > 0 .AND. dim_lag > 0) THEN
+     IF (nsteps_pdaf > 0 .AND. dim_lag > 0) THEN
         CALL PDAF_smoother_shift(dim_p, dim_ens, dim_lag, eofV, sens, &
              cnt_maxlag, screen)
      END IF
@@ -204,7 +204,7 @@ SUBROUTINE PDAF_get_state(steps, time, doexit, U_next_observation, U_distribute_
      ! *** Distribute ensembles and forecast information ***
      ! *****************************************************
 
-     doevol: IF (nsteps > 0 .AND. doexit /= 1) THEN
+     doevol: IF (nsteps_pdaf > 0 .AND. doexit /= 1) THEN
         ! *** More forecasts to be done             ***
         ! *** Send sub-ensembles to each task which ***
         ! *** not includes the filter PEs           ***
@@ -396,7 +396,7 @@ SUBROUTINE PDAF_get_state(steps, time, doexit, U_next_observation, U_distribute_
 ! ********************************************************
 ! *** Initialize state variables for ensemble forecast ***
 ! ********************************************************
-  doevol1: IF (nsteps > 0) THEN
+  doevol1: IF (nsteps_pdaf > 0) THEN
      IF ((screen > 2) .AND. modelpe .AND. mype_model==0) &
           WRITE (*,*) 'PDAF: get_state - Evolve member ', member, &
           'in task ', task_id
@@ -475,7 +475,7 @@ SUBROUTINE PDAF_get_state(steps, time, doexit, U_next_observation, U_distribute_
   cnt_steps = 0
 
   ! Set variables for exiting the routine
-  steps = nsteps
+  steps = nsteps_pdaf
   doexit = end_forecast
   outflag = flag
 

@@ -3,6 +3,7 @@
 # This version only sets the local files and frequently changed
 # options, and then includes the standard makefile pointed to by CLAWMAKE.
 CLAWMAKE = $(CLAW)/clawutil/src/Makefile.common
+PDAFLIB = $(CLAW)/geoclaw/src/2d/shallow/assimilation
 
 # See the above file for details and a list of make options, or type
 #   make .help
@@ -22,7 +23,8 @@ PLOTDIR = _plots               # Directory for plots
 # Environment variable FC should be set to fortran compiler, e.g. gfortran
 
 # Compiler flags can be specified here or set as an environment variable
-FFLAGS ?=
+FFLAGS ?= -cpp -DUSE_PDAF -L$(PDAFLIB) -I$(PDAFLIB) -lpdaf-d -I$(PDAFLIB)/dummympi -lblas -llapack  
+#FFLAGS ?= -cpp
 
 
 # ---------------------------------
@@ -47,7 +49,9 @@ MODULES = \
  $(GEOLIB)/surge/stommel_storm_module.f90 \
  $(GEOLIB)/surge/constant_storm_module.f90 \
  $(GEOLIB)/surge/storm_module.f90 \
- $(GEOLIB)/friction_module.f90
+ $(GEOLIB)/friction_module.f90 \
+ $(GEOLIB)/sortarr.f90 \
+ $(GEOLIB)/pkj_geoclaw/mapdomain.f90
 
 SOURCES = \
   $(GEOLIB)/setprob.f90 \
@@ -172,8 +176,7 @@ SOURCES = \
   $(AMRLIB)/opendatafile.f \
   $(AMRLIB)/init_alloc.f90 \
   $(AMRLIB)/restrt_alloc.f90 \
-  $(AMRLIB)/resize_alloc.f90
-
+  $(AMRLIB)/resize_alloc.f90 \
 #-------------------------------------------------------------------
 # Include Makefile containing standard definitions and make options:
 include $(CLAWMAKE)

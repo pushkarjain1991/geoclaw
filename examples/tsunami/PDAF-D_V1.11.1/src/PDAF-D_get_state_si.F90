@@ -21,7 +21,7 @@
 ! !ROUTINE: PDAF_get_state_si --- Interface to control ensemble integration
 !
 ! !INTERFACE:
-SUBROUTINE PDAF_get_state_si(nsteps, time, doexit, outflag)
+SUBROUTINE PDAF_get_state_si(nsteps_pdaf, time, doexit, outflag)
 
 ! !DESCRIPTION:
 ! Interface routine called from the model before the 
@@ -44,7 +44,7 @@ SUBROUTINE PDAF_get_state_si(nsteps, time, doexit, outflag)
   IMPLICIT NONE
   
 ! !ARGUMENTS:
-  INTEGER, INTENT(inout) :: nsteps  ! Flag and number of time steps
+  INTEGER, INTENT(inout) :: nsteps_pdaf  ! Flag and number of time steps
   REAL, INTENT(out)      :: time    ! current model time
   INTEGER, INTENT(inout) :: doexit  ! Whether to exit from forecasts
   INTEGER, INTENT(inout) :: outflag  ! Status flag
@@ -65,7 +65,7 @@ SUBROUTINE PDAF_get_state_si(nsteps, time, doexit, outflag)
 ! *** Call the full get_state routine  ***
 ! ****************************************
 
-  CALL PDAF_get_state(nsteps, time, doexit, next_observation_pdaf, &
+  CALL PDAF_get_state(nsteps_pdaf, time, doexit, next_observation_pdaf, &
        distribute_state_pdaf, prepoststep_pdaf, outflag)
 
 END SUBROUTINE PDAF_get_state_si

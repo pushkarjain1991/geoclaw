@@ -60,7 +60,7 @@ SUBROUTINE PDAF_put_state_seek(U_collect_state, U_init_dim_obs, U_obs_op, &
   USE PDAF_timer, &
        ONLY: PDAF_timeit, PDAF_time_temp
   USE PDAF_mod_filter, &
-       ONLY: dim_p, dim_obs, dim_eof, local_dim_ens, nsteps, &
+       ONLY: dim_p, dim_obs, dim_eof, local_dim_ens, nsteps_pdaf, &
        step_obs, step, member, subtype_filter, &
        type_forget, int_rediag, incremental, initevol, epsilon, &
        state, eofV, eofU, forget, screen, flag
@@ -99,7 +99,7 @@ SUBROUTINE PDAF_put_state_seek(U_collect_state, U_init_dim_obs, U_obs_op, &
 ! *** Only done on the filter Pes                ***
 ! **************************************************
 
-  doevol1: IF (nsteps > 0) THEN
+  doevol1: IF (nsteps_pdaf > 0) THEN
      modelpes: IF (modelpe) THEN
         IF ((task_id == statetask) .AND. (member == local_dim_ens)) THEN
            ! save evolved state fields in state vector
@@ -133,7 +133,7 @@ SUBROUTINE PDAF_put_state_seek(U_collect_state, U_init_dim_obs, U_obs_op, &
      ! *** Collect forecast ensemble on filter PEs ***
      ! ***********************************************
 
-     doevolB: IF (nsteps > 0) THEN
+     doevolB: IF (nsteps_pdaf > 0) THEN
 
         IF (.not.filterpe) THEN
            ! Non filter PEs only store a sub-ensemble

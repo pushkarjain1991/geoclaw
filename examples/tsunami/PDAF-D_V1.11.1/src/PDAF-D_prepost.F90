@@ -42,7 +42,7 @@ SUBROUTINE PDAF_prepost(U_collect_state, U_distribute_state, &
 !
 ! !USES:
   USE PDAF_mod_filter, &
-       ONLY: cnt_steps, nsteps, type_filter
+       ONLY: cnt_steps, nsteps_pdaf, type_filter
   USE PDAF_mod_filtermpi, &
        ONLY: mype_world
 
@@ -83,7 +83,7 @@ SUBROUTINE PDAF_prepost(U_collect_state, U_distribute_state, &
 ! *** At end of forecast phase ***
 ! ********************************
 
-  IF (cnt_steps == nsteps) THEN
+  IF (cnt_steps == nsteps_pdaf) THEN
 
      IF (mype_world==0) WRITE(*,'(a,5x,a)') 'PDAF','Perform pre/poststep of PDAF'
 
@@ -98,7 +98,7 @@ SUBROUTINE PDAF_prepost(U_collect_state, U_distribute_state, &
              U_prepoststep, outflag)
      END IF
 
-     nsteps = steps
+     nsteps_pdaf = steps
 
   ELSE
      outflag = 0

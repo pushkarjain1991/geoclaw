@@ -58,7 +58,7 @@ SUBROUTINE PDAF_put_state_enkf(U_collect_state, U_init_dim_obs, U_obs_op,  &
   USE PDAF_timer, &
        ONLY: PDAF_timeit, PDAF_time_temp
   USE PDAF_mod_filter, &
-       ONLY: dim_p, dim_obs, dim_ens, local_dim_ens, nsteps, &
+       ONLY: dim_p, dim_obs, dim_ens, local_dim_ens, nsteps_pdaf, &
        step_obs, step, member, subtype_filter, initevol, &
        state, eofV, rank_ana_enkf, forget, screen, &
        flag, sens, dim_lag, cnt_maxlag
@@ -98,7 +98,7 @@ SUBROUTINE PDAF_put_state_enkf(U_collect_state, U_init_dim_obs, U_obs_op,  &
 ! *** Only done on the filter Pes                ***
 ! **************************************************
 
-  doevol: IF (nsteps > 0) THEN
+  doevol: IF (nsteps_pdaf > 0) THEN
      modelpes: IF (modelpe) THEN
         ! Save evolved state in ensemble matrix
         CALL U_collect_state(dim_p, eofV(1:dim_p, member))
@@ -127,7 +127,7 @@ SUBROUTINE PDAF_put_state_enkf(U_collect_state, U_init_dim_obs, U_obs_op,  &
      ! *** Collect forecast ensemble on filter PEs ***
      ! ***********************************************
 
-     doevolB: IF (nsteps > 0) THEN
+     doevolB: IF (nsteps_pdaf > 0) THEN
 
         IF (.not.filterpe) THEN
            ! Non filter PEs only store a sub-ensemble

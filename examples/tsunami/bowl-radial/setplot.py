@@ -65,8 +65,15 @@ def setplot(plotdata):
     #plotitem.plot_var = geoplot.surface
     plotitem.plot_var = geoplot.surface_or_depth
     plotitem.pcolor_cmap = geoplot.tsunami_colormap
-    plotitem.pcolor_cmin = -0.9
-    plotitem.pcolor_cmax = 0.9
+    #Original
+    #plotitem.pcolor_cmin = -0.9
+    #plotitem.pcolor_cmax = 0.9
+    #hump
+    #plotitem.pcolor_cmin = -5.
+    #plotitem.pcolor_cmax = 5.0
+    #Planewave
+    plotitem.pcolor_cmin = -.25
+    plotitem.pcolor_cmax = 0.25
     plotitem.add_colorbar = True
     plotitem.amr_celledges_show = [1,1,0]
     plotitem.amr_patchedges_show = [1]
@@ -327,7 +334,8 @@ def setplot(plotdata):
     plotdata.printfigs = True                # print figures
     plotdata.print_format = 'png'            # file format
     plotdata.print_framenos = 'all'          # list of frames to print
-    plotdata.print_gaugenos = [4,5,104,105]  # list of gauges to print
+    #plotdata.print_gaugenos = [4,5,104,105]  # list of gauges to print
+    plotdata.print_gaugenos = [4,5,12, 104,105]  # list of gauges to print
     plotdata.print_fignos = 'all'            # list of figures to print
     plotdata.html = True                     # create html files of plots?
     plotdata.html_homelink = '../README.html'   # pointer for top of index
