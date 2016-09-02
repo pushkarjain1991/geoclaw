@@ -1,9 +1,7 @@
 """
 Module to set up run time parameters for Clawpack.
-
 The values set in the function setrun are then written out to data files
 that will be read in by the Fortran code.
-
 """
 
 import os
@@ -38,6 +36,11 @@ def setrun(claw_pkg='geoclaw'):
     rundata = setgeo(rundata)
 
     #------------------------------------------------------------------
+    # PDAF specific parameters:
+    #------------------------------------------------------------------
+    rundata = set_PDAF(rundata)
+    
+    #------------------------------------------------------------------
     # Standard Clawpack parameters to be written to claw.data:
     #   (or to amr2ez.data for AMR)
     #------------------------------------------------------------------
@@ -65,8 +68,8 @@ def setrun(claw_pkg='geoclaw'):
 
 
     # Number of grid cells: Coarsest grid
-    clawdata.num_cells[0] = 41
-    clawdata.num_cells[1] = 41
+    clawdata.num_cells[0] = 100
+    clawdata.num_cells[1] = 100
 
 
     # ---------------
@@ -109,7 +112,8 @@ def setrun(claw_pkg='geoclaw'):
     # Note that the time integration stops after the final output time.
     # The solution at initial time t0 is always written in addition.
 
-    clawdata.output_style = 1
+    #clawdata.output_style = 1
+    clawdata.output_style = 3
 
     if clawdata.output_style == 1:
         # Output nout frames at equally spaced times up to tfinal:
@@ -123,8 +127,8 @@ def setrun(claw_pkg='geoclaw'):
 
     elif clawdata.output_style == 3:
         # Output every iout timesteps with a total of ntot time steps:
-        clawdata.output_step_interval = 1
-        clawdata.total_steps = 1
+        clawdata.output_step_interval = 20
+        clawdata.total_steps = 200
         clawdata.output_t0 = True
         
 
@@ -143,7 +147,7 @@ def setrun(claw_pkg='geoclaw'):
     # The current t, dt, and cfl will be printed every time step
     # at AMR levels <= verbosity.  Set verbosity = 0 for no printing.
     #   (E.g. verbosity == 2 means print only on levels 1 and 2.)
-    clawdata.verbosity = 3
+    clawdata.verbosity = 2
 
 
 
@@ -153,11 +157,11 @@ def setrun(claw_pkg='geoclaw'):
 
     # if dt_variable==1: variable time steps used based on cfl_desired,
     # if dt_variable==0: fixed time steps dt = dt_initial will always be used.
-    clawdata.dt_variable = True
+    clawdata.dt_variable = False
 
     # Initial time step for variable dt.
     # If dt_variable==0 then dt=dt_initial for all steps:
-    clawdata.dt_initial = 0.0001
+    clawdata.dt_initial = 0.0016
 
     # Max time step to be allowed if variable dt used:
     clawdata.dt_max = 1e+99
@@ -252,14 +256,13 @@ def setrun(claw_pkg='geoclaw'):
         # and at the final time.
         clawdata.checkpt_interval = 5
 
-
     # ---------------
     # AMR parameters:
     # ---------------
     amrdata = rundata.amrdata
 
     # max number of refinement levels:
-    amrdata.amr_levels_max = 2
+    amrdata.amr_levels_max = 1
 
     # List of refinement ratios at each level (length at least mxnest-1)
     amrdata.refinement_ratios_x = [4,4]
@@ -386,11 +389,17 @@ def setgeo(rundata):
     # end of function setgeo
     # ----------------------
 
-
+def set_PDAF(rundata):
+    import clawpack.geoclaw.data
+    rundata.add_data(clawpack.geoclaw.data.PDAFData(), 'pdaf_data')
+    rundata.pdaf_data.filtertype = 2
+    rundata.pdaf_data.num_ensembles = 1
+    rundata.pdaf_data.rms_obs = 0.000001
+    rundata.pdaf_data.delt_obs = 20
+    return rundata
 
 if __name__ == '__main__':
     # Set up run-time parameters and write all data files.
     import sys
     rundata = setrun(*sys.argv[1:])
     rundata.write()
-

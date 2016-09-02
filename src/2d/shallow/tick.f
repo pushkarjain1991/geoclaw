@@ -5,8 +5,10 @@ c
      &                rest,dt_max)
 c
       use geoclaw_module
+#ifdef USE_PDAF
       use sortarr
       use mapdomain
+#endif
       use refinement_module, only: varRefTime
       use amr_module
       use topo_module, only: dt_max_dtopo, num_dtopo, topo_finalized,
@@ -26,32 +28,32 @@ c
       logical vtime,dumpout/.false./,dumpchk/.false./,rest,dump_final
       dimension dtnew(maxlv), ntogo(maxlv), tlevel(maxlv)
       integer clock_start, clock_finish, clock_rate
- 
+
 #ifdef USE_PDAF
 
       EXTERNAL :: prodRinvA_pdaf,
-     &             next_observation_pdaf, 
+     &             next_observation_pdaf,
      & ! Provide time step, model time and dimension of next observation
-     &            distribute_state_pdaf, 
+     &            distribute_state_pdaf,
      & ! Routine to distribute a state vector to model fields
      &             prepoststep_ens_pdaf,
      & ! Routine to collect a state vector from model fields
      &             collect_state_pdaf,
      & ! Initialize dimension of observation vector
-     &             init_dim_obs_pdaf, 
+     &             init_dim_obs_pdaf,
      & ! Implementation of observation operator
-     &             obs_op_pdaf, 
+     &             obs_op_pdaf,
      & ! Routine to provide vector of measurements
      &             init_obs_pdaf,
      & ! Add obs. error covariance R to HPH in EnKF
-     &             add_obs_error_pdaf, 
+     &             add_obs_error_pdaf,
      & ! Initialize obs error covar R in EnKF
      &             init_obscovar_pdaf
-      
+
       integer :: index_2d_pdaf(2)
 
-      integer,PARAMETER :: nx1 = 100
-      integer, PARAMETER :: ny1 = 100
+      integer,PARAMETER :: nx1 = 50
+      integer, PARAMETER :: ny1 = 50
       integer i_pkj
       integer j_pkj
       integer dim_counter ! Variable to count the ensemble number. Currently it
@@ -60,7 +62,7 @@ c
       integer :: nsteps_pdaf
       integer :: doexit
       integer :: status_pdaf
-      real(kind=8) :: h_pkj, hu_pkj, hv_pkj, eta_pkj 
+      real(kind=8) :: h_pkj, hu_pkj, hv_pkj, eta_pkj
       CHARACTER(len=3) :: ncycle_str
       CHARACTER(len=21) :: assim_filestr
       LOGICAL :: there
@@ -81,11 +83,11 @@ c
       counter_func(i,j) = j + (i-1)*100
 !      neighbors(i,j) = total_array(global_to_totalarray_map(counter_func
 !     .(i,j)))
-      neighbors(i,j) = global_to_totalarray_map(j + 
+      neighbors(i,j) = global_to_totalarray_map(j +
      . (i-1)*100)
       neighbors2(i,j) = total_array(neighbors(i,j))
       iadd(ivar,i,j)  = loc + ivar - 1 + nvar*((j-1)* mitot+i-1)
-     
+
       iaddaux(iaux,i,j) = locaux + iaux-1 + naux*(i-1) +
      .                                      naux*mitot*(j-1)
 
@@ -99,8 +101,8 @@ c
       type(ensstate) :: ens_num(dim_ens)
 #endif
 #ifndef USE_PDAF
-      integer,PARAMETER :: nx1 = 50
-      integer, PARAMETER :: ny1 = 50
+      integer,PARAMETER :: nx1 = 100
+      integer, PARAMETER :: ny1 = 100
       integer :: i1,i2,i_mod,j_mod
       integer, allocatable :: mptr_array(:)
       integer, allocatable :: ordered_mptr_array(:)
@@ -184,49 +186,17 @@ c        if this is a restart, make sure chkpt times start after restart time
        tlevel(i) = tlevel(1)
  5     continue
 
-#ifndef USE_PDAF
+#ifdef USE_PDAF2
          print *,"numgrids = ",numgrids(1)
-         !-------------------
-         !Get the order of mptr 
-         !-------------------
          corner_counter = numgrids(1)
          print *,"num of corners",corner_counter
 
-!         allocate(mptr_array(corner_counter))
-!         allocate(ordered_mptr_array(corner_counter))
-!         allocate(corner_array(corner_counter,2))
-!         
-!         mptr = lstart(1)
-!         do i_pkj =1,corner_counter
-!             mptr_array(i_pkj) = mptr    
-!             corner_array(i_pkj,1) = rnode(cornxlo,mptr)
-!             corner_array(i_pkj,2) = rnode(cornylo,mptr)
-!             mptr = node(levelptr, mptr)
-!         enddo
-!         print *,"mptr_array = ", mptr_array
-!      print *,"corner array = ",(corner_array(i1,:),i1=1,corner_counter)
-!         
-!      call set_global(corner_array,mptr_array,ordered_mptr_array)
-       call get_ordered_array(mptr_array,ordered_mptr_array)
-
-
-          OPEN(24,file="../ens_1.txt", STATUS="old")
-          do i2 = 1,size(ordered_mptr_array)
-                  mptr1 = ordered_mptr_array(i2)
-                  nx = node(ndihi,mptr1) - node(ndilo, mptr1) + 1
-                  ny = node(ndjhi,mptr1) - node(ndjlo, mptr1) + 1
-                  Ntot = nx*ny
-                  DO i_pkj = 1,Ntot
-                      READ(24,*) field((i2-1)*Ntot+i_pkj)
-                  !    print *,i_pkj
-                  ENDDO
-          ENDDO
-          CLOSE(24)
-          print *,"Read ens_1.tx"
-!         level = 1
-!         lend = lfine
-!         ngrids=0
-! 65      if (level .gt. lend) go to 91
+         call get_ordered_array(mptr_array,ordered_mptr_array)
+       
+         OPEN(24,file="../ens_1.txt", STATUS="old")
+         READ(24,*) field
+         CLOSE(24)
+         print *,"Read ens_1.txt"
 
          mptr = lstart(1)
 ! 71      if (mptr .eq. 0) go to 91
@@ -241,16 +211,13 @@ c        if this is a restart, make sure chkpt times start after restart time
                   loc     = node(store1, mptr1)
                   locaux  = node(storeaux,mptr1)
                   Ntot = nx*ny
-                  
+
                   print *,"loc=",loc
                   print *,"mptr1=",mptr1
                   print *, "nx = ",nx
                   print *, "ny = ",ny
                   print *, "corners = ",corn1,corn2
 
-
-                !From left to right. Bsically from 1 to nx
-                  !CLOSE(24)
 
                   do j_pkj = nghost+1, mjtot-nghost
                       do i_pkj = nghost+1, mitot-nghost
@@ -263,49 +230,17 @@ c        if this is a restart, make sure chkpt times start after restart time
                         i_mod = i_pkj-nghost
                         j_mod = j_pkj - nghost
                         !print *,i_mod,j_mod
-!                        alloc(iadd(1,i_pkj,j_pkj)) = 
-!     .                            field(i_mod+nx*(j_mod-1)) 
+!                        alloc(iadd(1,i_pkj,j_pkj)) =
+!     .                            field(i_mod+nx*(j_mod-1))
 !     .                    - alloc(iaddaux(1,i_pkj, j_pkj))
                         alloc(iadd(1,i_pkj,j_pkj)) =
      .              field((i2-1)*Ntot+i_mod+nx*(j_mod-1))
      .                    - alloc(iaddaux(1,i_pkj, j_pkj))
                         alloc(iadd(2,i_pkj, j_pkj)) = 0.d0
                         alloc(iadd(3,i_pkj, j_pkj)) = 0.d0
-                  !   endif
-                        
-                  !      if (alloc(iadd(1,i_pkj,j_pkj)) < 0.d0) then
-                  !              alloc(iadd(1,i_pkj,j_pkj)) = 0.d0
-                  !      endif
-                  
-                  !        do ivar=1,nvar
-                  !if (abs(alloc(iadd(ivar,i_pkj,j_pkj))) < 1d-90) then
-                  !                alloc(iadd(ivar,i_pkj,j_pkj)) = 0.d0
-                  !            endif
-                  !        enddo
-                        !h_pkj = alloc(iadd(1,i_pkj,j_pkj)) 
-                        !hu_pkj = alloc(iadd(2,i_pkj,j_pkj))
-                        !hv_pkj = alloc(iadd(3,i_pkj,j_pkj))
-                        !eta_pkj = h_pkj + alloc(iaddaux(1,i_pkj,j_pkj))
-                        !print *,field(i_pkj, j_pkj)
-                        
-                        !if (abs(eta_pkj) < 1d-90) then
-                        !   eta_pkj = 0.d0
-                        !end if
-
-                        !print *,h_pkj, hu_pkj, hv_pkj, eta_pkj
-               !         print *,alloc(iadd(1,i_pkj,j_pkj)), 
-     .         !                 alloc(iadd(2,i_pkj,j_pkj)),
-     .         !                 alloc(iadd(3,i_pkj,j_pkj)),  
-     .         !                 alloc(iaddaux(1,i_pkj,j_pkj))
                      enddo
                   enddo
-             !mptr = node(levelptr, mptr)
              enddo
-!             if (mptr .ne. 0) go to 71
-!             go to 71
-! 82         level = level +1
-!             go to 65
-! 91          continue 
 #endif
 
 #ifdef USE_PDAF
@@ -317,31 +252,20 @@ c        if this is a restart, make sure chkpt times start after restart time
       enddo
 
       print *, "Number of ensemble members is ",dim_ens
-      
+
       !Start of the model loop. This loop runs from 1:num_ens
       pdaf_modelloop: DO
 
          ens_num(dim_counter + 1)%ens_number = dim_counter + 1
-         print *,"Executing forecast of ens_number", 
+         print *,"Executing forecast of ens_number",
      &    ens_num(dim_counter + 1)%ens_number
 
          ! Gets the current time (timenow) and the number of steps (nsteps_pdaf) to forecast.
          ! next_observation - Check next_observation_pdaf.F
          ! distribute_state_pdaf - Copy wse from state_p to field
          call PDAF_get_state(nsteps_pdaf, timenow, doexit,
-     &         next_observation_pdaf,distribute_state_pdaf, 
+     &         next_observation_pdaf,distribute_state_pdaf,
      &         prepoststep_ens_pdaf, status_pdaf)
-
-         !--------------------------
-         !Printing the received PDAF state
-         !print *,"Just got pdaf_get_state"
-         !do i_pkj = 1,50
-         !    do  j_pkj = 1,50
-         !        print *,field(i_pkj, j_pkj)
-         !    enddo
-         !    print *,''
-         !enddo
-         !--------------------------
 
          print *,"I am being executed"
          !print *,doexit, status_pdaf
@@ -349,77 +273,35 @@ c        if this is a restart, make sure chkpt times start after restart time
           !Check if forecast has to be performed
           !if (time.lt.obstime .and. time + possk(1) .ge. obstime) then
           checkforecast: if (doexit /=1 .and. status_pdaf == 0) then
-              
+
               ! ***Forecast ensemble state ***
-              forecast_ensemble: if (nsteps_pdaf>0) then 
-                  
-                  !Initialize current model time 
+              forecast_ensemble: if (nsteps_pdaf>0) then
+
+                  !Initialize current model time
                   print *,"Time1 = ",time
                   time = timenow
                   !ncycle = nsteps_pdaf
-                  ncycle = time/possk(1)
+                  ncycle = nint(time/possk(1))
                   tlevel(1) = time !same as 20 lines above. PDAF loop can start there
                   do 6 i       = 2, mxnest
                       tlevel(i) = tlevel(1)
  6                continue
-                   
+
                   print *,"Time2 = ",time
                   print *,"ncycle = ",ncycle
                   !cycle_counter = 0
-        
 
 
 
          !-------------------
-         !Get the order of mptr 
+         !Get the order of mptr
          !-------------------
          corner_counter = numgrids(1)
 
 
          print *,"num of corners",corner_counter
 
-!         allocate(mptr_array(corner_counter))
-!         allocate(ordered_mptr_array(corner_counter))
-!         allocate(corner_array(corner_counter,2))
-!         
-!         mptr = lstart(1)
-!         do i_pkj =1,corner_counter
-!             mptr_array(i_pkj) = mptr    
-!             corner_array(i_pkj,1) = rnode(cornxlo,mptr)
-!             corner_array(i_pkj,2) = rnode(cornylo,mptr)
-!             mptr = node(levelptr, mptr)
-!         enddo
-!         print *,"mptr_array = ", mptr_array
-!      print *,"corner array = ",(corner_array(i1,:),i1=1,corner_counter)
-!         
-!      call set_global(corner_array,mptr_array,ordered_mptr_array)
       call get_ordered_array(mptr_array,ordered_mptr_array)
-      
-!      allocate(sample_array(100,100))
-!      !open(unit=23,file="../inputs_online/masked_topo.txt")
-!      open(unit=23,file="../yoyo.txt")
-!      do i_pkj=1,100
-!          read(23,*) sample_array(i_pkj,:)
-!      !print *,i_pkj
-!     end do
-!      close(23)
-
-!      call traverse_global(sample_array, ordered_mptr_array
-!     &        , total_array,global_to_totalarray_map, ptr_location)
-!
-!      print *,"mik1 = ", total_array(global_to_totalarray_map(63 + 
-!     . (51-1)*100))
-!      print *,"mik2 = ", total_array(neighbors(51,63))
-!      print *, "mik3 = ", sample_array(51,63)
-!      print *,"2d to 1d is = ", neighbors(14,100), neighbors(59,45)
-!     ., neighbors(65,20), neighbors(100,100)
-!      
-!      print *,"yolo"
-!      call oned_to_twod(3200,2,2,index_2d_pdaf)
-!      print *, "2d domain is", index_2d_pdaf
-!
-!      deallocate(sample_array)
-      
 
          mptr = lstart(1)
 ! 71      if (mptr .eq. 0) go to 91
@@ -433,7 +315,7 @@ c        if this is a restart, make sure chkpt times start after restart time
                   corn2 = rnode(cornylo,mptr1)
                   loc     = node(store1, mptr1)
                   locaux  = node(storeaux,mptr1)
-                  
+
                   print *,"loc=",loc
                   print *,"mptr1 1=",mptr1
                   print *, "nx = ",nx
@@ -451,26 +333,21 @@ c        if this is a restart, make sure chkpt times start after restart time
                         ! Extract depth and momenta
                         i_mod = i_pkj-nghost
                         j_mod = j_pkj - nghost
-!                        alloc(iadd(1,i_pkj,j_pkj)) = 
-!     .                            field(i_mod+nx*(j_mod-1)) 
+!                        alloc(iadd(1,i_pkj,j_pkj)) =
+!     .                            field(i_mod+nx*(j_mod-1))
 !     .                    - alloc(iaddaux(1,i_pkj, j_pkj))
                         alloc(iadd(1,i_pkj,j_pkj)) =
      .              field((i2-1)*Ntot+i_mod+nx*(j_mod-1))
      .                    - alloc(iaddaux(1,i_pkj, j_pkj))
-                        alloc(iadd(2,i_pkj, j_pkj)) = 
+                        alloc(iadd(2,i_pkj, j_pkj)) =
      .   ens_num(dim_counter + 1)%mom(1, (i2-1)*Ntot+i_mod+nx*(j_mod-1))
-                    alloc(iadd(3,i_pkj, j_pkj)) = 
+                    alloc(iadd(3,i_pkj, j_pkj)) =
      .   ens_num(dim_counter + 1)%mom(2, (i2-1)*Ntot+i_mod+nx*(j_mod-1))
                      enddo
                   enddo
              enddo
          deallocate(mptr_array)
          deallocate(ordered_mptr_array)
-!         deallocate(corner_array)
-
-
-                  !Advance pdaf_nsteps of forward model 
-                  !CALL integrate(time, nsteps_pdaf)
 #endif
 c
 c  ------ start of coarse grid integration loop. ------------------
@@ -507,7 +384,7 @@ c        write(*,*)" old possk is ", possk(1)
          diffdt = oldposs - possk(1)  ! if positive new step is smaller
 
 
-         if (.false.) then  
+         if (.false.) then
             write(*,122) diffdt,outtime  ! notify of change
  122        format(" Adjusting timestep by ",e10.3,
      .             " to hit output time of ",e12.6)
@@ -559,7 +436,7 @@ c     if this is true by checking if aux_finalized == 2 elsewhere in code.
       if (aux_finalized .eq. 1 .and. num_dtopo > 0) then
 c         # this is only true once, and only if there was moving topo
           deallocate(topo0work)
-          endif 
+          endif
       if (topo_finalized .and. (aux_finalized .lt. 2)) then
           aux_finalized = aux_finalized + 1
           endif
@@ -755,14 +632,13 @@ c
 c      time for output?  done with the whole thing?
 c
  110      continue
-          
+
 
 21        time    = time   + possk(1)
           ncycle  = ncycle + 1
           call conck(1,nvar,naux,time,rest)
 
 #ifndef USE_PDAF
-
       if ( .not.vtime) goto 201
 
         ! Adjust time steps if variable time step and/or variable
@@ -833,7 +709,7 @@ c             ! use same alg. as when setting refinement when first make new fin
 #ifdef USE_PDAF
 !22            continue
 22              end if forecast_ensemble
-                  
+
                   ! Calculating eta after forecast step which causes
                   ! alloc(iadd(1,i,j)) to modify.
                   ! eta = h + topo
@@ -844,7 +720,7 @@ c             ! use same alg. as when setting refinement when first make new fin
 
 
          !-------------------
-         !Get the order of mptr 
+         !Get the order of mptr
          !-------------------
 !         mptr = lstart(1)
          !if (mptr .eq. 0) go to 89
@@ -857,17 +733,17 @@ c             ! use same alg. as when setting refinement when first make new fin
 !         allocate(mptr_array(corner_counter))
 !         allocate(ordered_mptr_array(corner_counter))
 !         allocate(corner_array(corner_counter,2))
-!         
+!
 !         mptr = lstart(1)
 !         do i_pkj =1,corner_counter
-!             mptr_array(i_pkj) = mptr    
+!             mptr_array(i_pkj) = mptr
 !             corner_array(i_pkj,1) = rnode(cornxlo,mptr)
 !             corner_array(i_pkj,2) = rnode(cornylo,mptr)
 !             mptr = node(levelptr, mptr)
 !         enddo
 !         print *,"mptr_array = ", mptr_array
 !      print *,"corner array = ",(corner_array(i1,:),i1=1,corner_counter)
-         
+
 !      call set_global(corner_array,mptr_array,ordered_mptr_array)
       call get_ordered_array(mptr_array,ordered_mptr_array)
 
@@ -883,7 +759,7 @@ c             ! use same alg. as when setting refinement when first make new fin
                   corn2 = rnode(cornylo,mptr1)
                   loc     = node(store1, mptr1)
                   locaux  = node(storeaux,mptr1)
-                  Ntot = nx*ny 
+                  Ntot = nx*ny
                   print *,"loc=",loc
                   print *,"mptr1 2=",mptr1
                   print *, "nx = ",nx
@@ -901,13 +777,13 @@ c             ! use same alg. as when setting refinement when first make new fin
                         ! Extract depth and momenta
                         i_mod = i_pkj-nghost
                         j_mod = j_pkj - nghost
-                        field((i2-1)*Ntot+i_mod+nx*(j_mod-1)) = 
+                        field((i2-1)*Ntot+i_mod+nx*(j_mod-1)) =
      .      alloc(iadd(1,i_pkj,j_pkj)) + alloc(iaddaux(1,i_pkj, j_pkj))
          ens_num(dim_counter + 1)%mom(1,(i2-1)*Ntot+i_mod+nx*(j_mod-1))=
      .                      alloc(iadd(2,i_pkj, j_pkj))
 
          ens_num(dim_counter + 1)%mom(2,(i2-1)*Ntot+i_mod+nx*(j_mod-1))=
-     .                  alloc(iadd(3,i_pkj, j_pkj)) 
+     .                  alloc(iadd(3,i_pkj, j_pkj))
                      enddo
                   enddo
              enddo
@@ -922,14 +798,14 @@ c             ! use same alg. as when setting refinement when first make new fin
               ! *** PDAF: Perform assimilation if ensemble forecast is completed
               ! field is the eta here. Check collect_state
               if (filtertype==2) then
-                  CALL PDAF_put_state_enkf(collect_state_pdaf, 
-     &             init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf, 
-     &             prepoststep_ens_pdaf, add_obs_error_pdaf, 
+                  CALL PDAF_put_state_enkf(collect_state_pdaf,
+     &             init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf,
+     &             prepoststep_ens_pdaf, add_obs_error_pdaf,
      &             init_obscovar_pdaf, status_pdaf)
               else if (filtertype==1) then
-                  CALL PDAF_put_state_seik(collect_state_pdaf, 
-     &             init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf, 
-     &             prepoststep_ens_pdaf, prodRinvA_pdaf, 
+                  CALL PDAF_put_state_seik(collect_state_pdaf,
+     &             init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf,
+     &             prepoststep_ens_pdaf, prodRinvA_pdaf,
      &             init_obsvar_pdaf, status_pdaf)
               else if (filtertype==0) then
                   CALL PDAF_put_state_seek(collect_state_pdaf, 

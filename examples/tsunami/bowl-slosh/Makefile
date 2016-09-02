@@ -3,6 +3,7 @@
 # This version only sets the local files and frequently changed
 # options, and then includes the standard makefile pointed to by CLAWMAKE.
 CLAWMAKE = $(CLAW)/clawutil/src/Makefile.common
+PDAFLIB = $(CLAW)/geoclaw/src/2d/shallow/assimilation
 
 # See the above file for details and a list of make options, or type
 #   make .help
@@ -22,8 +23,8 @@ PLOTDIR = _plots               # Directory for plots
 # Environment variable FC should be set to fortran compiler, e.g. gfortran
 
 # Compiler flags can be specified here or set as an environment variable
-FFLAGS ?=
-
+FFLAGS ?= -cpp -DUSE_PDAF -L$(PDAFLIB) -I$(PDAFLIB) -lpdaf-d -I$(PDAFLIB)/dummympi -lblas -llapack  
+#FFLAGS ?= -cpp
 
 # ---------------------------------
 # package sources for this program:
@@ -47,13 +48,14 @@ EXCLUDE_SOURCES = \
 # ----------------------------------------
 
 MODULES = \
+ $(GEOLIB)/sortarr.f90 \
+ $(GEOLIB)/pkj_geoclaw/mapdomain.f90
 
 SOURCES = \
   ./qinit.f90 \
   $(CLAW)/riemann/src/rpn2_geoclaw.f \
   $(CLAW)/riemann/src/rpt2_geoclaw.f \
   $(CLAW)/riemann/src/geoclaw_riemann_utils.f \
-
 #-------------------------------------------------------------------
 # Include Makefile containing standard definitions and make options:
 include $(CLAWMAKE)

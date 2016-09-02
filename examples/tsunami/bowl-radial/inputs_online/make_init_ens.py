@@ -24,19 +24,24 @@ def makeinitens2(xv, yv, num_ens, lower=1.5, upper=3.0, ictype = "hump"):
     """
     Write output for ensemble members. This format is input for PDAF
     """
-    
-    print "Gaussian hump initial condition selected"
-    if num_ens == 1:
-        z = makeinit(xv, yv, 0, ictype = ictype)
-        np.savetxt("ens_1.txt", z, fmt='%12.10f')
+    if ictype=='hump': 
+        print "Gaussian hump initial condition selected"
     else:
-        pert = lambda x: (upper-lower)*np.exp(0.8)*(x-1)/(num_ens -1) + (-5.0+lower*np.exp(0.8))
-        for i in range(1,num_ens +1):
-            z = makeinit(xv, yv, pert(i), ictype = ictype)
-            np.savetxt("ens_"+str(i)+".txt", z, fmt='%12.10f')
+        print "Planewave initial condition selected"
 
-    if ictype == "planewave":
-        print "Not yet set for ictype planewave"
+        #pert = lambda x: (upper-lower)*np.exp(0.8)*(x-1)/(num_ens -1) + (-5.0+lower*np.exp(0.8))
+    if num_ens==1:
+        pert=np.array([0])
+    else:
+        if ictype=='hump':
+            pert = 0.01*np.random.randn(num_ens) 
+        else:
+            pert = np.random.randn(num_ens) 
+    print "pert = " , pert
+    for i in range(num_ens):
+        z = makeinit(xv, yv, pert[i], ictype = ictype)
+        np.savetxt("ens_"+str(i+1)+".txt", z, fmt='%12.10f')
+
 
 def makeinit(xv, yv, perturb, ictype = "hump"):
     """
@@ -52,7 +57,7 @@ def makeinit(xv, yv, perturb, ictype = "hump"):
     # Gaussian hump
     if ictype == "hump":
         ze = -((xv)**2 + (yv)**2)/10.
-        z = np.where(ze>-10., (5.e0 + perturb)*np.exp(ze), 0.)
+        z = np.where(ze>-10., (10.e0 + perturb)*np.exp(ze), 0.)
         print "Max amplitude = ", np.max(z)
 
     # Planewave 
@@ -76,7 +81,7 @@ if __name__ == "__main__":
     yupper = 99.0
     num_ens = 1
     ictype = "hump"
-    ens_range = range(1,num_ens+1)
+    ens_range = range(num_ens)
     obs_time_list = np.linspace(20,200,10,dtype='int32')
     #ictype = "planewave"
 
