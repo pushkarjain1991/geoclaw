@@ -4,7 +4,7 @@
 ! !ROUTINE: obs_op_pdaf --- Implementation of observation operator
 !
 ! !INTERFACE:
-SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
+SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_p)
 
 ! !DESCRIPTION:
 ! User-supplied routine for PDAF.
@@ -28,15 +28,15 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 ! !USES:
   USE mod_assimilation, &
        ONLY: obs_index
-  use mod_parallel,only: MPI_COMM_WORLD,MPIerr
+
   IMPLICIT NONE
 
 ! !ARGUMENTS:
   INTEGER, INTENT(in) :: step               ! Currrent time step
   INTEGER, INTENT(in) :: dim_p              ! PE-local dimension of state
-  INTEGER, INTENT(in) :: dim_obs_p          ! Dimension of observed state
+  INTEGER, INTENT(in) :: dim_obs_f          ! Dimension of observed state
   REAL, INTENT(in)    :: state_p(dim_p)     ! PE-local model state
-  REAL, INTENT(out) :: m_state_p(dim_obs_p) ! PE-local observed state
+  REAL, INTENT(out) :: m_state_p(dim_obs_f) ! PE-local observed state
 
 ! !CALLING SEQUENCE:
 ! Called by: PDAF_seek_analysis   (as U_obs_op)
@@ -53,10 +53,9 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 ! *** operator H on vector or matrix column ***
 ! *********************************************
 
-  DO i = 1, dim_obs_p
+  DO i = 1, dim_obs_f
      m_state_p(i) = state_p(obs_index(i))
+!          print *,state_p(7501)
   END DO
- !print *,state_p(7501)
-! print *,'HX'
- !CALL MPI_barrier(MPI_COMM_WORLD,MPIerr)
-END SUBROUTINE obs_op_pdaf
+
+END SUBROUTINE obs_op_f_pdaf

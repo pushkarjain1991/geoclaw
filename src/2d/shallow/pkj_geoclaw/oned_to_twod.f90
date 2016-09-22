@@ -1,6 +1,8 @@
 subroutine ind1d_to_coord2d(index_1d, coord_2d)
+#ifdef USE_PDAF
       use amr_module
-      use mapdomain,only:get_ordered_array
+      use mod_model,only: ordered_mptr_array
+!      use mapdomain,only:get_ordered_array
       implicit none
 
       integer, intent(in) :: index_1d
@@ -8,8 +10,8 @@ subroutine ind1d_to_coord2d(index_1d, coord_2d)
       real(kind=8), intent(inout) :: coord_2d(2)
 
       !Local variables
-      integer, allocatable :: mptr_array(:), ordered_mptr_array(:)
-      integer :: i,mptr,nx,ny,row_l,column_l,temp(1),ind
+!      integer, allocatable :: mptr_array(:), ordered_mptr_array(:)
+      integer :: ii,mptr,nx,ny,row_l,column_l,level
       real(kind=8) :: xlow,ylow,dx,dy
       integer :: cellnum , remaining_cells
 !      integer :: domain_num_row, domain_num_column
@@ -18,32 +20,34 @@ subroutine ind1d_to_coord2d(index_1d, coord_2d)
 ! get the 2d coordinate of 1d index
 ! ::::::::::::::::::::::::::::::::::::::::::
 !       print *, "executing the oned to twod"
-       call get_ordered_array(mptr_array,ordered_mptr_array) 
+!       call get_ordered_array(mptr_array,ordered_mptr_array)
        cellnum=0
-       temp=minloc(numgrids)
-       ind=temp(1)-1
-       
-       dx=hxposs(ind)
-       dy=hyposs(ind)
-       do i=1,size(ordered_mptr_array)
-           mptr=ordered_mptr_array(i)
+!       ind=minloc(numgrids,1)
+
+!       dx=hxposs(ind)
+!       dy=hyposs(ind)
+       do ii=1,size(ordered_mptr_array)
+           mptr=ordered_mptr_array(ii)
            nx=node(ndihi,mptr)-node(ndilo,mptr)+1
            ny=node(ndjhi,mptr)-node(ndjlo,mptr)+1
+           level=node(nestlevel,mptr)
+           dx=hxposs(level)
+           dy=hyposs(level)
 
            cellnum=cellnum+nx*ny
            if (index_1d<=cellnum) then
                xlow=rnode(cornxlo,mptr)
                ylow=rnode(cornylo,mptr)
                remaining_cells=index_1d-(cellnum-nx*ny)
-               row_l=(remaining_cells -1)/nx+1
-               column_l=mod(remaining_cells -1,nx)+1
+               column_l=(remaining_cells -1)/nx+1
+               row_l=mod(remaining_cells -1,nx)+1
                coord_2d(1)=xlow+(row_l-0.5)*dx
                coord_2d(2)=ylow+(column_l-0.5)*dy
                return
            endif
-        enddo
+       enddo
 
-
+#endif
 
 
 

@@ -106,8 +106,9 @@ program amr2
 
 #ifdef USE_PDAF
     use mod_model, only : nx,ny, field,total_steps, dtinit, time, &
-    num_grids, node_pdaf, rnode_pdaf
-    use amr_module, only: nsize, rsize, maxgr, node, rnode
+    xlow,xhigh,ylow,yhigh
+    use mod_parallel, only: MPIerr, mpi_comm_world, mype_world, &
+    npes_world, MPI_INTEGER, MPIstatus
 #endif
 
     implicit none
@@ -150,7 +151,7 @@ program amr2
 
 #ifdef USE_PDAF
     ! Add parallelization
-    CALL init_parallel_pdaf(0,1)
+    CALL init_parallel_pdaf(0,2)
 #endif
     ! Open parameter and debug files
     open(dbugunit,file=dbugfile,status='unknown',form='formatted')
@@ -569,8 +570,15 @@ program amr2
     write(parmunit,*) ' '
 
 !$   maxthreads = omp_get_max_threads() 
+#ifdef USE_PDAF
+     if (mype_world==0) then
+         write(outunit,*)" max threads set to ",maxthreads
+         print *," max threads set to ",maxthreads
+     endif
+#else
      write(outunit,*)" max threads set to ",maxthreads
      print *," max threads set to ",maxthreads
+#endif
     
     !
     !  print out program parameters for this run
@@ -605,10 +613,17 @@ program amr2
                                                 (iaux,auxtype(iaux),iaux=1,naux)
     if (mcapa > 0) write(outunit,"(' capacity fn. is aux. var',i9)") mcapa
 
-    print *, ' '
-    print *, 'Done reading data, starting computation ...  '
-    print *, ' '
-
+#ifdef USE_PDAF
+    if (mype_world==0) then
+        print *, ' '
+        print *, 'Done reading data, starting computation ...  '
+        print *, ' '
+    endif
+#else
+        print *, ' '
+        print *, 'Done reading data, starting computation ...  '
+        print *, ' '
+#endif
 
 
     call outtre (mstart,printout,nvar,naux)
@@ -626,54 +641,29 @@ program amr2
 
 
 #ifdef USE_PDAF
-!Allocate memory for temporary field in PDAF
-! *** Screen output ***
+    call get_dim_state()
     total_steps = nstop
-    WRITE (*, '(1x, a)') 'INITIALIZE GEOCLAW with PDAF'
-    WRITE (*, '(10x,a,i4,1x,a1,1x,i4)') 'Grid size:', nx, 'x', ny
-    WRITE (*, '(10x,a,i4)') 'Time steps', total_steps
-
-    !ALLOCATE(field(ny+2*nghost,nx+2*nghost))
-    !ALLOCATE(field(ny,nx))
-    !ALLOCATE(field(ny,nx))
-    ALLOCATE(field(ny*nx))
-    num_grids = numgrids(1)
-    print *,"Numgrids = ", num_grids
-    
-    print *,"rsize =", rsize
-    ALLOCATE(node_pdaf(nsize, maxgr))
-    ALLOCATE(rnode_pdaf(rsize, maxgr))
-    node_pdaf = node
-    rnode_pdaf = rnode
-   ! ************************************
-   ! *** Read initial field from file ***
-   ! ************************************
-
-   !OPEN(15, file = '../true_initial.txt', status='old')
-
-   !DO i = 1, nx
-   !    READ (15, *) field(i, :)
-   !    !PRINT *,field(i,i)
-   !END DO
-
-   !CLOSE(15)
-
-#endif
-
-#ifdef USE_PDAF
-     CALL init_pdaf()
+    xlow=xlower;xhigh=xupper
+    ylow=ylower;yhigh=yupper
+              
+    if (mype_world==0) then
+        WRITE (*, '(1x, a)') 'INITIALIZE GEOCLAW with PDAF'
+        WRITE (*, '(10x,a,i4,1x,a1,1x,i4)') 'Grid size:', nx, 'x', ny
+        WRITE (*, '(10x,a,i4)') 'Time steps', total_steps
+    endif
+    CALL init_pdaf()
 #endif
 
     ! --------------------------------------------------------
     !  Tick is the main routine which drives the computation:
     ! --------------------------------------------------------
+    !CALL  MPI_Barrier(mpi_comm_world,MPIerr)
+    !print *, "mype", mype_world
+    !CALL  MPI_Barrier(mpi_comm_world,MPIerr)
+    !stop
+    
     call tick(nvar,cut,nstart,vtime,time,naux,t0,rest,dt_max)
     ! --------------------------------------------------------
-
-#ifdef USE_PDAF
-    DEALLOCATE(node_pdaf)
-    DEALLOCATE(rnode_pdaf)
-#endif
 
     ! Done with computation, cleanup:
 

@@ -61,30 +61,30 @@ END IF
 ! *** Set number of time steps until next observation ***
 ! *******************************************************
 
-  print *,"mod_time before = ", mod_time
+!  print *,"mod_time before = ", mod_time
   time = mod_time          ! Not used in this implementation
   mod_time = mod_time + REAL(nsteps_pdaf)*dt
-  print *, "stepnow = ", stepnow
-  print *,"dt = ", dt
-  print *,"mod_time after = ", mod_time
-
+!  print *, "stepnow = ", stepnow
+!  print *,"dt = ", dt
+!  print *,"mod_time after = ", mod_time
+! print *,'I am prcess ',mype_world,'in next observation'
   setexit: IF (stepnow == total_steps) THEN
       !Already at final time step
-     WRITE (*, '(i7, 3x, a)') &
+      if (mype_world==0) WRITE (*, '(i7, 3x, a)') &
           stepnow, 'No more observations - end assimilation'
   doexit = 1
   have_obs = .FALSE.
 
   ELSE IF (stepnow + nsteps_pdaf < total_steps) THEN setexit
      ! Next obbservation ahead
-     WRITE (*, '(i7, 3x, a, i7)') &
+     if (mype_world==0) WRITE (*, '(i7, 3x, a, i7)') &
           stepnow, 'Next observation at time step', stepnow + nsteps_pdaf
      doexit = 0          ! Do not exit assimilation
      have_obs = .TRUE.
   
   ELSE IF (stepnow + nsteps_pdaf == total_steps) THEN setexit
      ! Final obbservation ahead
-     WRITE (*, '(i7, 3x, a, i7)') &
+      if (mype_world==0) WRITE (*, '(i7, 3x, a, i7)') &
           stepnow, 'Final observation at time step', stepnow + nsteps_pdaf
      doexit = 0          ! Do not exit assimilation
      have_obs = .TRUE.
@@ -96,7 +96,7 @@ END IF
      mod_time = mod_time - REAL(nsteps_pdaf)*dt + REAL(total_steps - stepnow)*dt
      doexit = 0
      have_obs = .FALSE.
-     WRITE (*, '(i7, 3x, a)') &
+     if (mype_world==0) WRITE (*, '(i7, 3x, a)') &
           stepnow, 'No more observations - evolve up to time step', stepnow + &
   nsteps_pdaf
   END IF setexit

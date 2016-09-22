@@ -23,100 +23,65 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_assimilation, &
-       ONLY : obs, obs_index
-  USE mod_model, &
-       ONLY : nx, ny
-
   IMPLICIT NONE
 
-! !ARGUMENTS:
-  INTEGER, INTENT(in)  :: step       ! Current time step
-  INTEGER, INTENT(out) :: dim_obs_p  ! Dimension of observation vector
+! ARGUMENTS:
+  INTEGER, INTENT(in)  :: step      ! Current time step
+  INTEGER :: dim_obs_p ! Dimension of full observation vector
+! LOCAL variables
+  CHARACTER(len=20) :: fname
+  CHARACTER(len=4) :: stepstr         ! String for time step
+  REAL(KIND=8):: x,y
+  REAL(KIND=8),ALLOCATABLE :: xx(:),yy(:),qq(:)
+  INTEGER :: i,IO
+  INTEGER :: cnt0
+
+
+  INTERFACE
+      SUBROUTINE get_obs(xx,yy,qq,dim_obs_p)
+          REAL(KIND=8),ALLOCATABLE :: xx(:),yy(:),qq(:)
+          INTEGER :: dim_obs_p
+      END SUBROUTINE get_obs
+  END INTERFACE
+
+
 
 ! !CALLING SEQUENCE:
-! Called by: PDAF_seek_analysis    (as U_init_dim_obs)
-! Called by: PDAF_seik_analysis, PDAF_seik_analysis_newT
-! Called by: PDAF_enkf_analysis_rlm, PDAF_enkf_analysis_rsm
-! Called by: PDAF_etkf_analysis, PDAF_etkf_analysis_T
-! Called by: PDAF_estkf_analysis, PDAF_estkf_analysis_fixed
+! Called by: PDAF_lseik_update   (as U_init_dim_obs)
+! Called by: PDAF_lestkf_update  (as U_init_dim_obs)
+! Called by: PDAF_letkf_update   (as U_init_dim_obs)
 !EOP
 
-! *** Local variables
-  INTEGER :: i, j                     ! Counters
-  INTEGER :: cnt, cnt0                ! Counters
-  !REAL, ALLOCATABLE :: obs_field(:,:) ! Array for observation field read from file
-  REAL, ALLOCATABLE :: obs_field(:) ! Array for observation field read from file
-  CHARACTER(len=3) :: stepstr         ! String for time step
+   WRITE (stepstr, '(i4)') step
+   fname='../obs_step'//TRIM(ADJUSTL(stepstr))//'.txt'
+   fname=trim(adjustl(fname))
+   cnt0=0
+   OPEN (12, file= fname,status='old')
+ 
+   DO
+      READ(12,*,IOSTAT=IO) x,y
+      IF (IO /= 0) exit 
+      cnt0=cnt0+1
+   ENDDO 
+   if (IO>0) then
+       print *,"error: error reading the file ",fname
+       stop
+   endif
+
+   allocate(xx(cnt0))
+   allocate(yy(cnt0))
+   allocate(qq(cnt0))
+   rewind(12)
+   do i=1,cnt0
+       read(12,*) xx(i),yy(i),qq(i)
+   enddo
+   close(12)
+!   print *,cnt0
+!   print *,xx(1:10),yy(1:10),qq(1:10)
+   call get_obs(xx,yy,qq,dim_obs_p) 
 
 
-! ****************************************
-! *** Initialize observation dimension ***
-! ****************************************
-
-  ! Read observation field form file
-  !ALLOCATE(obs_field(ny, nx))
-  ALLOCATE(obs_field(ny*nx))
-
-!  IF (step<10) THEN
-!     WRITE (stepstr, '(i1)') step
-!  ELSE
-!     WRITE (stepstr, '(i2)') step
-!  END IF
-     WRITE (stepstr, '(i3)') step
-
-  OPEN (12, file='../obs_step'//TRIM(ADJUSTL(stepstr))//'.txt', status='old')
-!  DO i = 1, ny
-!     READ (12, *) obs_field(i, :)
-!  END DO
-     READ (12, *) obs_field
-  CLOSE (12)
-
-  ! Count observations
-  cnt = 0
-!  DO j = 1, nx
-!     DO i= 1, ny
-!        IF (obs_field(i,j) > -999.0) cnt = cnt + 1
-!     END DO
-!  END DO
-  DO j = 1, nx*ny
-     IF (obs_field(j) > -999.0) cnt = cnt + 1
-  END DO
-
-  ! Set number of observations
-  dim_obs_p = cnt
-
-  ! Initialize vector of observations and index array
-  IF (ALLOCATED(obs_index)) DEALLOCATE(obs_index)
-  IF (ALLOCATED(obs)) DEALLOCATE(obs)
-  ALLOCATE(obs_index(dim_obs_p))
-  ALLOCATE(obs(dim_obs_p))
-
-  cnt = 0
-  cnt0 = 0
-! DO j = 1, ny
-!     DO i= 1, nx
-!        cnt0 = cnt0 + 1
-!        IF (obs_field(i,j) > -999.0) THEN
-!           cnt = cnt + 1
-!           obs_index(cnt) = cnt0      ! Index of observation in state vector
-!           obs(cnt) = obs_field(i, j) ! Vector of observations
-!        END IF
-!     END DO
-!  END DO
- DO j = 1, ny*nx
-    cnt0 = cnt0 + 1
-    IF (obs_field(j) > -999.0) THEN
-       cnt = cnt + 1
-       obs_index(cnt) = cnt0      ! Index of observation in state vector
-       obs(cnt) = obs_field(j) ! Vector of observations
-    END IF
- END DO
 
 
-! *** Clean up ***
-
-  DEALLOCATE(obs_field)
 
 END SUBROUTINE init_dim_obs_pdaf
-

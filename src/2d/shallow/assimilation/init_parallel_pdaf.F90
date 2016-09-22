@@ -64,7 +64,8 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
        ONLY: mype_world, npes_world, MPI_COMM_WORLD, mype_model, npes_model, &
        COMM_model, mype_filter, npes_filter, COMM_filter, filterpe, &
        n_modeltasks, local_npes_model, task_id, COMM_couple, MPIerr
-
+  USE parser,&
+      ONLY: parse
   IMPLICIT NONE    
   
 ! !ARGUMENTS:
@@ -89,10 +90,20 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
   INTEGER :: mype_couple, npes_couple ! Rank and size in COMM_couple
   INTEGER :: pe_index           ! Index of PE
   INTEGER :: my_color, color_couple ! Variables for communicator-splitting 
+  LOGICAL :: iniflag            ! Flag whether MPI is initialized
+  CHARACTER(len=32) :: handle   ! handle for command line parser
+!  INTEGER :: npes_world, mype_world   ! Rank and size on MPI_COMM_WORLD
 
   ! *** Initialize PE information on COMM_world ***
+!  CALL MPI_Initialized(iniflag, MPIerr)
+!  IF (.not.iniflag) THEN
+     CALL MPI_Init(MPIerr)
+!  END IF
   CALL MPI_Comm_size(MPI_COMM_WORLD, npes_world, MPIerr)
   CALL MPI_Comm_rank(MPI_COMM_WORLD, mype_world, MPIerr)
+! *** Parse number of model tasks ***
+  handle = 'n_modeltasks'
+  CALL parse(handle, n_modeltasks)
 
 
   ! *** Initialize communicators for ensemble evaluations ***
@@ -152,7 +163,6 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
      END DO
   END DO doens1
 
-
   CALL MPI_Comm_split(COMM_ensemble, task_id, mype_ens, &
        COMM_model, MPIerr)
   
@@ -192,7 +202,6 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
   ! *** Generate communicators for communication ***
   ! *** between model and filter PEs             ***
   ! *** (Split COMM_ENSEMBLE)                    ***
-
   color_couple = mype_filter + 1
 
   CALL MPI_Comm_split(MPI_COMM_WORLD, color_couple, mype_world, &

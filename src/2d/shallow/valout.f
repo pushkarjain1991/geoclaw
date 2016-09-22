@@ -4,6 +4,9 @@ c
       subroutine valout (lst, lend, time, nvar, naux)
 c
       use amr_module
+#ifdef USE_PDAF
+      use mod_parallel, only: mype_world
+#endif
       implicit double precision (a-h,o-z)
       character*10  fname1, fname2, fname3, fname4, fname5
 
@@ -20,6 +23,13 @@ c     # set outaux = .true. to also output the aux arrays to fort.a<iframe>
       real(kind=8), allocatable :: qeta(:)
 
       integer :: clock_start, clock_finish, clock_rate
+
+#ifdef USE_PDAF
+      character(len=1) :: ensstr
+      !real(kind=8) :: amrflags2(1-mbuff:mx+mbuff,1-mbuff:my+mbuff)
+      real(kind=8), allocatable :: amrflags2(:,:)
+
+#endif
 
       iadd(ivar,i,j)  = loc + ivar - 1 + nvar*((j-1)*mitot+i-1)
       iaddaux(iaux,i,j) = locaux + iaux-1 + naux*(i-1) +
@@ -51,21 +61,39 @@ c     ### Python graphics output
 c
 
 c        ###  make the file names and open output files
+#ifdef USE_PDAF
+         write(ensstr,'(i1)') mype_world+1
+         fname1 = 'fort.q'//ensstr//'xxx'
+         fname2 = 'fort.t'//ensstr//'xxx'
+         fname3 = 'fort.a'//ensstr//'xxx'
+         fname4 = 'fort.b'//ensstr//'xxx'
+         fname5 = 'fort.m'//ensstr//'xxx'
+
+#else
          fname1 = 'fort.qxxxx'
          fname2 = 'fort.txxxx'
          fname3 = 'fort.axxxx'
          fname4 = 'fort.bxxxx'
+#endif
          matunit1 = 50
          matunit2 = 60
          matunit3 = 70
          matunit4 = 71
+
+#ifdef USE_PDAF
+         matunit5 = 81
+#endif
+
          nstp     = matlabu
-         do 55 ipos = 10, 7, -1
+         do 55 ipos = 11, 8, -1
             idigit = mod(nstp,10)
             fname1(ipos:ipos) = char(ichar('0') + idigit)
             fname2(ipos:ipos) = char(ichar('0') + idigit)
             fname3(ipos:ipos) = char(ichar('0') + idigit)
             fname4(ipos:ipos) = char(ichar('0') + idigit)
+#ifdef USE_PDAF
+            fname5(ipos:ipos) = char(ichar('0') + idigit)
+#endif
             nstp = nstp / 10
  55      continue
 
@@ -275,6 +303,49 @@ c     # Print meqn = nvar+1 because eta added.
      &       i6,'                 ndim'/,
      &       i6,'                 nghost'/,/)
 c
+
+#ifdef USE_PDAF
+      
+         level = lst
+ 166     if (level .gt. lend) go to 191
+            mptr = lstart(level)
+ 171        if (mptr .eq. 0) go to 181
+              nx = node(ndihi,mptr) - node(ndilo,mptr) + 1
+              ny = node(ndjhi,mptr) - node(ndjlo,mptr) + 1
+              dx = hxposs(level)
+              dy = hyposs(level)
+              xlow = rnode(cornxlo,mptr)
+              ylow = rnode(cornylo,mptr)
+              locamrflags = node(storeflags, mptr)
+              
+              mbuff = max(nghost,ibuff+1)
+              allocate(amrflags2(1-mbuff:nx+mbuff,1-mbuff:ny+mbuff))
+              amrflags2=alloc(locamrflags)
+              print *, ibuff, nghost, mbuff
+              print *, locamrflags
+              print *, mptr
+              print *, alloc(locamrflags)
+              stop
+
+      y_loop: do j=1,ny
+        y_c = ylow + (j - 0.5d0) * dy
+
+        x_loop: do i = 1,nx
+            x_c = xlow + (i - 0.5d0) * dx
+                  print *, x_c, y_c, amrflags2(i,j)
+
+        enddo x_loop
+      enddo y_loop
+          deallocate(amrflags2)
+
+            mptr = node(levelptr, mptr)
+            go to 171
+ 181     level = level + 1
+         go to 166
+
+ 191    continue
+        close(unit=matunit5)
+#endif
 
       write(6,601) matlabu,time
   601 format('AMRCLAW: Frame ',i4,

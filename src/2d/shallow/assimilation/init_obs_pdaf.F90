@@ -44,6 +44,6 @@ SUBROUTINE init_obs_pdaf(step, dim_obs_p, observation_p)
 ! ******************************
   
   observation_p = obs
-
+! print *,obs(1366)
 END SUBROUTINE init_obs_pdaf
 

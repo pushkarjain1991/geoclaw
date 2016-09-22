@@ -15,11 +15,15 @@
 
 # Root directory of PDAF package
 BASEDIR = /h2/pkjain/Desktop/Pushkar/clawpack/geoclaw/examples/tsunami/PDAF-D_V1.11.1
-
+#AMR_MODULE=/home/shawn/clawpack-5.3.1/amrclaw/src/2d/
+#GEO_MODULE=/home/shawn/clawpack-5.3.1/geoclaw/src/2d/shallow/pkj_geoclaw
+#          /home/shawn/clawpack-5.3.1/amrclaw/src/2d
 # Include machine-specific definitions
 # For available include files see directory make.arch
 # To choose a file, set PDAF_ARCH either here or by an
 # environment variable.
+#PDAF_ARCH = linux_gfortran
+#PDAF_ARCH=linux_gfortran
 include $(BASEDIR)/make.arch/$(PDAF_ARCH).h
 
 
@@ -29,7 +33,12 @@ include $(BASEDIR)/make.arch/$(PDAF_ARCH).h
 .SUFFIXES: .F90 .o 
 
 # Modules used for the model part
-MODULES =  	mod_model.o
+MODULES =  mod_model.o
+#USER_SUPPLIED_MODULES= alloc_field_exchange.o\
+                         mapdomain.o 
+
+
+
 
 # Model routines
 OBJ_MODEL =	main.o\
@@ -51,8 +60,7 @@ OBJ_PDAF_INT =  init_parallel_pdaf.o \
 		init_pdaf.o \
 		init_pdaf_parse.o \
 		init_pdaf_info.o \
-		finalize_pdaf.o 
-		#assimilate_pdaf.o
+		finalize_pdaf.o assimilate_pdaf.o
 
 # Generic user-supplied routines
 OBJ_USER_GEN  = init_ens.o \
@@ -81,13 +89,13 @@ OBJ_USER_LOCAL = init_n_domains_pdaf.o \
 		init_obs_l_pdaf.o \
 		init_dim_obs_l_pdaf.o \
 		g2l_obs_pdaf.o \
-		init_obsvar_l_pdaf.o \
 		init_dim_obs_f_pdaf.o \
 		init_obs_f_pdaf.o \
-		obs_op_f_pdaf.o
+		obs_op_f_pdaf.o   \
+		init_obsvar_l_pdaf.o \
 
-OBJ_USER_DOMAIN = oned_to_twod.o \
-		  twod_to_oned.o
+#OBJ_USER_DOMAIN = oned_to_twod.o \
+#		  twod_to_oned.o
 
 # Full list of user-supplied routines for online modes
 #OBJ_PDAF_USER = $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL)
@@ -130,6 +138,7 @@ libpdaf-d.a:
 	@cd $(BASEDIR)/src; make;
 
 #libonline: libpdaf-d.a $(MODULES) $(OBJ_MPI) $(MOD_ASSIM) $(OBJ_PDAF_INT) $(OBJ_USER_GEN) $(OBJ_USER_ENKF) $(OBJ_USER_SEIK)
+#libonline: libpdaf-d.a $(MODULES) $(OBJ_USER_DOMAIN) $(OBJ_MPI) $(MOD_ASSIM) $(OBJ_PDAF_INT) $(OBJ_USER_GEN) $(OBJ_USER_ENKF) $(OBJ_USER_SEIK) $(OBJ_USER_LOCAL)
 libonline: libpdaf-d.a $(MODULES) $(OBJ_USER_DOMAIN) $(OBJ_MPI) $(MOD_ASSIM) $(OBJ_PDAF_INT) $(OBJ_USER_GEN) $(OBJ_USER_ENKF) $(OBJ_USER_SEIK)
 	@echo "++++++ Generate assimilation library ++++++"
 	@cp $(BASEDIR)/lib/libpdaf-d.a .
@@ -139,8 +148,8 @@ libonline: libpdaf-d.a $(MODULES) $(OBJ_USER_DOMAIN) $(OBJ_MPI) $(MOD_ASSIM) $(O
 
 ######################################################
 
-.F90.o :
-	$(FC) $(OPT) $(MPI_INC) $(CPP_DEFS)  -c $*.F90
+%.o: %.F90
+	$(FC) $(OPT) $(MPI_INC) $(CPP_DEFS) -c $*.F90
 
 # For older compilers one might need to separate the
 # preprocessing from the compilation as defined below:
@@ -171,4 +180,7 @@ listarch:
 	@echo Available architecture-specific input files for PDAF_ARCH
 	@echo ---------------------------------------------------------
 	@ls -1 ../../make.arch | cut -d"." -f1
-
+debug:
+#	@echo $(PDAF_ARCH)
+#	@echo $(BASEDIR)/make.arch/$(PDAF_ARCH).h
+	@echo $(FC)

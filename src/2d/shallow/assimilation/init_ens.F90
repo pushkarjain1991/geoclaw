@@ -16,7 +16,7 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 ! to initialize an ensemble of dim\_ens states.
 ! Typically, the ensemble will be directly read from files.
 !
-! The routine is called by all filter processes and 
+! The routine is called by all filter processes and
 ! initializes the ensemble for the PE-local domain.
 !
 ! Implementation for the 2D online example
@@ -37,7 +37,7 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
   INTEGER, INTENT(in) :: dim_p                   ! PE-local state dimension
   INTEGER, INTENT(in) :: dim_ens                 ! Size of ensemble
   REAL, INTENT(inout) :: state_p(dim_p)          ! PE-local model state
-  ! It is not necessary to initialize the array 'state_p' for SEIK. 
+  ! It is not necessary to initialize the array 'state_p' for SEIK.
   ! It is available here only for convenience and can be used freely.
   REAL, INTENT(inout) :: Uinv(dim_ens-1,dim_ens-1) ! Array not referenced for SEIK
   REAL, INTENT(out)   :: ens_p(dim_p, dim_ens)   ! PE-local state ensemble
@@ -51,7 +51,7 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
   INTEGER :: i, j, member  ! Counters
   INTEGER, SAVE :: allocflag = 0      ! Flag for memory counting
   REAL, ALLOCATABLE :: field(:)     ! global model field
-  CHARACTER(len=2) :: ensstr          ! String for ensemble member
+  CHARACTER(len=3) :: ensstr          ! String for ensemble member
   INTEGER :: index_2d_pdaf(2)
   !INTEGER :: index_2d_row, index_2d_col
   INTEGER :: index_1d_pdaf
@@ -60,66 +60,67 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 ! **********************
 ! *** INITIALIZATION ***
 ! **********************
+ens_p=0
 
   ! *** Generate full ensemble on filter-PE 0 ***
-  WRITE (*, '(/9x, a)') 'Initialize state ensemble'
-  WRITE (*, '(9x, a)') '--- read ensemble from files'
-  WRITE (*, '(9x, a, i5)') '--- Ensemble size:  ', dim_ens
-  
-  ! allocate memory for temporary fields
-  ALLOCATE(field(ny*nx))
- !print *, nx, ny
-
-! ********************************
-! *** Read ensemble from files ***
-! ********************************
-
-  DO member = 1, dim_ens
-     WRITE (ensstr, '(i2)') member
-     OPEN(24, file = '../ens_'//TRIM(ADJUSTL(ensstr))//'.txt', status='old')
-     !do i=1,4
-         !do j =1,nx*ny
-     !    do j = 1,nx1*ny1
-     !        read(24,*) field((i-1)*nx1*ny1 + j)
-     !    enddo
-     !enddo
-     read(24,*)field
-     !print *,field
-     CLOSE(24)
-     ens_p(:,member) = field(:)
-     !DO i = 1, ny
-     !   READ (20, *) field(i, :)
-     !END DO
-     !DO i = 1, ny
-     !   ens_p(1 + (i-1)*nx : i*nx, member) = field(i, 1:nx)
-     !END DO
-
-  END DO
-
+!  WRITE (*, '(/9x, a)') 'Initialize state ensemble'
+!  WRITE (*, '(9x, a)') '--- read ensemble from files'
+!  WRITE (*, '(9x, a, i5)') '--- Ensemble size:  ', dim_ens
+!
+!  ! allocate memory for temporary fields
+!  ALLOCATE(field(dim_p))
+!  field=0
+! !print *, nx, ny
+!
+!! ********************************
+!! *** Read ensemble from files ***
+!! ********************************
+!
+!  DO member = 1, dim_ens
+!     WRITE (ensstr, '(i3)') member
+!     OPEN(24, file = '../ens_'//TRIM(ADJUSTL(ensstr))//'.txt', status='old')
+!!     do i=1,ny*nx
+!        read(24,*) field
+!!     enddo
+!!     read(24,*)field
+!     !print *,field
+!!     do j=1,nx
+!        ens_p(:,member) = field(:)
+!!     enddo
+!     CLOSE(24)
+!
+!     !DO i = 1, ny
+!     !   READ (20, *) field(i, :)
+!     !END DO
+!     !DO i = 1, ny
+!     !   ens_p(1 + (i-1)*nx : i*nx, member) = field(i, 1:nx)
+!     !END DO
+!
+!  END DO
+! deallocate(field)
 
 ! ****************
 ! *** clean up ***
 ! ****************
 
-  DEALLOCATE(field)
 
-  !Just testing printing
-!  call oned_to_twod(3200,2,2,index_2d_pdaf)
-!  print *, "2d domain is", index_2d_pdaf
-!  call oned_to_twod(5445,2,2,index_2d_pdaf)
-!  print *, "2d domain is", index_2d_pdaf
-!  call oned_to_twod(5720,2,2,index_2d_pdaf)
-!  print *, "2d domain is", index_2d_pdaf
-!  call oned_to_twod(10000,2,2,index_2d_pdaf)
-!  print *, "2d domain is", index_2d_pdaf
 
-!  call twod_to_oned(14,100,index_1d_pdaf)
-!  print *, "1d domain is", index_1d_pdaf
-!  call twod_to_oned(59,45,index_1d_pdaf)
-!  print *, "1d domain is", index_1d_pdaf
-!  call twod_to_oned(65,20,index_1d_pdaf)
-!  print *, "1d domain is", index_1d_pdaf
-!  call twod_to_oned(100,100,index_1d_pdaf)
-!  print *, "1d domain is", index_1d_pdaf
-
+  !  !Just testing printing #  call oned_to_twod(3200,2,2,index_2d_pdaf)
+  !  print *, "2d domain is", index_2d_pdaf
+  !  call oned_to_twod(5445,2,2,index_2d_pdaf)
+  !  print *, "2d domain is", index_2d_pdaf
+  !  call oned_to_twod(5720,2,2,index_2d_pdaf)
+  !  print *, "2d domain is", index_2d_pdaf
+  !  call oned_to_twod(10000,2,2,index_2d_pdaf)
+  !  print *, "2d domain is", index_2d_pdaf
+  !
+  !  call twod_to_oned(14,100,index_1d_pdaf)
+  !  print *, "1d domain is", index_1d_pdaf
+  !  call twod_to_oned(59,45,index_1d_pdaf)
+  !  print *, "1d domain is", index_1d_pdaf
+  !  call twod_to_oned(65,20,index_1d_pdaf)
+  !  print *, "1d domain is", index_1d_pdaf
+  !  call twod_to_oned(100,100,index_1d_pdaf)
+  !  print *, "1d domain is", index_1d_pdaf
+  !
 END SUBROUTINE init_ens

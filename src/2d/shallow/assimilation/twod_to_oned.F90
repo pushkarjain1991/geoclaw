@@ -27,7 +27,6 @@ subroutine twod_to_oned(index_2d_row,index_2d_col, index_1d)
       !local_col = index_2d_col - (domain_num_col - 1)*50
       local_row = mod(index_2d_row - 1, 50) + 1
       local_col = mod(index_2d_col - 1, 50) + 1
-!index_1d = cells_temp + (index_2d(1) - 1)*nx(domain_num) + index_2d(2)
       index_1d = cells_temp + (local_row - 1)*50 + local_col
 
 end subroutine twod_to_oned
@@ -49,7 +48,7 @@ subroutine check_domain2(i_global, j_global, domain_num)
       domain_num_x = ((i_global-1)/50) + 1
       domain_num = domain_num_y + (domain_num_x-1)*2
       print *,"Twod to oned"
-      print *,"Global_coord = ", j_global, i_global
+      print *,"Global_row = ", i_global, "Global column = ", j_global
       print *, "domain coordinate - ",domain_num_x, domain_num_y
       print *,"Domain number = ", domain_num
 end subroutine check_domain2

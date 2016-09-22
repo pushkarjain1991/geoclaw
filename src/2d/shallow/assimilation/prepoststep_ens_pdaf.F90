@@ -10,25 +10,25 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 ! !DESCRIPTION:
 ! User-supplied routine for PDAF.
 ! Used in the filters: SEIK/EnKF/LSEIK/ETKF/LETKF/ESTKF/LESTKF
-! 
+!
 ! The routine is called for global filters (e.g. SEIK)
 ! before the analysis and after the ensemble transformation.
 ! For local filters (e.g. LSEIK) the routine is called
 ! before and after the loop over all local analysis
 ! domains.
-! The routine provides full access to the state 
+! The routine provides full access to the state
 ! estimate and the state ensemble to the user.
-! Thus, user-controlled pre- and poststep 
-! operations can be performed here. For example 
+! Thus, user-controlled pre- and poststep
+! operations can be performed here. For example
 ! the forecast and the analysis states and ensemble
-! covariance matrix can be analyzed, e.g. by 
-! computing the estimated variances. 
+! covariance matrix can be analyzed, e.g. by
+! computing the estimated variances.
 ! For the offline mode, this routine is the place
 ! in which the writing of the analysis ensemble
 ! can be performed.
 !
-! If a user considers to perform adjustments to the 
-! estimates (e.g. for balances), this routine is 
+! If a user considers to perform adjustments to the
+! estimates (e.g. for balances), this routine is
 ! the right place for it.
 !
 ! Implementation for the 2D offline example
@@ -83,7 +83,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   REAL, ALLOCATABLE :: variance(:)    ! model state variances
   !REAL, ALLOCATABLE :: field(:,:)     ! global model field
   REAL, ALLOCATABLE :: field(:)     ! global model field
-  CHARACTER(len=2) :: ensstr          ! String for ensemble member
+  CHARACTER(len=3) :: ensstr          ! String for ensemble member
   CHARACTER(len=3) :: stepstr         ! String for time step
   CHARACTER(len=3) :: anastr          ! String for call type (initial, forecast, analysis)
 
@@ -91,7 +91,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 ! **********************
 ! *** INITIALIZATION ***
 ! **********************
-
+!print *, 'I am process ',mype_world
   IF (firsttime) THEN
      WRITE (*, '(8x, a)') 'Analyze initial state ensemble'
      anastr = 'ini'
@@ -110,7 +110,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
   ! Initialize numbers
   rmserror_est  = 0.0
-  invdim_ens    = 1.0 / REAL(dim_ens)  
+  invdim_ens    = 1.0 / REAL(dim_ens)
   invdim_ensm1  = 1.0 / REAL(dim_ens - 1)
 
 
@@ -164,7 +164,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   WRITE (*, '(12x, a, es12.4)') &
        'RMS error according to sampled variance: ', rmserror_est
 
-  
+
 ! *******************
 ! *** File output ***
 ! *******************
@@ -173,7 +173,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
      WRITE (*, '(8x, a)') '--- write ensemble and state estimate'
 
-     ALLOCATE(field(ny*nx))
+     ALLOCATE(field(dim_p))
 
     !Set string for time step
      IF (step>=0) THEN
@@ -185,17 +185,19 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
      ! Write analysis ensemble
      DO member = 1, dim_ens
-       
-        !Modified for GEOCLAW format match 
+
+        !Modified for GEOCLAW format match
         !DO i = 1, ny
         !   field(i, 1:nx) = ens_p(1 + (i-1)*nx : i*nx, member)
         !END DO
+
         field(:) = ens_p(:,member)
 
-        WRITE (ensstr, '(i2.2)') member
+        WRITE (ensstr, '(i3.2)') member
 
-        OPEN(20, file ='ens_'//TRIM(ensstr)//'_step'//TRIM(ADJUSTL(stepstr))//'_'// TRIM(anastr)//'.txt', status = 'replace')
- 
+        OPEN(20, file ='ens_'//TRIM(ADJUSTL(ensstr))//'_step'//TRIM(ADJUSTL(stepstr))//'_'// TRIM(anastr)//'.txt',&
+            status = 'replace')
+
         !DO i = 1, ny
         !   WRITE (20, *) field(i, :)
         !END DO
@@ -203,19 +205,28 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
         CLOSE(20)
      END DO
+     field(:)=variance(:)
 
-     ! Write analysis state
-     !DO j = 1, nx
-     !   field(1:ny, j) = state_p(1 + (j-1)*ny : j*ny)
-     !END DO
-     
-     !DO i = 1, ny
-     !   field(i, 1:nx) = state_p(1 + (i-1)*nx : i*nx)
-     !END DO
-     field(:) = state_p(:)
+    WRITE (ensstr, '(i3.2)') member
 
-     OPEN(20, file = 'state_step'//TRIM(ADJUSTL(stepstr))//'_'//TRIM(anastr)//'.txt', status = 'replace')
- 
+    OPEN(20, file = 'variance_'//TRIM(ADJUSTL(stepstr))//'_'//TRIM(anastr)//'.txt', &
+        status = 'replace')
+    WRITE(20,*) field
+    CLOSE(20)
+
+    ! Write analysis state
+    !DO j = 1, nx
+    !   field(1:ny, j) = state_p(1 + (j-1)*ny : j*ny)
+    !END DO
+
+    !DO i = 1, ny
+    !   field(i, 1:nx) = state_p(1 + (i-1)*nx : i*nx)
+    !END DO
+    field(:) = state_p(:)
+
+     OPEN(20, file = 'state_step'//TRIM(ADJUSTL(stepstr))//'_'//TRIM(anastr)//'.txt', &
+         status = 'replace')
+
      !DO i = 1, ny
      !   WRITE (20, *) field(i, :)
      !END DO
