@@ -304,48 +304,48 @@ c     # Print meqn = nvar+1 because eta added.
      &       i6,'                 nghost'/,/)
 c
 
-#ifdef USE_PDAF
-      
-         level = lst
- 166     if (level .gt. lend) go to 191
-            mptr = lstart(level)
- 171        if (mptr .eq. 0) go to 181
-              nx = node(ndihi,mptr) - node(ndilo,mptr) + 1
-              ny = node(ndjhi,mptr) - node(ndjlo,mptr) + 1
-              dx = hxposs(level)
-              dy = hyposs(level)
-              xlow = rnode(cornxlo,mptr)
-              ylow = rnode(cornylo,mptr)
-              locamrflags = node(storeflags, mptr)
-              
-              mbuff = max(nghost,ibuff+1)
-              allocate(amrflags2(1-mbuff:nx+mbuff,1-mbuff:ny+mbuff))
-              amrflags2=alloc(locamrflags)
-              print *, ibuff, nghost, mbuff
-              print *, locamrflags
-              print *, mptr
-              print *, alloc(locamrflags)
-              stop
-
-      y_loop: do j=1,ny
-        y_c = ylow + (j - 0.5d0) * dy
-
-        x_loop: do i = 1,nx
-            x_c = xlow + (i - 0.5d0) * dx
-                  print *, x_c, y_c, amrflags2(i,j)
-
-        enddo x_loop
-      enddo y_loop
-          deallocate(amrflags2)
-
-            mptr = node(levelptr, mptr)
-            go to 171
- 181     level = level + 1
-         go to 166
-
- 191    continue
-        close(unit=matunit5)
-#endif
+!#ifdef USE_PDAF
+!      
+!         level = lst
+! 166     if (level .gt. lend) go to 191
+!            mptr = lstart(level)
+! 171        if (mptr .eq. 0) go to 181
+!              nx = node(ndihi,mptr) - node(ndilo,mptr) + 1
+!              ny = node(ndjhi,mptr) - node(ndjlo,mptr) + 1
+!              dx = hxposs(level)
+!              dy = hyposs(level)
+!              xlow = rnode(cornxlo,mptr)
+!              ylow = rnode(cornylo,mptr)
+!              locamrflags = node(storeflags, mptr)
+!              
+!              mbuff = max(nghost,ibuff+1)
+!              allocate(amrflags2(1-mbuff:nx+mbuff,1-mbuff:ny+mbuff))
+!              amrflags2=alloc(locamrflags)
+!              print *, ibuff, nghost, mbuff
+!              print *, locamrflags
+!              print *, mptr
+!              print *, alloc(locamrflags)
+!              stop
+!
+!      y_loop: do j=1,ny
+!        y_c = ylow + (j - 0.5d0) * dy
+!
+!        x_loop: do i = 1,nx
+!            x_c = xlow + (i - 0.5d0) * dx
+!                  print *, "in valout", x_c, y_c, amrflags2(i,j)
+!
+!        enddo x_loop
+!      enddo y_loop
+!          deallocate(amrflags2)
+!
+!            mptr = node(levelptr, mptr)
+!            go to 171
+! 181     level = level + 1
+!         go to 166
+!
+! 191    continue
+!        close(unit=matunit5)
+!#endif
 
       write(6,601) matlabu,time
   601 format('AMRCLAW: Frame ',i4,

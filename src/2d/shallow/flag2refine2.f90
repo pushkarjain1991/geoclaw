@@ -22,7 +22,7 @@
 ! ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
                        tolsp,q,aux,amrflags,DONTFLAG,DOFLAG)
-
+    
     use amr_module, only: mxnest, t0
     use geoclaw_module, only:dry_tolerance, sea_level
     use geoclaw_module, only: spherical_distance, coordinate_system
@@ -41,6 +41,12 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 
     use regions_module, only: num_regions, regions
     use refinement_module
+
+#ifdef USE_PDAF
+      use mod_parallel, only: mype_world, MPIerr, mpi_comm_world, n_modeltasks
+      use mpi, only: mpi_real8, mpi_real 
+      !USE PDAF_mod_filtermpi, only: MPI_REALTYPE
+#endif
 
     implicit none
 
@@ -67,8 +73,25 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
     ! Storm specific variables
     real(kind=8) :: R_eye(2), wind_speed
 
+#ifdef USE_PDAF
+    integer :: gsize
+    !real(kind=8), dimension(5000) :: recvbuf = 0
+    !real(kind=8), dimension(2500) :: sendbuf = 0
+    real(kind=8), allocatable :: recvbuf(:)
+    real(kind=8), allocatable :: sendbuf(:)
+    
+    integer :: sendcount, recvcount
+    integer, parameter :: root = 0
+    integer :: recvsize
+    character(len=1) :: mptr_str
+    character(len=7) :: file1
+    character(len=7) :: file2
+    integer :: csize
+#endif
+
     ! Initialize flags
     amrflags = DONTFLAG
+
 
     ! Loop over interior points on this grid
     ! (i,j) grid cell is [x_low,x_hi] x [y_low,y_hi], cell center at (x_c,y_c)
@@ -205,4 +228,99 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 
         enddo x_loop
     enddo y_loop
+
+#ifdef USE_PDAF
+    if (level == 1) then
+            
+            sendcount = mx*my
+            recvcount = mx*my
+            gsize = n_modeltasks
+            recvsize = gsize*sendcount
+            !allocate(sendbuf(sendcount))
+            if (mype_world == 0) then
+                allocate(recvbuf(recvsize))
+            endif
+            !do i = 1,mx
+            !    do j = 1,my
+            !        sendbuf(i+(j-1)*50) = amrflags(i,j)
+            !    enddo
+            !enddo
+            
+
+            !if (xlower==0.0) then
+            !    if (ylower==0.0) then
+            !        if (mype_world == 0) then
+            !            open(unit=46, file='file0', status='replace')
+            !            do j = 1,mx*my
+            !                write(46,*) sendbuf(j)
+            !            enddo
+            !            close(46)
+            !        endif
+            !        
+            !        if (mype_world == 1) then
+            !            open(unit=47, file='file1', status='replace')
+            !            do i = 1,mx*my
+            !                write(47,*) sendbuf(i)
+            !            enddo
+            !            close(47)
+            !        endif
+            !    endif
+            !endif
+            
+            !if (mype_world == 0) then
+            !    if (xlower==0.0) then
+            !        if (ylower==0.0) then
+            !            !print *, "size", size(recvbuf), xlower, ylower
+            !            !print *, "amrflags = ", amrflags(:,:)
+            !            open(unit=45, file='file_combined1', status='replace')
+            !            do i=1,recvsize
+            !                write(45,*) recvbuf(i)
+            !            enddo
+            !            close(45)
+            !        endif
+            !    endif
+            !endif
+            
+            sendbuf(:)=mype_world
+            if (mype_world == 0) then
+                print *, "sendcount = ", sendcount
+                print *, "recvcount = ", recvcount
+                print *, "sendbuf size = ", size(sendbuf)
+                print *, "recvbuf size = ", size(recvbuf)
+                !print *, "recvbuf = ", recvbuf
+            endif
+            call MPI_barrier(mpi_comm_world, mpierr)
+            call mpi_gather(amrflags(1:mx, 1:my), sendcount, mpi_real8, recvbuf, recvcount, mpi_real8, root, mpi_comm_world, mpierr)
+            !call mpi_gather(sendbuf, sendcount, mpi_real8, recvbuf, recvcount, mpi_real8, root, mpi_comm_world, mpierr)
+            !if (mype_world == 0) then
+            !    print *, "MPI err = ", mpierr
+            !    !print *, "recvbuf = ", recvbuf
+            !endif
+
+            !if (mype_world == 0) then
+            !    !allocate(reshaped_buffer(mx*my, gsize))
+            !    allocate(reshaped_buffer(2500, 4))
+            !    reshaped_buffer = reshape(recvbuf,(/mx*my, gsize/))
+            !    deallocate(reshaped_buffer)
+            !endif
+
+            !if (mype_world == 0) then
+            !    if (xlower==0.0) then
+            !        if (ylower==0.0) then
+            !            !print *, "size", size(recvbuf), xlower, ylower
+            !            !print *, "amrflags = ", amrflags(:,:)
+            !            open(unit=45, file='file_combined', status='replace')
+            !            do i=1,recvsize
+            !                write(45,*) recvbuf(i)
+            !            enddo
+            !            close(45)
+            !        endif
+            !    endif
+            !endif
+            if (mype_world == 0) then
+                deallocate(recvbuf)
+            endif
+            deallocate(sendbuf)
+    endif
+#endif
 end subroutine flag2refine2
