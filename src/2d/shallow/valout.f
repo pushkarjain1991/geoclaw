@@ -8,7 +8,11 @@ c
       use mod_parallel, only: mype_world
 #endif
       implicit double precision (a-h,o-z)
+#ifdef USE_PDAF
       character*10  fname1, fname2, fname3, fname4, fname5
+#else
+      character*10  fname1, fname2, fname3, fname4
+#endif
 
 c     # GeoClaw specific output....  add eta to q array before printing
 c
@@ -85,7 +89,11 @@ c        ###  make the file names and open output files
 #endif
 
          nstp     = matlabu
+#ifdef USE_PDAF
          do 55 ipos = 11, 8, -1
+#else
+         do 55 ipos = 10, 7, -1
+#endif
             idigit = mod(nstp,10)
             fname1(ipos:ipos) = char(ichar('0') + idigit)
             fname2(ipos:ipos) = char(ichar('0') + idigit)

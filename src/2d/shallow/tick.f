@@ -9,6 +9,7 @@ c
       use sortarr
       use mapdomain
       use mod_parallel, only: mype_world, MPIerr, mpi_comm_world
+      use mod_assimilation, only: stepnow_pdaf, assimilate_step
 #endif
       use refinement_module, only: varRefTime
       use amr_module
@@ -377,6 +378,15 @@ c
           call conck(1,nvar,naux,time,rest)
 
 #ifdef USE_PDAF
+          stepnow_pdaf = stepnow_pdaf + 1
+          if (mype_world==0) then
+              print *, "stepnow = ",stepnow_pdaf
+              print *, "assimilate_step = ", assimilate_step
+          endif
+          if (stepnow_pdaf == assimilate_step) then
+              call regrid(nvar,lbase,cut,naux,start_time)
+              call setbestsrc()     ! need at every grid change
+          endif
           call assimilate_pdaf(nvar, naux, mxnest, time)
 #else
       if ( .not.vtime) goto 201
@@ -443,8 +453,7 @@ c
               
 
 c
-c  # computation is complete to final time or requested number of steps
-c
+c  # computation is complete to final time or requested number of sc
        if (ncycle .ge. nstop .and. tfinal .lt. rinfinity) then
 c         # warn the user that calculation finished prematurely
           write(outunit,102) nstop

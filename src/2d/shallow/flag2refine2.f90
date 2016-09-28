@@ -44,7 +44,8 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 
 #ifdef USE_PDAF
       use mod_parallel, only: mype_world, MPIerr, mpi_comm_world, n_modeltasks
-      use mpi, only: mpi_real8, mpi_real 
+      use mpi, only: mpi_real8
+      use mod_assimilation, only: stepnow_pdaf, assimilate_step
       !USE PDAF_mod_filtermpi, only: MPI_REALTYPE
 #endif
 
@@ -78,14 +79,19 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
     !real(kind=8), dimension(5000) :: recvbuf = 0
     !real(kind=8), dimension(2500) :: sendbuf = 0
     real(kind=8), allocatable :: recvbuf(:)
+    real(kind=8), allocatable, dimension(:,:) :: reshaped_buffer
     real(kind=8), allocatable :: sendbuf(:)
+    real(kind=8), allocatable :: flagunion(:)
+    logical, allocatable :: mask(:)
+    integer :: alloc_stat
     
     integer :: sendcount, recvcount
     integer, parameter :: root = 0
     integer :: recvsize
-    character(len=1) :: mptr_str
+    character(len=1) :: ensstr
     character(len=7) :: file1
     character(len=7) :: file2
+    character(len=17) :: filename
     integer :: csize
 #endif
 
@@ -230,42 +236,47 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
     enddo y_loop
 
 #ifdef USE_PDAF
-    if (level == 1) then
+    !write(ensstr,*) mype_world
+    if (stepnow_pdaf == assimilate_step) then
+        print *, "reached here"
+        if (level == 1) then
             
             sendcount = mx*my
             recvcount = mx*my
             gsize = n_modeltasks
             recvsize = gsize*sendcount
-            !allocate(sendbuf(sendcount))
+            if(allocated(sendbuf)) deallocate(sendbuf)
+            allocate(sendbuf(sendcount))
+
             if (mype_world == 0) then
                 allocate(recvbuf(recvsize))
             endif
-            !do i = 1,mx
-            !    do j = 1,my
-            !        sendbuf(i+(j-1)*50) = amrflags(i,j)
-            !    enddo
-            !enddo
+            do i = 1,mx
+                do j = 1,my
+                    sendbuf(i+(j-1)*50) = amrflags(i,j)
+                enddo
+            enddo
             
 
-            !if (xlower==0.0) then
-            !    if (ylower==0.0) then
-            !        if (mype_world == 0) then
-            !            open(unit=46, file='file0', status='replace')
-            !            do j = 1,mx*my
-            !                write(46,*) sendbuf(j)
-            !            enddo
-            !            close(46)
-            !        endif
-            !        
-            !        if (mype_world == 1) then
-            !            open(unit=47, file='file1', status='replace')
-            !            do i = 1,mx*my
-            !                write(47,*) sendbuf(i)
-            !            enddo
-            !            close(47)
-            !        endif
-            !    endif
-            !endif
+            if (xlower==0.0) then
+                if (ylower==0.0) then
+                    if (mype_world == 0) then
+                        open(unit=46, file='file0', status='replace')
+                        do j = 1,mx*my
+                            write(46,*) sendbuf(j)
+                        enddo
+                        close(46)
+                    endif
+                    
+                    if (mype_world == 1) then
+                        open(unit=47, file='file1', status='replace')
+                        do i = 1,mx*my
+                            write(47,*) sendbuf(i)
+                        enddo
+                        close(47)
+                    endif
+                endif
+            endif
             
             !if (mype_world == 0) then
             !    if (xlower==0.0) then
@@ -281,46 +292,128 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             !    endif
             !endif
             
-            sendbuf(:)=mype_world
-            if (mype_world == 0) then
-                print *, "sendcount = ", sendcount
-                print *, "recvcount = ", recvcount
-                print *, "sendbuf size = ", size(sendbuf)
-                print *, "recvbuf size = ", size(recvbuf)
-                !print *, "recvbuf = ", recvbuf
-            endif
-            call MPI_barrier(mpi_comm_world, mpierr)
+            !sendbuf(:)=mype_world
+            !if (mype_world == 0) then
+            !    print *, "sendcount = ", sendcount
+            !    print *, "recvcount = ", recvcount
+            !    print *, "sendbuf size = ", size(sendbuf)
+            !    print *, "recvbuf size = ", size(recvbuf)
+            !    !print *, "recvbuf = ", recvbuf
+            !endif
+            !call MPI_barrier(mpi_comm_world, mpierr)
             call mpi_gather(amrflags(1:mx, 1:my), sendcount, mpi_real8, recvbuf, recvcount, mpi_real8, root, mpi_comm_world, mpierr)
+            print *, "mype = ", mype_world
+            call MPI_barrier(mpi_comm_world, mpierr)
+
+            !Comparing flags of different ensembles
+            if (mype_world == 0) then
+                if (xlower==0.0) then
+                    if (ylower==0.0) then
+                        !print *, "size", size(recvbuf), xlower, ylower
+                        !print *, "amrflags = ", amrflags(:,:)
+                        open(unit=45, file='file_combined', status='replace')
+                        do i=1,recvsize
+                            write(45,*) recvbuf(i)
+                        enddo
+                        !write(45,*) recvbuf
+                        close(45)
+                    endif
+                endif
+            endif
             !call mpi_gather(sendbuf, sendcount, mpi_real8, recvbuf, recvcount, mpi_real8, root, mpi_comm_world, mpierr)
             !if (mype_world == 0) then
             !    print *, "MPI err = ", mpierr
             !    !print *, "recvbuf = ", recvbuf
             !endif
 
-            !if (mype_world == 0) then
-            !    !allocate(reshaped_buffer(mx*my, gsize))
-            !    allocate(reshaped_buffer(2500, 4))
-            !    reshaped_buffer = reshape(recvbuf,(/mx*my, gsize/))
-            !    deallocate(reshaped_buffer)
-            !endif
+            !RESHAPING recvbuf
 
-            !if (mype_world == 0) then
-            !    if (xlower==0.0) then
-            !        if (ylower==0.0) then
-            !            !print *, "size", size(recvbuf), xlower, ylower
-            !            !print *, "amrflags = ", amrflags(:,:)
-            !            open(unit=45, file='file_combined', status='replace')
-            !            do i=1,recvsize
-            !                write(45,*) recvbuf(i)
-            !            enddo
-            !            close(45)
-            !        endif
-            !    endif
-            !endif
+
             if (mype_world == 0) then
-                deallocate(recvbuf)
+                !Allocating memory for reshaped buffer
+                allocate(reshaped_buffer(mx*my, gsize))
+
+                !Reshaping recvbuf
+                reshaped_buffer = reshape(recvbuf,(/mx*my, gsize/))
+
+                !Writing to file for debugging
+                if (xlower==0.0) then
+                    if (ylower==0.0) then
+                        print *, "recvbuf_shape = ", shape(recvbuf)
+                        print *, "reshaped_buffer_shape = ", shape(reshaped_buffer)
+                        open(unit=48, file='reshaped_buffer', status='replace')
+                        do i = 1,mx*my
+                            write(48,*) reshaped_buffer(i,:)
+                        enddo
+                        close(48)
+                    endif
+                endif
             endif
-            deallocate(sendbuf)
+
+            if(allocated(flagunion)) deallocate(flagunion)
+            allocate(flagunion(mx*my))
+
+
+            !Perform boolean operation
+            if (mype_world == 0) then
+                flagunion = 0.0
+
+                if(allocated(mask)) deallocate(mask)
+                allocate(mask(mx*my))
+                mask = any(reshaped_buffer .eq. 2.0, 2)
+                where (mask .eqv. .true.) 
+                    flagunion = 2.0
+                endwhere
+                
+                if (xlower==0.0) then
+                    if (ylower==0.0) then
+                        open(unit=48, file='flag_union', status='replace')
+                        do i = 1,mx*my
+                            write(48,*) flagunion(i)
+                        enddo
+                        close(48)
+                    endif
+                endif
+            endif
+
+            !Broadcast flagunion
+            call mpi_bcast(flagunion, mx*my, mpi_real8, root, mpi_comm_world, mpierr)
+                
+            if (mype_world == 1) then
+                if (xlower==0.0) then
+                    if (ylower==0.0) then
+                        open(unit=48, file='check_broadcast', status='replace')
+                        do i = 1,mx*my
+                            write(48,*) flagunion(i)
+                        enddo
+                        close(48)
+                    endif
+                endif
+            endif
+
+            !Write flagunion to amrflags
+            amrflags(1:mx, 1:my) = reshape(flagunion,(/mx,my/))
+            print *, "new amrflag = ", amrflags(1:mx, 1:my)
+
+
+            
+
+
+             
+            !if (mype_world == 0) then
+            !    allocate(reshaped_amrflag(2500,2), stat=alloc_stat)
+            !    if (alloc_stat /= 0) then
+            !            print *, "Memory not allocated"
+            !    endif
+            !!    reshaped_amrflag = reshape(amrflags,(/2500,2/))
+            !!    print *, "reshaped_amrflag", reshaped_amrflag
+            !    deallocate(reshaped_amrflag)
+            !endif
+            !
+            !if (mype_world == 0) then
+            !    deallocate(recvbuf)
+            !endif
+        endif
     endif
 #endif
 end subroutine flag2refine2

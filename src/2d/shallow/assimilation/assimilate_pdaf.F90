@@ -87,7 +87,8 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
 ! *** Call assimilation routine ***
 ! *********************************
 !  assimilate_level(1)=mxlevel;assimilate_level(2)=1
-   stepnow_pdaf=stepnow_pdaf+1
+   !stepnow_pdaf=stepnow_pdaf+1 !Moving to tick so that can update flags at
+   !assimilation
    ncycle_pdaf=ncycle_pdaf+1
 !   call alloc2field(nvar,naux)
    if (stepnow_pdaf==assimilate_step) then
