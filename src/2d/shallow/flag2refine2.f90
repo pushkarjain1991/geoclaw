@@ -393,7 +393,7 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 
             !Write flagunion to amrflags
             amrflags(1:mx, 1:my) = reshape(flagunion,(/mx,my/))
-            print *, "new amrflag = ", amrflags(1:mx, 1:my)
+            !print *, "new amrflag = ", amrflags(1:mx, 1:my)
 
 
             

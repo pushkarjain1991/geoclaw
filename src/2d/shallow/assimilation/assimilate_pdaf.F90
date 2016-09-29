@@ -155,6 +155,7 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
         endif
 !      call MPI_barrier(mpi_comm_world,mpierr)
         IF (status_pdaf==0) then
+#ifdef dasd
     output : if (mype_world==0) then! output for mype=0
                  write(cyclestr,'(i3)') ncycle_pdaf
                  fname='state_step'//trim(adjustl(cyclestr))//'_ana.txt'
@@ -173,12 +174,13 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
                  endif
                  call field2alloc(nvar,naux,.true.)
                  if (mxlevel /=1) then
-                     do ii=mxlevel-1,1!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                     do ii=mxlevel-1,1,-1!!!!!!!!!!!!!!!!!!!!!!!!!!!
                        call update(ii,nvar,naux)
                      enddo
                  endif
                  call valout(1,mxlevel,time_geoclaw,nvar,naux)
              endif output
+#endif
 !             print *,'before get state'
              call MPI_barrier(mpi_comm_world,mpierr)
 !             print *, "I am process", mype_world

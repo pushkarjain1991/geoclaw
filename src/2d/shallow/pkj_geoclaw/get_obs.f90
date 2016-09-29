@@ -24,6 +24,7 @@
           logical :: obs_flag(size(x))
           logical :: have_obs
           cnt=0 
+          ! Count number of observations at finest mesh
           do i=1,size(ordered_mptr_array)
               mptr=ordered_mptr_array(i)
               level=node(nestlevel,mptr)
@@ -32,7 +33,7 @@
               xlow=rnode(cornxlo,mptr)
               ylow=rnode(cornylo,mptr)
               dx=hxposs(level);dy=hyposs(level)
-              if (level /= mxnest) cycle
+              !if (level /= mxnest) cycle
               do j=1,nx*ny
                   row=(j-1)/nx+1
                   coln=mod(j-1,nx)+1
@@ -69,7 +70,7 @@
               dx=hxposs(level);dy=hyposs(level)
               do j=1,nx*ny
                 cnt0=cnt0+1
-                if (level==mxnest) then
+                !if (level==mxnest) then
                     row=(j-1)/nx+1
                     coln=mod(j-1,nx)+1
                     left=xlow+(coln-1)*dx;right=xlow+coln*dx
@@ -94,7 +95,7 @@
 !                            obs(cnt1),coords_obs(1,cnt1),&
 !                            coords_obs(2,cnt1),cnt0,cnt1
                     endif
-                endif
+                !endif
               enddo
           enddo
 !          print *,obs_index(100:130)
