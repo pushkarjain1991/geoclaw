@@ -94,11 +94,11 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
    if (stepnow_pdaf==assimilate_step) then
        
 
+       print *, "mypeyhmm1", mype_world
        call alloc2field(nvar,naux)
-       !CALL  MPI_Barrier(mpi_comm_world,MPIerr)
-       !print *, "mypeyhmm", mype_world
-       !CALL  MPI_Barrier(mpi_comm_world,MPIerr)
-       !stop
+       CALL  MPI_Barrier(mpi_comm_world,MPIerr)
+       print *, "mypeyhmm2", mype_world
+       CALL  MPI_Barrier(mpi_comm_world,MPIerr)
        !print *,'(1,1) before get state is',field(25311)
         if(mype_world==0) write(*,'(a,5x,a)') 'PDAF','Perform assimilation with PDAF '
         if (filtertype==2) then
@@ -125,6 +125,7 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
                 init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf,&
                 prepoststep_ens_pdaf, prodRinvA_pdaf,&
                 init_obsvar_pdaf, status_pdaf)
+       print *, "mypeyhmm3", mype_world
         !else if (filtertype==7) then
         !    CALL PDAF_put_state_lestkf(collect_state_pdaf,&
         !        init_dim_obs_f_pdaf,obs_op_f_pdaf,init_obs_f_pdaf,&

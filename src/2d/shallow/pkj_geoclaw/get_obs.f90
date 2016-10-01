@@ -25,15 +25,21 @@
           logical :: have_obs
           cnt=0 
           ! Count number of observations at finest mesh
-          do i=1,size(ordered_mptr_array)
-              mptr=ordered_mptr_array(i)
-              level=node(nestlevel,mptr)
-              nx=node(ndihi,mptr)-node(ndilo,mptr)+1
-              ny=node(ndjhi,mptr)-node(ndjlo,mptr)+1
-              xlow=rnode(cornxlo,mptr)
-              ylow=rnode(cornylo,mptr)
+
+#ifdef PKJ_DEBUG
+          print *, "Running get_obs"
+#endif
+         level = 1
+ 65      if (level .gt. lfine) go to 90
+            mptr = lstart(level)
+ 70         if (mptr .eq. 0) go to 80
+              nx      = node(ndihi,mptr) - node(ndilo,mptr) + 1
+              ny      = node(ndjhi,mptr) - node(ndjlo,mptr) + 1
+              xlow = rnode(cornxlo,mptr)
+              ylow = rnode(cornylo,mptr)
               dx=hxposs(level);dy=hyposs(level)
-              !if (level /= mxnest) cycle
+
+
               do j=1,nx*ny
                   row=(j-1)/nx+1
                   coln=mod(j-1,nx)+1
@@ -52,7 +58,13 @@
 !                      print *,left,right,down,up 
                   endif 
               enddo
-          enddo
+  
+          mptr = node(levelptr, mptr)
+            go to 70
+ 80      level = level + 1
+         go to 65
+
+ 90     continue
 
           if (.not. allocated(obs_index)) allocate(obs_index(cnt))
           if (.not. allocated(obs)) allocate(obs(cnt))
@@ -60,14 +72,17 @@
 
           cnt0=0
           cnt1=0
-          do i=1,size(ordered_mptr_array)
-              mptr=ordered_mptr_array(i)
-              level=node(nestlevel,mptr)
-              nx=node(ndihi,mptr)-node(ndilo,mptr)+1
-              ny=node(ndjhi,mptr)-node(ndjlo,mptr)+1
-              xlow=rnode(cornxlo,mptr)
-              ylow=rnode(cornylo,mptr)
+         
+         level = 1
+ 66      if (level .gt. lfine) go to 91
+            mptr = lstart(level)
+ 71         if (mptr .eq. 0) go to 81
+              nx      = node(ndihi,mptr) - node(ndilo,mptr) + 1
+              ny      = node(ndjhi,mptr) - node(ndjlo,mptr) + 1
+              xlow = rnode(cornxlo,mptr)
+              ylow = rnode(cornylo,mptr)
               dx=hxposs(level);dy=hyposs(level)
+
               do j=1,nx*ny
                 cnt0=cnt0+1
                 !if (level==mxnest) then
@@ -82,14 +97,18 @@
                     if (have_obs) then 
                         cnt1=cnt1+1
                         obs_index(cnt1)=cnt0
-                        q_local=pack(q,obs_flag)! for 1d array will pick
-!                        out elements from mask obs_flag
-                        obs(cnt1)=sum(q_local)/size(q_local)
+
+               !print *, "before print qlocal ", mptr, xlow, ylow
+               !         q_local=pack(q,obs_flag)! for 1d array will pick
+               !print *, "after print qlocal ", mptr, xlow, ylow
+!              !          out elements from mask obs_flag
+               !         obs(cnt1)=sum(q_local)/size(q_local)
+                        obs(cnt1)=0.01
 
 
-                        call ind1d_to_coord2d(cnt0,temp_coord_obs_2d)
-                        coords_obs(1,cnt1)=temp_coord_obs_2d(1)
-                        coords_obs(2,cnt1)=temp_coord_obs_2d(2)
+                        !call ind1d_to_coord2d(cnt0,temp_coord_obs_2d)
+                        !coords_obs(1,cnt1)=temp_coord_obs_2d(1)
+                        !coords_obs(2,cnt1)=temp_coord_obs_2d(2)
                         
 !                        print *,left,right,down,up,size(q_local),&
 !                            obs(cnt1),coords_obs(1,cnt1),&
@@ -97,12 +116,17 @@
                     endif
                 !endif
               enddo
-          enddo
-!          print *,obs_index(100:130)
-!          print *,coords_obs(1,100:130)
-!          print *,coords_obs(2,100:130)
-!          print *,obs(100:130)
+  
+          mptr = node(levelptr, mptr)
+            go to 71
+ 81      level = level + 1
+         go to 66
+
+ 91     continue
 #endif     
+#ifdef PKJ_DEBUG
+          print *, "Finished running get_obs"
+#endif
       end subroutine get_obs
 
 

@@ -27,77 +27,78 @@ subroutine alloc2field(nvar,naux)
         integer :: i_mod,j_mod,loc,locaux,mitot,mjtot,nx,ny 
         integer :: ivar,i,j,iaux
         integer :: iadd,iaddaux
+        integer :: cell_cnt = 1
+        integer :: level
+        integer :: ncells
         iadd(ivar,i,j)=loc+ivar-1+nvar*((j-1)*mitot+i-1)
-
         iaddaux(iaux,i,j)=locaux+iaux-1+naux*(i-1)+naux*mitot*(j-1)
 
-!        mptr=4
-!        loc=node(store1,mptr)
-!        locaux=node(storeaux,mptr)
-!        mitot=54
-!        print *,alloc(iadd(1,3,3))
+         ncells = 0
 
+         !Count the total number of cells
+         !The value will be used to allocate field
+         level = 1
+ 66      if (level .gt. lfine) go to 91
+            mptr = lstart(level)
+ 71         if (mptr .eq. 0) go to 81
+                nx = node(ndihi,mptr) - node(ndilo, mptr) + 1
+                ny = node(ndjhi,mptr) - node(ndjlo, mptr) + 1
+                mitot   = nx + 2*nghost
+                mjtot   = ny + 2*nghost
+                loc     = node(store1, mptr)
+                locaux  = node(storeaux,mptr)
 
+                ncells=ncells+nx*ny
+                mptr = node(levelptr, mptr)
+             go to 71
+ 81      level = level + 1
+         go to 66
+ 91      continue
 
-!           Ntot=0
-           call get_ordered_array()   
-!           print *,ordered_mptr_array
-           if (.not. allocated(field)) allocate(field(dim_state_p))
-!           allocate(field(dim_state_p))
-!           if (mype_world==0) print *,"allocated field"
-!           call mpi_barrier(mpi_comm_world,mpierr)
-!               print *,mptr_array
-!               do ii = 1,size(ordered_mptr_array)
-!                   mptr = ordered_mptr_array(ii)
-!                   nx = node(ndihi,mptr) - node(ndilo, mptr) + 1
-!                   ny = node(ndjhi,mptr) - node(ndjlo, mptr) + 1
-!                   Ntot=Ntot+nx*ny
-!               enddo
-!               allocate(field(Ntot))  !need to figure out the dimension of new field
-!              print *,Ntot
-!          endif 
-          print *,ordered_mptr_array
-          Ntot_l=0
-!          print *,alloc(8416)
-        do ii = 1,size(ordered_mptr_array)
-           mptr = ordered_mptr_array(ii)
-!           if (mype_world==0) print *,ii,mptr
+ print *, "rank - ", mype_world, 'ncells - ', ncells
+
+         if(allocated(field)) deallocate(field)
+         allocate(field(ncells))
+         print *, "field allocated for rank ", mype_world
+
+         ! Values from alloc to field
+         level = 1
+ 65      if (level .gt. lfine) go to 90
+            mptr = lstart(level)
+ 70         if (mptr .eq. 0) go to 80
            nx = node(ndihi,mptr) - node(ndilo, mptr) + 1
            ny = node(ndjhi,mptr) - node(ndjlo, mptr) + 1
            mitot   = nx + 2*nghost
            mjtot   = ny + 2*nghost
            loc     = node(store1, mptr)
            locaux  = node(storeaux,mptr)
-!           if (ii==11) print *, alloc(iadd(1,3,3)) 
+           !xlow = rnode(cornxlo,mptr)
+           !ylow = rnode(cornylo,mptr)
 
-!                  print *,"loc=",loc
-!                  print *,"mptr =",mptr
-!                  print *, "nx = ",nx
-!                  print *, "ny = ",ny
-!                  print *, "corners = ",corn1,corn2
-
-          Ntot_l = Ntot_l+nx*ny
           do j_pkj = nghost+1, mjtot-nghost
             do i_pkj = nghost+1, mitot-nghost
-              do ivar=1,nvar
-                if (abs(alloc(iadd(ivar,i_pkj,j_pkj))) < 1d-90) then
-                    alloc(iadd(ivar,i_pkj,j_pkj)) = 0.d0
-                endif
-              enddo
                         
-                i_mod = i_pkj - nghost
-                j_mod = j_pkj - nghost
-                field(Ntot_l-nx*ny+i_mod+nx*(j_mod-1)) =&
+                field(cell_cnt) =&
                 alloc(iadd(1,i_pkj,j_pkj)) +alloc(iaddaux(1,i_pkj, j_pkj))
+                if (mype_world == 0) then
+                        if ((level == 1) .and. (mptr == 4)) then
+                    print *, "printing field in alloc2field"
+                    print *, field(1), mptr
+                        endif
+                endif
+                cell_cnt = cell_cnt + 1
             enddo
           enddo
-        enddo
-!        print *,'finish alloc to field'
-!       deallocate(mptr_array)
-!       deallocate(ordered_mptr_array)
-!       print *,alloc(iadd(1,3,3))
-!       print *,"finished"
-!       print *,'field=',field(2500)
+            mptr = node(levelptr, mptr)
+            go to 70
+ 80      level = level + 1
+         go to 65
 
+ 90     continue
+
+        !Check alloc2field
+        open(unit=33, file="check_alloc2field", status='replace')
+        write(33, *) field
+        close(33)
 #endif
 end subroutine alloc2field

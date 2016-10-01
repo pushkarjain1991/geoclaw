@@ -78,7 +78,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
    close(12)
 !   print *,cnt0
 !   print *,xx(1:10),yy(1:10),qq(1:10)
+   print *, "init_dim_obs_pdaf1"
    call get_obs(xx,yy,qq,dim_obs_p) 
+   print *, "init_dim_obs_pdaf2"
 
 
 

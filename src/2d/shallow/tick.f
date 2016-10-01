@@ -8,7 +8,7 @@ c
 #ifdef USE_PDAF
       use sortarr
       use mapdomain
-      use mod_parallel, only: mype_world, MPIerr, mpi_comm_world
+      use mod_parallel, only: mype_world, mpierr, mpi_comm_world
       use mod_assimilation, only: stepnow_pdaf, assimilate_step
 #endif
       use refinement_module, only: varRefTime
@@ -387,7 +387,11 @@ c
               call regrid(nvar,lbase,cut,naux,start_time)
               call setbestsrc()     ! need at every grid change
           endif
+              call mpi_barrier(mpi_comm_world, mpierr)
+              print *, "reached yo1", mype_world, stepnow_pdaf
+              call mpi_barrier(mpi_comm_world, mpierr)
           call assimilate_pdaf(nvar, naux, mxnest, time)
+              print *, "reached yo2", mype_world, stepnow_pdaf
 #else
       if ( .not.vtime) goto 201
 
