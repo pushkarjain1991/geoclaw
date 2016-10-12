@@ -41,8 +41,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 ! !USES:
   USE mod_assimilation, &
        ONLY: incremental, filename, subtype, covartype
-  USE mod_model, &
-       ONLY: nx, ny
+  !USE mod_model, ONLY: nx, ny
 
   IMPLICIT NONE
 
@@ -81,8 +80,8 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   REAL :: invdim_ensm1                ! Inverse of ensemble size minus 1
   REAL :: rmserror_est                ! estimated RMS error
   REAL, ALLOCATABLE :: variance(:)    ! model state variances
-  !REAL, ALLOCATABLE :: field(:,:)     ! global model field
-  REAL, ALLOCATABLE :: field(:)     ! global model field
+  !REAL, ALLOCATABLE :: field1(:,:)     ! global model field
+  REAL, ALLOCATABLE :: field1(:)     ! global model field
   CHARACTER(len=3) :: ensstr          ! String for ensemble member
   CHARACTER(len=3) :: stepstr         ! String for time step
   CHARACTER(len=3) :: anastr          ! String for call type (initial, forecast, analysis)
@@ -173,7 +172,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
      WRITE (*, '(8x, a)') '--- write ensemble and state estimate'
 
-     ALLOCATE(field(dim_p))
+     ALLOCATE(field1(dim_p))
 
     !Set string for time step
      IF (step>=0) THEN
@@ -186,56 +185,44 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
      ! Write analysis ensemble
      DO member = 1, dim_ens
 
-        !Modified for GEOCLAW format match
-        !DO i = 1, ny
-        !   field(i, 1:nx) = ens_p(1 + (i-1)*nx : i*nx, member)
-        !END DO
-
-        field(:) = ens_p(:,member)
+        field1(:) = ens_p(:,member)
 
         WRITE (ensstr, '(i3.2)') member
 
         OPEN(20, file ='ens_'//TRIM(ADJUSTL(ensstr))//'_step'//TRIM(ADJUSTL(stepstr))//'_'// TRIM(anastr)//'.txt',&
             status = 'replace')
 
-        !DO i = 1, ny
-        !   WRITE (20, *) field(i, :)
-        !END DO
-        WRITE (20, *) field
+        DO i = 1, size(field1)
+            WRITE (20, *) field1(i)
+        ENDDO
 
         CLOSE(20)
      END DO
-     field(:)=variance(:)
+     print *, "prepost done"
+     
+    !field1(:)=variance(:)
 
-    WRITE (ensstr, '(i3.2)') member
+    !WRITE (ensstr, '(i3.2)') member
 
-    OPEN(20, file = 'variance_'//TRIM(ADJUSTL(stepstr))//'_'//TRIM(anastr)//'.txt', &
-        status = 'replace')
-    WRITE(20,*) field
-    CLOSE(20)
+    !OPEN(20, file = 'variance_'//TRIM(ADJUSTL(stepstr))//'_'//TRIM(anastr)//'.txt', &
+    !    status = 'replace')
+    !WRITE(20,*) field1(:)
+    !CLOSE(20)
 
     ! Write analysis state
-    !DO j = 1, nx
-    !   field(1:ny, j) = state_p(1 + (j-1)*ny : j*ny)
-    !END DO
-
-    !DO i = 1, ny
-    !   field(i, 1:nx) = state_p(1 + (i-1)*nx : i*nx)
-    !END DO
-    field(:) = state_p(:)
+    field1(:) = state_p(:)
 
      OPEN(20, file = 'state_step'//TRIM(ADJUSTL(stepstr))//'_'//TRIM(anastr)//'.txt', &
          status = 'replace')
 
-     !DO i = 1, ny
-     !   WRITE (20, *) field(i, :)
-     !END DO
-     WRITE (20, *) field
+     DO i = 1, size(field1)
+         WRITE (20, *) field1(i)
+     ENDDO
 
      CLOSE(20)
 
 
-     DEALLOCATE(field)
+     DEALLOCATE(field1)
   END IF
 
 

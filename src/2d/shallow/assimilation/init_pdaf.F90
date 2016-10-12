@@ -21,8 +21,6 @@ SUBROUTINE init_pdaf()
 ! Later revisions - see svn log
 !
 ! !USES:
-!  USE mod_model, &        ! Model variables
-!       ONLY: nx, ny
   USE mod_parallel, &     ! Parallelization variables
        ONLY: mype_world, n_modeltasks, task_id, &
        COMM_model, COMM_filter, COMM_couple, filterpe, abort_parallel, &
@@ -32,7 +30,7 @@ SUBROUTINE init_pdaf()
        rms_obs, model_error, model_err_amp, incremental, covartype, &
        type_forget, forget, dim_bias, rank_analysis_enkf, &
        locweight, local_range, srange, int_rediag, filename, &
-       type_trans, type_sqrt, delt_obs,assimilate_step,stepnow_pdaf,ncycle_pdaf
+       type_trans, type_sqrt, delt_obs,assimilate_step,stepnow_pdaf
 
   IMPLICIT NONE
 
@@ -119,7 +117,6 @@ SUBROUTINE init_pdaf()
    endif
  stepnow_pdaf=0
  assimilate_step=delt_obs
- ncycle_pdaf=0
   subtype = 0       ! subtype of filter:
                     !   ESTKF:
                     !     (0) Standard form of ESTKF
@@ -149,7 +146,7 @@ SUBROUTINE init_pdaf()
                     !   This parameter has also to be set internally in PDAF_init.
   rank_analysis_enkf = 0   ! rank to be considered for inversion of HPH
                     ! in analysis of EnKF; (0) for analysis w/o eigendecomposition
-  int_rediag = 1    ! Interval of analysis steps to perform
+  int_rediag = 1    ! Interval of analysis steps to perform 
                     !    re-diagonalization in SEEK
   locweight = 0     ! Type of localizating weighting
                     !   (0) constant weight of 1
@@ -158,7 +155,7 @@ SUBROUTINE init_pdaf()
                     !   (3) regulated localization of R with mean error variance
                     !   (4) regulated localization of R with single-point error variance
 
-!  local_range = 8 ! Range in grid points for observation domain in local filters
+  local_range = 8 ! Range in grid points for observation domain in local filters
   srange = local_range  ! Support range for 5th-order polynomial
                     ! or range for 1/e for exponential weighting
 
@@ -220,7 +217,7 @@ SUBROUTINE init_pdaf()
      filter_param_i(6) = type_trans  ! Type of ensemble transformation
      filter_param_i(7) = type_sqrt   ! Type of transform square-root (SEIK-sub4/ESTKF)
      filter_param_r(1) = forget      ! Forgetting factor
-
+     
      CALL PDAF_init(filtertype, subtype, 0, &
           filter_param_i, 7,&
           filter_param_r, 2, &
@@ -243,11 +240,7 @@ SUBROUTINE init_pdaf()
 ! *** Prepare ensemble forecasts ***
 ! ******************************'***
 
-  !CALL PDAF_get_state(steps, timenow, doexit, next_observation_pdaf, &
-  !     distribute_state_pdaf, prepoststep_ens_pdaf, status_pdaf)
-  !   call MPI_Barrier(mpi_comm_world, MPIerr)
-  !   print *, "mype3", mype_world
-  !   call MPI_Barrier(mpi_comm_world, MPIerr)
-  !   stop
+  CALL PDAF_get_state(steps, timenow, doexit, next_observation_pdaf, &
+       distribute_state_pdaf, prepoststep_ens_pdaf, status_pdaf)
 
 END SUBROUTINE init_pdaf

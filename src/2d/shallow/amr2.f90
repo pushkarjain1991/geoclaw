@@ -105,10 +105,14 @@ program amr2
     use multilayer_module, only: set_multilayer
 
 #ifdef USE_PDAF
-    use mod_model, only : nx,ny, field,total_steps, dtinit, time, &
-    xlow,xhigh,ylow,yhigh
+    !use mod_model, only : nx,ny, field,total_steps, dtinit, time, &
+    !xlow,xhigh,ylow,yhigh
+    use mpi, only: mpi_real8
+    use amr_module, only: numcells
+    use mod_model, only : field, total_steps, reshaped_recv_ic
     use mod_parallel, only: MPIerr, mpi_comm_world, mype_world, &
-    npes_world, MPI_INTEGER, MPIstatus
+    npes_world, MPI_INTEGER, MPIstatus, n_modeltasks
+    use mod_assimilation, only: dim_state_p, dim_ens
 #endif
 
     implicit none
@@ -118,17 +122,17 @@ program amr2
     ! Local variables
     integer :: i, iaux, mw, level
     integer :: ndim, nvar, naux, mcapa1, mindim, dimensional_split
-#ifdef USE_PDAF
-    integer :: nstart, nsteps, nv1, lentotsave, num_gauge_SAVE
-#else
+!#ifdef USE_PDAF
+!    integer :: nstart, nsteps, nv1, lentotsave, num_gauge_SAVE
+!#else
     integer :: nstart, nsteps, nv1, nx, ny, lentotsave, num_gauge_SAVE
-#endif
+!#endif
     integer :: omp_get_max_threads, maxthreads
-#ifdef USE_PDAF
-    real(kind=8) :: ratmet, cut, dt_max
-#else
+!#ifdef USE_PDAF
+!    real(kind=8) :: ratmet, cut, dt_max
+!#else
     real(kind=8) :: time, ratmet, cut, dtinit, dt_max
-#endif
+!#endif
     logical :: vtime, rest, output_t0    
 
     ! Timing variables
@@ -147,6 +151,13 @@ program amr2
     character(len=*), parameter :: dbugfile = 'fort.debug'
     character(len=*), parameter :: matfile = 'fort.nplot'
     character(len=*), parameter :: parmfile = 'fort.parameters'
+#ifdef USE_PDAF
+    character(len=1):: mype_str
+    character(len=6):: ensstr1
+    real(kind=8), allocatable :: recv_ic(:)
+    integer, parameter :: root = 0
+#endif
+    
 
 
 #ifdef USE_PDAF
@@ -641,17 +652,51 @@ program amr2
 
 
 #ifdef USE_PDAF
-    call get_dim_state()
     total_steps = nstop
-    xlow=xlower;xhigh=xupper
-    ylow=ylower;yhigh=yupper
-              
+    !call get_dim_state()
+    dim_state_p = 0
+    do i = 1, lfine
+        dim_state_p = dim_state_p + numcells(i)
+    enddo
+    print *, "Initial dim_state_p = ", dim_state_p
+    call alloc2field(nvar, naux)
+    
+    write(ensstr1, '(i3.1)') mype_world
+    open(unit=57, file='init_ens'//trim(adjustl(ensstr1)), status='replace')
+    write(57,*) field(:)
+    close(57)
+    
+    call mpi_barrier(mpi_comm_world, mpierr)
+    !Assign field to ens_p
+
+   
+    !Gather the initial conditions to root processor
+    if (mype_world == 0) allocate(recv_ic(dim_state_p*n_modeltasks))
+    print *, "Reading IC, ", mype_world
+    call mpi_barrier(mpi_comm_world, mpierr)
+    call mpi_gather(field, dim_state_p, mpi_real8, recv_ic, dim_state_p,&
+    mpi_real8, root, mpi_comm_world, mpierr) 
+    
+    if (mype_world == 0) then
+        reshaped_recv_ic = reshape(recv_ic, (/dim_state_p, n_modeltasks/))
+        deallocate(recv_ic)
+    endif
+
+!    !Write the initial conditions to ens files
+!    write(mype_str, '(i1)') mype_world
+!    ensstr = "ens_0"//mype_str
+!    open(unit = 56, file=ensstr, status='replace')
+!    do i=1,dim_state_p
+!        write(56,*) field(i)
+!    enddo
+!    close(56)
     if (mype_world==0) then
         WRITE (*, '(1x, a)') 'INITIALIZE GEOCLAW with PDAF'
         WRITE (*, '(10x,a,i4,1x,a1,1x,i4)') 'Grid size:', nx, 'x', ny
         WRITE (*, '(10x,a,i4)') 'Time steps', total_steps
     endif
     CALL init_pdaf()
+    call mpi_barrier(mpi_comm_world, mpierr)
 #endif
 
     ! --------------------------------------------------------
@@ -909,5 +954,9 @@ program amr2
     ! Close output and debug files.
     close(outunit)
     close(dbugunit)
+
+#ifdef USE_PDAF
+    call mpi_finalize(mpierr)
+#endif
 
 end program amr2

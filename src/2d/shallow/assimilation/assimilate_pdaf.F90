@@ -22,7 +22,7 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
 !  use PDAF_mod_filter, only: cnt_steps,nsteps,type_filter
   use mod_parallel, only: mype_world,abort_parallel,mpi_comm_world,mpierr
   USE mod_assimilation, &      ! Variables for assimilation
-       ONLY: filtertype, stepnow_pdaf,assimilate_step,ncycle_pdaf
+       ONLY: filtertype, stepnow_pdaf, assimilate_step
    use mod_model,only: field
 
   IMPLICIT NONE
@@ -37,7 +37,7 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
   INTEGER,INTENT(IN)::naux
   INTEGER,INTENT(IN)::mxlevel
   INTEGER :: status_pdaf       ! PDAF status flag
-  INTEGER :: steps
+  INTEGER :: steps=0
   INTEGER :: doexit
   INTEGER :: ii,jj
   REAL(8) :: time_geoclaw
@@ -89,43 +89,42 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
 !  assimilate_level(1)=mxlevel;assimilate_level(2)=1
    !stepnow_pdaf=stepnow_pdaf+1 !Moving to tick so that can update flags at
    !assimilation
-   ncycle_pdaf=ncycle_pdaf+1
-!   call alloc2field(nvar,naux)
    if (stepnow_pdaf==assimilate_step) then
-       
-
        print *, "mypeyhmm1", mype_world
+       ! Put the geoclaw alloc values to PDAF field
+       ! Next step is to use the field for assimilation
        call alloc2field(nvar,naux)
+       if (mype_world == 0) then
+           print *, "First alloc2field before put_state- ", field(:)
+       endif
        CALL  MPI_Barrier(mpi_comm_world,MPIerr)
        print *, "mypeyhmm2", mype_world
        CALL  MPI_Barrier(mpi_comm_world,MPIerr)
-       !print *,'(1,1) before get state is',field(25311)
-        if(mype_world==0) write(*,'(a,5x,a)') 'PDAF','Perform assimilation with PDAF '
-        if (filtertype==2) then
-             CALL PDAF_put_state_enkf(collect_state_pdaf,&
+       if(mype_world==0) write(*,'(a,5x,a)') 'PDAF','Perform assimilation with PDAF '
+       if (filtertype==2) then
+           CALL PDAF_put_state_enkf(collect_state_pdaf,&
                  init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf,&
                  prepoststep_ens_pdaf, add_obs_error_pdaf,&
                  init_obscovar_pdaf,status_pdaf)
-        else if (filtertype==1) then
-             CALL PDAF_put_state_seik(collect_state_pdaf,&
+       else if (filtertype==1) then
+           CALL PDAF_put_state_seik(collect_state_pdaf,&
                  init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf,&
                  prepoststep_ens_pdaf, prodRinvA_pdaf,&
                  init_obsvar_pdaf, status_pdaf)
-        else if (filtertype==4) then
-             CALL PDAF_put_state_etkf(collect_state_pdaf,&
+       else if (filtertype==4) then
+           CALL PDAF_put_state_etkf(collect_state_pdaf,&
                  init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf,&
                  prepoststep_ens_pdaf, prodRinvA_pdaf,&
                  init_obsvar_pdaf,status_pdaf)
-        else if (filtertype==0) then
-            CALL PDAF_assimilate_seek(collect_state_pdaf,&
+       else if (filtertype==0) then
+           CALL PDAF_assimilate_seek(collect_state_pdaf,&
                 init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf,&
                 prepoststep_ens_pdaf, prodRinvA_pdaf, status_pdaf)
-        else if (filtertype==6) then
-            CALL PDAF_put_state_estkf(collect_state_pdaf,&
+       else if (filtertype==6) then
+           CALL PDAF_put_state_estkf(collect_state_pdaf,&
                 init_dim_obs_pdaf, obs_op_pdaf, init_obs_pdaf,&
                 prepoststep_ens_pdaf, prodRinvA_pdaf,&
                 init_obsvar_pdaf, status_pdaf)
-       print *, "mypeyhmm3", mype_world
         !else if (filtertype==7) then
         !    CALL PDAF_put_state_lestkf(collect_state_pdaf,&
         !        init_dim_obs_f_pdaf,obs_op_f_pdaf,init_obs_f_pdaf,&
@@ -154,66 +153,41 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
              if (mype_world==0) print *,"invalid filter type"
              CALL  abort_parallel()
         endif
-!      call MPI_barrier(mpi_comm_world,mpierr)
+        print *, "mypeyhmm3, ", mype_world
+        print *, "status_pdaf = ", status_pdaf 
+
         IF (status_pdaf==0) then
-#ifdef dasd
-    output : if (mype_world==0) then! output for mype=0
-                 write(cyclestr,'(i3)') ncycle_pdaf
-                 fname='state_step'//trim(adjustl(cyclestr))//'_ana.txt'
-                 fname=trim(adjustl(fname))
-!                 print *, 'the size of field is ', size(field)
-!                 INQUIRE(file='state_step'//trim(adjustl(cyclestr))//'_ana.txt',exist=there)
-                 INQUIRE(file=fname,exist=there)
-                 if (there) then
-                     open(15,file=fname,status='old')
-                     read(15,*) field
-                     close(15)
-                 else
-                     print *,'Cannot find assimilate file: ',fname
-!                     call abort_parallel()
-                     stop
-                 endif
-                 call field2alloc(nvar,naux,.true.)
-                 if (mxlevel /=1) then
-                     do ii=mxlevel-1,1,-1!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                       call update(ii,nvar,naux)
-                     enddo
-                 endif
-                 call valout(1,mxlevel,time_geoclaw,nvar,naux)
-             endif output
-#endif
-!             print *,'before get state'
-             call MPI_barrier(mpi_comm_world,mpierr)
-!             print *, "I am process", mype_world
-!             call MPI_barrier(mpi_comm_world,mpierr)
-             call PDAF_get_state(steps,time_pdaf,doexit,next_observation_pdaf,&
-                 distribute_state_pdaf,prepoststep_ens_pdaf,status_pdaf)
-             print *,'(1,1) after get state is',field(25311)
-!             print *, "I am process", mype_world
-!             call MPI_barrier(mpi_comm_world,mpierr)
-             stepnow_pdaf=0
-!             call field2alloc(nvar,naux)
-             call field2alloc(nvar,naux,.false.)!not for output purpose
              
+            print *, "Getting assim value before PDAF_get_state - ", field(:)
+            call PDAF_get_state(steps,time_pdaf,doexit,next_observation_pdaf,&
+            distribute_state_pdaf,prepoststep_ens_pdaf,status_pdaf)
 
-             if (mxlevel /=1) then
-                 do ii=mxlevel -1,1!!!!!!!!!!!!
-                   call update(ii,nvar,naux)
-                 enddo
-             endif
-        Endif
+            stepnow_pdaf=0
 
-     else ! not in assimilation time
-         status_pdaf=0
-     endif
+            print *, "Getting assim value after PDAF_get_state - ", field(:)
+
+            ! Put the assimilated values from field to alloc
+            call field2alloc(nvar,naux)!not for output purpose
+            deallocate(field)
+             
+            ! Use geoclaw update step to 'update' assimilated values at all
+            ! levels 
+            if (mxlevel /=1) then
+                do ii=mxlevel -1, 1
+                    call update(ii,nvar,naux)
+                enddo
+            endif
+        ELSE
+            WRITE (*,'(/1x,a6,i3,a43,i4,a1/)') &
+            'ERROR ', status_pdaf, &
+            ' in PDAF_put_state - stopping! (PE ', mype_world,')'
+            CALL  abort_parallel()
+        END IF
+
+    else ! not in assimilation time
+        status_pdaf=0
+    endif
   ! Check for errors during execution of PDAF
 
-!  call field2alloc(nvar,naux)
-  IF (status_pdaf /= 0) THEN
-     WRITE (*,'(/1x,a6,i3,a43,i4,a1/)') &
-          'ERROR ', status_pdaf, &
-          ' in PDAF_put_state - stopping! (PE ', mype_world,')'
-     CALL  abort_parallel()
-  END IF
 
 END SUBROUTINE assimilate_pdaf

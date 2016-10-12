@@ -12,11 +12,11 @@ SUBROUTINE distribute_state_pdaf(dim_p, state_p)
 !
 ! During the forecast phase of the filter this
 ! subroutine is called from PDAF\_get\_state
-! supplying a model state which has to be evolved.
-! The routine has to initialize the fields of the
-! model (typically available through a module) from
-! the state vector of PDAF. With parallelization,
-! MPI communication might be required to
+! supplying a model state which has to be evolved. 
+! The routine has to initialize the fields of the 
+! model (typically available through a module) from 
+! the state vector of PDAF. With parallelization, 
+! MPI communication might be required to 
 ! initialize all subdomains on the model PEs.
 !
 ! The routine is executed by each process that is
@@ -24,8 +24,8 @@ SUBROUTINE distribute_state_pdaf(dim_p, state_p)
 !
 ! For the dummy model and PDAF with domain
 ! decomposition the state vector and the model
-! field are identical. Hence, the field array
-! is directly initialized from an ensemble
+! field are identical. Hence, the field array 
+! is directly initialized from an ensemble 
 ! state vector by each model PE.
 !
 ! !REVISION HISTORY:
@@ -33,11 +33,10 @@ SUBROUTINE distribute_state_pdaf(dim_p, state_p)
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_model, &
-       ONLY: nx, ny, field
+  USE mod_model, ONLY: field
 
   IMPLICIT NONE
-
+  
 ! !ARGUMENTS:
   INTEGER, INTENT(in) :: dim_p           ! PE-local state dimension
   REAL, INTENT(inout) :: state_p(dim_p)  ! PE-local state vector
@@ -47,20 +46,17 @@ SUBROUTINE distribute_state_pdaf(dim_p, state_p)
 ! Called by: PDAF_assimilate_X   (as U_coll_state)
 !EOP
 
-! *** local variables ***
-  INTEGER :: i, j         ! Counters
-
 
 ! *******************************************
 ! *** Initialize model fields from state  ***
 !********************************************
 
-  !Make sure state_p has data as per geoclaw configuration: left to right
-  ! and then row-wise
-
-  if (.not. allocated(field)) allocate(field(dim_p))
-     field(:) = state_p(:)
-     print *,"successfully ditribute to field"
+  !if (.not. allocated(field)) allocate(field(dim_p))
+  if (allocated(field)) deallocate(field)
+  allocate(field(dim_p))
+  field(:) = state_p(:)
+  print *, "state_p at distribute_state_pdaf = ", state_p(:)
+  print *,"successfully ditribute to field"
 
 
 END SUBROUTINE distribute_state_pdaf

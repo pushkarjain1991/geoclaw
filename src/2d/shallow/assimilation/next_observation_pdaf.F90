@@ -29,12 +29,13 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps_pdaf, doexit, time)
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_assimilation, &
-       ONLY: delt_obs, mod_time => time, have_obs
+  USE mod_assimilation, ONLY: delt_obs
+       !ONLY: delt_obs, mod_time => time, have_obs
   USE mod_parallel, &
        ONLY: mype_world
   USE mod_model, &
-       ONLY: total_steps, dt => dtinit
+       ONLY: total_steps
+       !ONLY: total_steps, dt => dtinit
 
   IMPLICIT NONE
 
@@ -48,57 +49,31 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps_pdaf, doexit, time)
 ! Called by: PDAF_get_state   (as U_next_obs)
 !EOP
 
-!Local variables
-! INTEGER, SAVE :: firsttime = 1 ! Flag for initial call
 
-IF (stepnow < total_steps) THEN
-   nsteps_pdaf = delt_obs
-ELSE
-   nsteps_pdaf = 0
-END IF
 
 ! *******************************************************
 ! *** Set number of time steps until next observation ***
 ! *******************************************************
 
-!  print *,"mod_time before = ", mod_time
-  time = mod_time          ! Not used in this implementation
-  mod_time = mod_time + REAL(nsteps_pdaf)*dt
-!  print *, "stepnow = ", stepnow
-!  print *,"dt = ", dt
-!  print *,"mod_time after = ", mod_time
-! print *,'I am prcess ',mype_world,'in next observation'
-  setexit: IF (stepnow == total_steps) THEN
-      !Already at final time step
-      if (mype_world==0) WRITE (*, '(i7, 3x, a)') &
-          stepnow, 'No more observations - end assimilation'
-  doexit = 1
-  have_obs = .FALSE.
 
-  ELSE IF (stepnow + nsteps_pdaf < total_steps) THEN setexit
+  IF (stepnow + nsteps_pdaf <= total_steps) THEN
      ! Next obbservation ahead
+     nsteps_pdaf = delt_obs
+     print *, "delt_obs =", delt_obs
+     print *, "stepnow = ", stepnow
+     !have_obs = .TRUE.
+     doexit = 0          ! Do not exit assimilation
      if (mype_world==0) WRITE (*, '(i7, 3x, a, i7)') &
           stepnow, 'Next observation at time step', stepnow + nsteps_pdaf
-     doexit = 0          ! Do not exit assimilation
-     have_obs = .TRUE.
   
-  ELSE IF (stepnow + nsteps_pdaf == total_steps) THEN setexit
-     ! Final obbservation ahead
-      if (mype_world==0) WRITE (*, '(i7, 3x, a, i7)') &
-          stepnow, 'Final observation at time step', stepnow + nsteps_pdaf
-     doexit = 0          ! Do not exit assimilation
-     have_obs = .TRUE.
+  ELSE
+      ! End of assimilation
+      if (mype_world==0) WRITE (*, '(i7, 3x, a)') &
+          stepnow, 'No more observations - end assimilation'
+  nsteps_pdaf = 0
+  doexit = 1
+  !have_obs = .FALSE.
 
-  ELSE IF (stepnow < total_steps) THEN setexit
-     !Only forecasting requested
-     !Reset time steps and mod_time
-     nsteps_pdaf = total_steps - stepnow
-     mod_time = mod_time - REAL(nsteps_pdaf)*dt + REAL(total_steps - stepnow)*dt
-     doexit = 0
-     have_obs = .FALSE.
-     if (mype_world==0) WRITE (*, '(i7, 3x, a)') &
-          stepnow, 'No more observations - evolve up to time step', stepnow + &
-  nsteps_pdaf
-  END IF setexit
+  END IF
 
 END SUBROUTINE next_observation_pdaf

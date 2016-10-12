@@ -27,8 +27,7 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_model, &
-       ONLY: nx, ny
+  USE mod_model, ONLY: reshaped_recv_ic
 
   IMPLICIT NONE
 
@@ -50,77 +49,31 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 ! *** local variables ***
   INTEGER :: i, j, member  ! Counters
   INTEGER, SAVE :: allocflag = 0      ! Flag for memory counting
-  REAL, ALLOCATABLE :: field(:)     ! global model field
+!  REAL, ALLOCATABLE :: field(:)     ! global model field
   CHARACTER(len=3) :: ensstr          ! String for ensemble member
-  INTEGER :: index_2d_pdaf(2)
+  !INTEGER :: index_2d_pdaf(2)
   !INTEGER :: index_2d_row, index_2d_col
-  INTEGER :: index_1d_pdaf
+  !INTEGER :: index_1d_pdaf
 
 
 ! **********************
 ! *** INITIALIZATION ***
 ! **********************
-ens_p=0
 
   ! *** Generate full ensemble on filter-PE 0 ***
-!  WRITE (*, '(/9x, a)') 'Initialize state ensemble'
-!  WRITE (*, '(9x, a)') '--- read ensemble from files'
-!  WRITE (*, '(9x, a, i5)') '--- Ensemble size:  ', dim_ens
+  WRITE (*, '(/9x, a)') 'Initialize state ensemble'
+  WRITE (*, '(9x, a)') '--- read ensemble from files'
+  WRITE (*, '(9x, a, i5)') '--- Ensemble size:  ', dim_ens
 !
-!  ! allocate memory for temporary fields
-!  ALLOCATE(field(dim_p))
-!  field=0
-! !print *, nx, ny
-!
-!! ********************************
-!! *** Read ensemble from files ***
-!! ********************************
-!
-!  DO member = 1, dim_ens
-!     WRITE (ensstr, '(i3)') member
-!     OPEN(24, file = '../ens_'//TRIM(ADJUSTL(ensstr))//'.txt', status='old')
-!!     do i=1,ny*nx
-!        read(24,*) field
-!!     enddo
-!!     read(24,*)field
-!     !print *,field
-!!     do j=1,nx
-!        ens_p(:,member) = field(:)
-!!     enddo
-!     CLOSE(24)
-!
-!     !DO i = 1, ny
-!     !   READ (20, *) field(i, :)
-!     !END DO
-!     !DO i = 1, ny
-!     !   ens_p(1 + (i-1)*nx : i*nx, member) = field(i, 1:nx)
-!     !END DO
-!
-!  END DO
-! deallocate(field)
-
+DO member = 1, dim_ens
+    ens_p(:, member) = reshaped_recv_ic(:,member)
+enddo
+!print *, ens_p(:,1)
+print *, "reshpaed_recv_ic = ", reshaped_recv_ic(:,1)
+    
 ! ****************
 ! *** clean up ***
 ! ****************
+deallocate(reshaped_recv_ic)
 
-
-
-  !  !Just testing printing #  call oned_to_twod(3200,2,2,index_2d_pdaf)
-  !  print *, "2d domain is", index_2d_pdaf
-  !  call oned_to_twod(5445,2,2,index_2d_pdaf)
-  !  print *, "2d domain is", index_2d_pdaf
-  !  call oned_to_twod(5720,2,2,index_2d_pdaf)
-  !  print *, "2d domain is", index_2d_pdaf
-  !  call oned_to_twod(10000,2,2,index_2d_pdaf)
-  !  print *, "2d domain is", index_2d_pdaf
-  !
-  !  call twod_to_oned(14,100,index_1d_pdaf)
-  !  print *, "1d domain is", index_1d_pdaf
-  !  call twod_to_oned(59,45,index_1d_pdaf)
-  !  print *, "1d domain is", index_1d_pdaf
-  !  call twod_to_oned(65,20,index_1d_pdaf)
-  !  print *, "1d domain is", index_1d_pdaf
-  !  call twod_to_oned(100,100,index_1d_pdaf)
-  !  print *, "1d domain is", index_1d_pdaf
-  !
 END SUBROUTINE init_ens

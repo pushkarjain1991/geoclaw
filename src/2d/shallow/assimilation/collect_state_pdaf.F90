@@ -27,8 +27,7 @@ SUBROUTINE collect_state_pdaf(dim_p, state_p)
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_model, &
-       ONLY: nx, ny, field
+  USE mod_model, ONLY: field
 
   IMPLICIT NONE
   
@@ -41,9 +40,6 @@ SUBROUTINE collect_state_pdaf(dim_p, state_p)
 ! Called by: PDAF_assimilate_X   (as U_coll_state)
 !EOP
 
-! *** local variables ***
-  INTEGER :: i, j         ! Counters
-  
 
 ! *************************************************
 ! *** Initialize state vector from model fields ***

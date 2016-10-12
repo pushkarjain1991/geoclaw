@@ -45,7 +45,7 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 #ifdef USE_PDAF
       use mod_parallel, only: mype_world, MPIerr, mpi_comm_world, n_modeltasks
       use mpi, only: mpi_real8
-      use mod_assimilation, only: stepnow_pdaf, assimilate_step
+      use mod_assimilation, only: stepnow_pdaf, assimilate_step, dim_ens
       !USE PDAF_mod_filtermpi, only: MPI_REALTYPE
 #endif
 
@@ -238,13 +238,17 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 #ifdef USE_PDAF
     !write(ensstr,*) mype_world
     if (stepnow_pdaf == assimilate_step) then
-        print *, "reached here"
+        print *, "reached here123 ", mype_world
         if (level == 1) then
             
             sendcount = mx*my
             recvcount = mx*my
             gsize = n_modeltasks
             recvsize = gsize*sendcount
+            call MPI_barrier(mpi_comm_world, mpierr)
+            print *, "flag2refine debugging"
+            print *, "mype = ", mype_world, "level = ", level, "nx,ny = ", mx, my
+            call MPI_barrier(mpi_comm_world, mpierr)
             if(allocated(sendbuf)) deallocate(sendbuf)
             allocate(sendbuf(sendcount))
 
@@ -278,32 +282,10 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
                 endif
             endif
             
-            !if (mype_world == 0) then
-            !    if (xlower==0.0) then
-            !        if (ylower==0.0) then
-            !            !print *, "size", size(recvbuf), xlower, ylower
-            !            !print *, "amrflags = ", amrflags(:,:)
-            !            open(unit=45, file='file_combined1', status='replace')
-            !            do i=1,recvsize
-            !                write(45,*) recvbuf(i)
-            !            enddo
-            !            close(45)
-            !        endif
-            !    endif
-            !endif
-            
-            !sendbuf(:)=mype_world
-            !if (mype_world == 0) then
-            !    print *, "sendcount = ", sendcount
-            !    print *, "recvcount = ", recvcount
-            !    print *, "sendbuf size = ", size(sendbuf)
-            !    print *, "recvbuf size = ", size(recvbuf)
-            !    !print *, "recvbuf = ", recvbuf
-            !endif
-            !call MPI_barrier(mpi_comm_world, mpierr)
+            print *, "Gathering... ", mype_world
             call mpi_gather(amrflags(1:mx, 1:my), sendcount, mpi_real8, recvbuf, recvcount, mpi_real8, root, mpi_comm_world, mpierr)
-            print *, "mype = ", mype_world
-            call MPI_barrier(mpi_comm_world, mpierr)
+            print *, "done gathering... ", mype_world
+            !call MPI_barrier(mpi_comm_world, mpierr)
 
             !Comparing flags of different ensembles
             if (mype_world == 0) then
@@ -320,15 +302,8 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
                     endif
                 endif
             endif
-            !call mpi_gather(sendbuf, sendcount, mpi_real8, recvbuf, recvcount, mpi_real8, root, mpi_comm_world, mpierr)
-            !if (mype_world == 0) then
-            !    print *, "MPI err = ", mpierr
-            !    !print *, "recvbuf = ", recvbuf
-            !endif
 
             !RESHAPING recvbuf
-
-
             if (mype_world == 0) then
                 !Allocating memory for reshaped buffer
                 allocate(reshaped_buffer(mx*my, gsize))
@@ -353,7 +328,6 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             if(allocated(flagunion)) deallocate(flagunion)
             allocate(flagunion(mx*my))
 
-
             !Perform boolean operation
             if (mype_world == 0) then
                 flagunion = 0.0
@@ -377,6 +351,7 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             endif
 
             !Broadcast flagunion
+            print *, "Broadcasting..."
             call mpi_bcast(flagunion, mx*my, mpi_real8, root, mpi_comm_world, mpierr)
                 
             if (mype_world == 1) then
@@ -394,10 +369,6 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             !Write flagunion to amrflags
             amrflags(1:mx, 1:my) = reshape(flagunion,(/mx,my/))
             !print *, "new amrflag = ", amrflags(1:mx, 1:my)
-
-
-            
-
 
              
             !if (mype_world == 0) then

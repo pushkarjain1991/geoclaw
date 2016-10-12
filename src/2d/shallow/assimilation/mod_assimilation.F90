@@ -5,12 +5,12 @@
 MODULE mod_assimilation
 
 ! !DESCRIPTION:
-! This module provides variables needed for the
+! This module provides variables needed for the 
 ! assimilation within the routines of the dummy model.
 ! For simplicity, all assimilation-related variables
 ! are stored here, even if they are only used in
 ! the main program for the filter initialization.
-! Most variables can be specified as a command line
+! Most variables can be specified as a command line 
 ! argument.
 !
 ! Implementation for the 2D online example
@@ -27,21 +27,21 @@ MODULE mod_assimilation
 
 ! *** Variables specific for online tutorial example ***
 
-   INTEGER :: dim_state           ! Global model state dimension
+  INTEGER :: dim_state           ! Global model state dimension
   INTEGER :: dim_state_p         ! Model state dimension for PE-local domain
   INTEGER, ALLOCATABLE :: local_dims(:)  ! Array for local state dimensions
 
-  REAL(8), ALLOCATABLE    :: obs(:)          ! Vector holding all observations
+  REAL(kind=8), ALLOCATABLE    :: obs(:)          ! Vector holding all observations
   INTEGER, ALLOCATABLE :: obs_index(:)    ! Vector holding state-vector indices of observations
   INTEGER, ALLOCATABLE :: obs_index_l(:)  ! Vector holding local state-vector indices of observations
-  REAL, ALLOCATABLE :: coords_obs(:,:) ! Array for observation coordinates
+  !REAL, ALLOCATABLE :: coords_obs(:,:) ! Array for observation coordinates
   INTEGER :: coords_l(2)                  ! Coordinates of local analysis domain
   INTEGER, ALLOCATABLE :: local_dims_obs(:) ! Array for process-local observation dimensions
 
-  INTEGER :: coords_l_1d
-  REAL :: coords_l_2d(2)
-  INTEGER, ALLOCATABLE :: coords_obs_1d(:) ! Array for observation coordinates
-  REAL, ALLOCATABLE :: coords_obs_2d(:,:) ! Array for observation coordinates
+  !INTEGER :: coords_l_1d
+  !REAL :: coords_l_2d(2)
+  !INTEGER, ALLOCATABLE :: coords_obs_1d(:) ! Array for observation coordinates
+  !REAL, ALLOCATABLE :: coords_obs_2d(:,:) ! Array for observation coordinates
 
 
 
@@ -67,7 +67,7 @@ MODULE mod_assimilation
   INTEGER :: filtertype   ! Select filter algorithm:
                           ! SEEK (0), SEIK (1), EnKF (2), LSEIK (3), ETKF (4), LETKF (5)
   INTEGER :: subtype      ! Subtype of filter algorithm
-                          !   SEEK:
+                          !   SEEK: 
                           !     (0) evolve normalized modes
                           !     (1) evolve scaled modes with unit U
                           !     (2) fixed basis (V); variable U matrix
@@ -131,7 +131,7 @@ MODULE mod_assimilation
   REAL    :: srange        ! Support range for 5th order polynomial
                            !   or radius for 1/e for exponential weighting
 !    ! SEIK-subtype4/LSEIK-subtype4/ESTKF/LESTKF
-  INTEGER :: type_sqrt     ! Type of the transform matrix square-root
+  INTEGER :: type_sqrt     ! Type of the transform matrix square-root 
                     !   (0) symmetric square root, (1) Cholesky decomposition
 
 !    ! File output - available as a command line option
@@ -146,7 +146,6 @@ MODULE mod_assimilation
                            ! Only for upward-compatibility of PDAF!
   REAL    :: time          ! model time
 !  REAL    :: dum_ncycle    ! Cycle number
-  LOGICAL :: have_obs      ! Flag whether we consider observations
   
   INTEGER :: stepnow_pdaf
   INTEGER :: assimilate_step

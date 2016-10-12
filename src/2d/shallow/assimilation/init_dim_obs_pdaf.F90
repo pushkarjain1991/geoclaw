@@ -52,12 +52,15 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 ! Called by: PDAF_letkf_update   (as U_init_dim_obs)
 !EOP
 
+   print *, "Running init_dim_obs_pdaf"
+
    WRITE (stepstr, '(i4)') step
    fname='../obs_step'//TRIM(ADJUSTL(stepstr))//'.txt'
-   fname=trim(adjustl(fname))
+   !fname=trim(adjustl(fname))
+
+   ! Counting the number of observation values
    cnt0=0
-   OPEN (12, file= fname,status='old')
- 
+   OPEN (12, file= fname, status='old')
    DO
       READ(12,*,IOSTAT=IO) x,y
       IF (IO /= 0) exit 
@@ -67,7 +70,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
        print *,"error: error reading the file ",fname
        stop
    endif
+   print *, "Obs file ", fname, " has ", cnt0, " observations"
 
+   ! Allocate space for x,y coordinates and observations q
    allocate(xx(cnt0))
    allocate(yy(cnt0))
    allocate(qq(cnt0))
@@ -76,14 +81,10 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
        read(12,*) xx(i),yy(i),qq(i)
    enddo
    close(12)
-!   print *,cnt0
-!   print *,xx(1:10),yy(1:10),qq(1:10)
-   print *, "init_dim_obs_pdaf1"
+
    call get_obs(xx,yy,qq,dim_obs_p) 
-   print *, "init_dim_obs_pdaf2"
+   print *, "dim_obs_p = ", dim_obs_p
 
-
-
-
+   print *, "Finished running init_dim_obs_pdaf"
 
 END SUBROUTINE init_dim_obs_pdaf

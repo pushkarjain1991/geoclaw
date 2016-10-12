@@ -7,9 +7,10 @@ c
       use geoclaw_module
 #ifdef USE_PDAF
       use sortarr
-      use mapdomain
+      !use mapdomain
       use mod_parallel, only: mype_world, mpierr, mpi_comm_world
       use mod_assimilation, only: stepnow_pdaf, assimilate_step
+      use mod_model, only: field
 #endif
       use refinement_module, only: varRefTime
       use amr_module
@@ -29,7 +30,11 @@ c
       character(len=128) :: time_format
       real(kind=8) cpu_start,cpu_finish
 #ifdef USE_PDAF
-      character(len=1) :: ensstr
+      character(len=3) :: stepstr1
+      real(kind=8), allocatable :: temp_field(:)
+      integer :: curr_tot_step
+      integer :: num_ex = 1
+      integer :: field_size
 #endif
 
 c
@@ -387,12 +392,11 @@ c
               call regrid(nvar,lbase,cut,naux,start_time)
               call setbestsrc()     ! need at every grid change
           endif
-              call mpi_barrier(mpi_comm_world, mpierr)
               print *, "reached yo1", mype_world, stepnow_pdaf
               call mpi_barrier(mpi_comm_world, mpierr)
-          call assimilate_pdaf(nvar, naux, mxnest, time)
+              call assimilate_pdaf(nvar, naux, mxnest, time)
               print *, "reached yo2", mype_world, stepnow_pdaf
-#else
+#endif
       if ( .not.vtime) goto 201
 
         ! Adjust time steps if variable time step and/or variable
@@ -438,6 +442,58 @@ c             ! use same alg. as when setting refinement when first make new fin
                endif
        endif
 
+#ifdef USE_PDAF
+
+       if (mype_world == 0) then
+           if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+
+
+               ! Copy original alloc to field
+               call alloc2field(nvar, naux)
+
+               ! Copy original field to temporary field
+               field_size = size(field)
+               allocate(temp_field(field_size))
+               temp_field(:) = field(:)
+
+               ! Read state_step_ana
+               curr_tot_step = num_ex * assimilate_step 
+               num_ex = num_ex + 1
+               write(stepstr1, '(i3.1)') curr_tot_step
+               OPEN(20, file='state_step'//TRIM(ADJUSTL(stepstr1))//
+     &         '_ana.txt', status = 'old')
+               
+               ! Assign state_step_ana to field
+               read(20,*) field(:)
+               close(20)
+
+               ! Perform field to alloc
+               call field2alloc(nvar, naux)
+               
+               ! Perform valout
+               call valout(1,lfine,time,nvar,naux)
+
+               ! Assign temporary field to field
+               field(:) = temp_field(:)
+
+               ! Assign field to alloc
+               call field2alloc(nvar, naux)
+
+               ! Deallocate temp_field
+               deallocate(temp_field)
+               deallocate(field)
+
+               if (printout) call outtre(mstart,.true.,nvar,naux)
+               if (num_gauges .gt. 0) then
+                   do ii = 1, num_gauges
+                       call print_gauges_and_reset_nextLoc(ii, nvar)
+                   end do
+               endif
+           endif
+       endif
+       print *, "At valout - ", mype_world
+       call mpi_barrier(mpi_comm_world, mpierr)
+#else
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
          call valout(1,lfine,time,nvar,naux)
          if (printout) call outtre(mstart,.true.,nvar,naux)
