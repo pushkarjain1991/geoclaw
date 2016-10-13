@@ -45,7 +45,8 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 #ifdef USE_PDAF
       use mod_parallel, only: mype_world, MPIerr, mpi_comm_world, n_modeltasks
       use mpi, only: mpi_real8
-      use mod_assimilation, only: stepnow_pdaf, assimilate_step, dim_ens
+      use mod_assimilation, only: stepnow_pdaf, assimilate_step, &
+      dim_ens
       !USE PDAF_mod_filtermpi, only: MPI_REALTYPE
 #endif
 

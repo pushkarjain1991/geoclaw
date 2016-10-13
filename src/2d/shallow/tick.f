@@ -391,7 +391,12 @@ c
           if (stepnow_pdaf == assimilate_step) then
               call regrid(nvar,lbase,cut,naux,start_time)
               call setbestsrc()     ! need at every grid change
+
+              call mpi_barrier(mpi_comm_world, mpierr)
+              ! Update dim_state_p and state
+              call update_dim_state_p(nvar, naux)
           endif
+              call mpi_barrier(mpi_comm_world, mpierr)
               print *, "reached yo1", mype_world, stepnow_pdaf
               call mpi_barrier(mpi_comm_world, mpierr)
               call assimilate_pdaf(nvar, naux, mxnest, time)
@@ -464,6 +469,7 @@ c             ! use same alg. as when setting refinement when first make new fin
      &         '_ana.txt', status = 'old')
                
                ! Assign state_step_ana to field
+               print *, "field has size = ", field_size
                read(20,*) field(:)
                close(20)
 

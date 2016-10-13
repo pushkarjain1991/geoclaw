@@ -91,15 +91,13 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
    !assimilation
    if (stepnow_pdaf==assimilate_step) then
        print *, "mypeyhmm1", mype_world
+       
        ! Put the geoclaw alloc values to PDAF field
        ! Next step is to use the field for assimilation
        call alloc2field(nvar,naux)
-       if (mype_world == 0) then
-           print *, "First alloc2field before put_state- ", field(:)
-       endif
-       CALL  MPI_Barrier(mpi_comm_world,MPIerr)
-       print *, "mypeyhmm2", mype_world
-       CALL  MPI_Barrier(mpi_comm_world,MPIerr)
+
+       print *, "mypeyhmm2abc", mype_world
+
        if(mype_world==0) write(*,'(a,5x,a)') 'PDAF','Perform assimilation with PDAF '
        if (filtertype==2) then
            CALL PDAF_put_state_enkf(collect_state_pdaf,&
@@ -158,13 +156,11 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
 
         IF (status_pdaf==0) then
              
-            print *, "Getting assim value before PDAF_get_state - ", field(:)
             call PDAF_get_state(steps,time_pdaf,doexit,next_observation_pdaf,&
             distribute_state_pdaf,prepoststep_ens_pdaf,status_pdaf)
 
             stepnow_pdaf=0
 
-            print *, "Getting assim value after PDAF_get_state - ", field(:)
 
             ! Put the assimilated values from field to alloc
             call field2alloc(nvar,naux)!not for output purpose

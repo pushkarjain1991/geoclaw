@@ -55,7 +55,7 @@ SUBROUTINE distribute_state_pdaf(dim_p, state_p)
   if (allocated(field)) deallocate(field)
   allocate(field(dim_p))
   field(:) = state_p(:)
-  print *, "state_p at distribute_state_pdaf = ", state_p(:)
+!  print *, "state_p at distribute_state_pdaf = ", state_p(:)
   print *,"successfully ditribute to field"
 
 

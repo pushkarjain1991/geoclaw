@@ -68,8 +68,6 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 DO member = 1, dim_ens
     ens_p(:, member) = reshaped_recv_ic(:,member)
 enddo
-!print *, ens_p(:,1)
-print *, "reshpaed_recv_ic = ", reshaped_recv_ic(:,1)
     
 ! ****************
 ! *** clean up ***
