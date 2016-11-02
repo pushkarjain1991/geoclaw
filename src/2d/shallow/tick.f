@@ -6,10 +6,11 @@ c
 c
       use geoclaw_module
 #ifdef USE_PDAF
-      use sortarr
+      !use sortarr
       !use mapdomain
       use mod_parallel, only: mype_world, mpierr, mpi_comm_world
-      use mod_assimilation, only: stepnow_pdaf, assimilate_step
+      use mod_assimilation, only: stepnow_pdaf, assimilate_step,
+     & regrid_assim, second_valout
       use mod_model, only: field
 #endif
       use refinement_module, only: varRefTime
@@ -31,6 +32,8 @@ c
       real(kind=8) cpu_start,cpu_finish
 #ifdef USE_PDAF
       character(len=3) :: stepstr1
+      character(len=2) :: ensstr2
+      logical :: dir_exists
       real(kind=8), allocatable :: temp_field(:)
       integer :: curr_tot_step
       integer :: num_ex = 1
@@ -384,23 +387,38 @@ c
 
 #ifdef USE_PDAF
           stepnow_pdaf = stepnow_pdaf + 1
+          regrid_assim=.true.
           if (mype_world==0) then
               print *, "stepnow = ",stepnow_pdaf
               print *, "assimilate_step = ", assimilate_step
           endif
           if (stepnow_pdaf == assimilate_step) then
+              print *, "Regridding first time"
+              print *, "lbase = ", lbase
               call regrid(nvar,lbase,cut,naux,start_time)
               call setbestsrc()     ! need at every grid change
+          
+!          if (rprint .and. lbase .lt. lfine) then
+!             call outtre(lstart(lbase+1),.false.,nvar,naux)
+!          endif
+
+              if (mxlevel /=1) then
+                  do ii=mxlevel-1,1
+                      call update(ii, nvar, naux)
+                  enddo
+              endif
 
               call mpi_barrier(mpi_comm_world, mpierr)
               ! Update dim_state_p and state
               call update_dim_state_p(nvar, naux)
           endif
-              call mpi_barrier(mpi_comm_world, mpierr)
-              print *, "reached yo1", mype_world, stepnow_pdaf
-              call mpi_barrier(mpi_comm_world, mpierr)
-              call assimilate_pdaf(nvar, naux, mxnest, time)
-              print *, "reached yo2", mype_world, stepnow_pdaf
+          call mpi_barrier(mpi_comm_world, mpierr)
+          print *, "reached yo1", mype_world, stepnow_pdaf
+          call mpi_barrier(mpi_comm_world, mpierr)
+          
+          call assimilate_pdaf(nvar, naux, mxnest, time)
+
+          
 #endif
       if ( .not.vtime) goto 201
 
@@ -499,6 +517,38 @@ c             ! use same alg. as when setting refinement when first make new fin
        endif
        print *, "At valout - ", mype_world
        call mpi_barrier(mpi_comm_world, mpierr)
+          
+       regrid_assim=.false.          
+       if (stepnow_pdaf == assimilate_step) then
+          print *, "Regridding second time"
+          print *, "lbase = ", lbase
+          call regrid(nvar,lbase,cut,naux,start_time)
+          call setbestsrc()     ! need at every grid change
+          do ii=mxlevel-1,1
+              call update(ii, nvar, naux)
+          enddo
+       endif
+
+       ! Output for every ensemble  
+       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+           write(ensstr2, '(i2.1)') mype_world
+       inquire(file="_output_"//trim(adjustl(ensstr2)),exist=dir_exists)
+           if(dir_exists .eqv. .false.) then
+               call system('mkdir _output_'// trim(adjustl(ensstr2)))
+           endif
+           call chdir("_output_"//trim(adjustl(ensstr2)))
+           second_valout = .true.
+           call valout(1,lfine,time,nvar,naux)
+           second_valout = .false.
+           call chdir("../")
+       endif
+
+          
+       !VERY VERY IMPORTANT
+       if (stepnow_pdaf == assimilate_step) then
+           stepnow_pdaf = 0
+       endif
+       print *, "reached yo2", mype_world, stepnow_pdaf
 #else
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
          call valout(1,lfine,time,nvar,naux)

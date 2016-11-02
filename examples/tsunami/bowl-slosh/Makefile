@@ -23,8 +23,10 @@ PLOTDIR = _plots               # Directory for plots
 # Environment variable FC should be set to fortran compiler, e.g. gfortran
 
 # Compiler flags can be specified here or set as an environment variable
-FFLAGS ?= -cpp -DUSE_PDAF -L$(PDAFLIB) -I$(PDAFLIB) -lpdaf-d -I$(PDAFLIB)/dummympi -lblas -llapack  
-#FFLAGS ?= -cpp
+##FFLAGS ?= -cpp -DUSE_PDAF -L$(PDAFLIB) -I$(PDAFLIB) -lpdaf-d -I$(PDAFLIB)/dummympi -lblas -llapack  
+#FFLAGS ?= -cpp -DUSE_PDAF -L$(PDAFLIB) -I$(PDAFLIB) -lpdaf-d -lblas -llapack  
+#FC=mpif90
+FFLAGS ?= -cpp
 
 # ---------------------------------
 # package sources for this program:
@@ -55,7 +57,7 @@ SOURCES = \
   ./qinit.f90 \
   $(CLAW)/riemann/src/rpn2_geoclaw.f \
   $(CLAW)/riemann/src/rpt2_geoclaw.f \
-  $(CLAW)/riemann/src/geoclaw_riemann_utils.f \
+  $(CLAW)/riemann/src/geoclaw_riemann_utils.f 
 #-------------------------------------------------------------------
 # Include Makefile containing standard definitions and make options:
 include $(CLAWMAKE)

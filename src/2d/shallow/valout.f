@@ -4,6 +4,10 @@ c
       subroutine valout (lst, lend, time, nvar, naux)
 c
       use amr_module
+#ifdef USE_PDAF
+      use mod_assimilation, only: second_valout
+      use mod_parallel, only: mype_world
+#endif
       implicit double precision (a-h,o-z)
       character*10  fname1, fname2, fname3, fname4
 
@@ -30,6 +34,13 @@ c     # set outaux = .true. to also output the aux arrays to fort.a<iframe>
 c
       call system_clock(clock_start,clock_rate)
 
+#ifdef USE_PDAF
+      if(mype_world == 0) then
+          if(second_valout .eqv. .true.) then
+              matlabu = matlabu - 1
+          endif
+      endif
+#endif
 
       if (nvar /= 3) then
           write(6,*) '*** Error: valout assumes nvar==3 for geoclaw'

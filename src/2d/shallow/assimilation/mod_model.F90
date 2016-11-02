@@ -38,5 +38,6 @@ MODULE mod_model
 !  INTEGER,ALLOCATABLE :: node_pdaf(:,:)
   !INTEGER,ALLOCATABLE :: mptr_array(:)
   !INTEGER,ALLOCATABLE :: ordered_mptr_array(:)
+  REAL(KIND=8) :: random_pert
   
 END MODULE mod_model

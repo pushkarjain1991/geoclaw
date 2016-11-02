@@ -159,8 +159,6 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
             call PDAF_get_state(steps,time_pdaf,doexit,next_observation_pdaf,&
             distribute_state_pdaf,prepoststep_ens_pdaf,status_pdaf)
 
-            stepnow_pdaf=0
-
 
             ! Put the assimilated values from field to alloc
             call field2alloc(nvar,naux)!not for output purpose

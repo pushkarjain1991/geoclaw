@@ -46,7 +46,7 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
       use mod_parallel, only: mype_world, MPIerr, mpi_comm_world, n_modeltasks
       use mpi, only: mpi_real8
       use mod_assimilation, only: stepnow_pdaf, assimilate_step, &
-      dim_ens
+      dim_ens, regrid_assim
       !USE PDAF_mod_filtermpi, only: MPI_REALTYPE
 #endif
 
@@ -238,7 +238,8 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 
 #ifdef USE_PDAF
     !write(ensstr,*) mype_world
-    if (stepnow_pdaf == assimilate_step) then
+    if(regrid_assim .eqv. .true.) then
+    if (stepnow_pdaf == assimilate_step .or. t == t0) then
         print *, "reached here123 ", mype_world
         if (level == 1) then
             
@@ -258,7 +259,7 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             endif
             do i = 1,mx
                 do j = 1,my
-                    sendbuf(i+(j-1)*50) = amrflags(i,j)
+                    sendbuf(i+(j-1)*mx) = amrflags(i,j)
                 enddo
             enddo
             
@@ -386,6 +387,7 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             !    deallocate(recvbuf)
             !endif
         endif
+    endif
     endif
 #endif
 end subroutine flag2refine2

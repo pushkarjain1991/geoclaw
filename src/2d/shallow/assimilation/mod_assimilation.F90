@@ -154,6 +154,8 @@ MODULE mod_assimilation
 !  integer,allocatable :: mptr_array(:)
 !  integer,allocatable :: ordered_mptr_array(:) 
 
-!  LOGICAL :: first_assimilation=.true.
+  LOGICAL :: regrid_assim=.false.
+  LOGICAL :: second_valout=.false.
+
 !$OMP threadprivate (obs_index_l,coords_l,coords_l_1d,coords_l_2d)
 END MODULE mod_assimilation

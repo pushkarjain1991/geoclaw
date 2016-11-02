@@ -109,10 +109,11 @@ program amr2
     !xlow,xhigh,ylow,yhigh
     use mpi, only: mpi_real8
     use amr_module, only: numcells
-    use mod_model, only : field, total_steps, reshaped_recv_ic
+    use mod_model, only : field, total_steps, reshaped_recv_ic, &
+    random_pert
     use mod_parallel, only: MPIerr, mpi_comm_world, mype_world, &
     npes_world, MPI_INTEGER, MPIstatus, n_modeltasks
-    use mod_assimilation, only: dim_state_p, dim_ens
+    use mod_assimilation, only: dim_state_p, dim_ens, regrid_assim
 #endif
 
     implicit none
@@ -508,7 +509,11 @@ program amr2
         call set_fgmax()
 
     else
-
+!This is for setting same level at initial time t=0
+! regrid_Assim will be switched off after setting initial domain
+#ifdef USE_PDAF
+        regrid_assim = .true.
+#endif
         open(outunit, file=outfile, status='unknown', form='formatted')
 
         tstart_thisrun = t0
@@ -557,6 +562,10 @@ program amr2
         num_gauges = 0
         call setgrd(nvar,cut,naux,dtinit,t0)
         num_gauges = num_gauge_SAVE
+
+#ifdef USE_PDAF
+        regrid_assim = .false.
+#endif
 
 ! commented out to match 4-x version
 !!$        if (possk(1) .gt. dtinit*cflv1/cfl .and. vtime) then
@@ -658,7 +667,7 @@ program amr2
     do i = 1, lfine
         dim_state_p = dim_state_p + numcells(i)
     enddo
-    print *, "Initial dim_state_p = ", dim_state_p
+    print *, "Initial dim_state_p = ", mype_world, dim_state_p
     call alloc2field(nvar, naux)
     
     write(ensstr1, '(i3.1)') mype_world
