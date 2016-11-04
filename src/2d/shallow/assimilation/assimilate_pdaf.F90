@@ -181,7 +181,6 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
     else ! not in assimilation time
         status_pdaf=0
     endif
-  ! Check for errors during execution of PDAF
 
 
 END SUBROUTINE assimilate_pdaf

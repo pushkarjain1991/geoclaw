@@ -392,7 +392,12 @@ c
               print *, "stepnow = ",stepnow_pdaf
               print *, "assimilate_step = ", assimilate_step
           endif
+          
+          !Ready for assimilation
           if (stepnow_pdaf == assimilate_step) then
+              ! Perform regridding with regrid_assim True
+              ! This is to get the ensembles obtain same flagging 
+              ! and hence same patches
               print *, "Regridding first time"
               print *, "lbase = ", lbase
               call regrid(nvar,lbase,cut,naux,start_time)
@@ -409,13 +414,13 @@ c
               endif
 
               call mpi_barrier(mpi_comm_world, mpierr)
+              
               ! Update dim_state_p and state
               call update_dim_state_p(nvar, naux)
+
           endif
-          call mpi_barrier(mpi_comm_world, mpierr)
-          print *, "reached yo1", mype_world, stepnow_pdaf
-          call mpi_barrier(mpi_comm_world, mpierr)
           
+          ! Perform assimilation
           call assimilate_pdaf(nvar, naux, mxnest, time)
 
           

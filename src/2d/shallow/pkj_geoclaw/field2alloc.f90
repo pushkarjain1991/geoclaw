@@ -51,6 +51,13 @@ subroutine field2alloc(nvar,naux)
                      alloc(iadd(1,i_pkj,j_pkj)) = &
                      field(cell_cnt) - alloc(iaddaux(1,i_pkj, j_pkj))
                      cell_cnt = cell_cnt + 1
+
+                     !wse update might cause total hieght /= 0 
+                     if (abs(alloc(iadd(1,i_pkj,j_pkj))) < 1.0) then
+                         print *, "alloc non negative activated"
+                         alloc(iadd(1,i_pkj,j_pkj)) = 0.d0
+                     endif
+                             
                   enddo
                 enddo
                 mptr = node(levelptr, mptr)

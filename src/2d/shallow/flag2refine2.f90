@@ -264,10 +264,11 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             enddo
             
 
-            if (xlower==0.0) then
-                if (ylower==0.0) then
+            if (xlower==-90.0) then
+                if (ylower==-60.0) then
                     if (mype_world == 0) then
                         open(unit=46, file='file0', status='replace')
+                        write(46,*) "time = ", t
                         do j = 1,mx*my
                             write(46,*) sendbuf(j)
                         enddo
@@ -276,10 +277,20 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
                     
                     if (mype_world == 1) then
                         open(unit=47, file='file1', status='replace')
+                        write(47,*) "time = ", t
                         do i = 1,mx*my
                             write(47,*) sendbuf(i)
                         enddo
                         close(47)
+                    endif
+                    
+                    if (mype_world == 2) then
+                        open(unit=48, file='file2', status='replace')
+                        write(48,*) "time = ", t
+                        do i = 1,mx*my
+                            write(48,*) sendbuf(i)
+                        enddo
+                        close(48)
                     endif
                 endif
             endif
@@ -291,11 +302,12 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 
             !Comparing flags of different ensembles
             if (mype_world == 0) then
-                if (xlower==0.0) then
-                    if (ylower==0.0) then
+                if (xlower==-90.0) then
+                    if (ylower==-60.0) then
                         !print *, "size", size(recvbuf), xlower, ylower
                         !print *, "amrflags = ", amrflags(:,:)
                         open(unit=45, file='file_combined', status='replace')
+                        write(45,*) "time = ", t
                         do i=1,recvsize
                             write(45,*) recvbuf(i)
                         enddo
@@ -314,11 +326,12 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
                 reshaped_buffer = reshape(recvbuf,(/mx*my, gsize/))
 
                 !Writing to file for debugging
-                if (xlower==0.0) then
-                    if (ylower==0.0) then
+                if (xlower==-90.0) then
+                    if (ylower==-60.0) then
                         print *, "recvbuf_shape = ", shape(recvbuf)
                         print *, "reshaped_buffer_shape = ", shape(reshaped_buffer)
                         open(unit=48, file='reshaped_buffer', status='replace')
+                        write(48,*) "time = ", t
                         do i = 1,mx*my
                             write(48,*) reshaped_buffer(i,:)
                         enddo
@@ -336,14 +349,17 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 
                 if(allocated(mask)) deallocate(mask)
                 allocate(mask(mx*my))
-                mask = any(reshaped_buffer .eq. 2.0, 2)
+                !mask = any(reshaped_buffer .eq. 2.0, 2)
+                mask = any(reshaped_buffer .eq. DOFLAG, 2)
                 where (mask .eqv. .true.) 
-                    flagunion = 2.0
+                    !flagunion = 2.0
+                    flagunion = DOFLAG
                 endwhere
                 
-                if (xlower==0.0) then
-                    if (ylower==0.0) then
+                if (xlower==-90.0) then
+                    if (ylower==-60.0) then
                         open(unit=48, file='flag_union', status='replace')
+                        write(48,*) "time = ", t
                         do i = 1,mx*my
                             write(48,*) flagunion(i)
                         enddo
@@ -357,9 +373,10 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             call mpi_bcast(flagunion, mx*my, mpi_real8, root, mpi_comm_world, mpierr)
                 
             if (mype_world == 1) then
-                if (xlower==0.0) then
-                    if (ylower==0.0) then
+                if (xlower==-90.0) then
+                    if (ylower==-60.0) then
                         open(unit=48, file='check_broadcast', status='replace')
+                        write(48,*) "time = ", t
                         do i = 1,mx*my
                             write(48,*) flagunion(i)
                         enddo
@@ -371,21 +388,6 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
             !Write flagunion to amrflags
             amrflags(1:mx, 1:my) = reshape(flagunion,(/mx,my/))
             !print *, "new amrflag = ", amrflags(1:mx, 1:my)
-
-             
-            !if (mype_world == 0) then
-            !    allocate(reshaped_amrflag(2500,2), stat=alloc_stat)
-            !    if (alloc_stat /= 0) then
-            !            print *, "Memory not allocated"
-            !    endif
-            !!    reshaped_amrflag = reshape(amrflags,(/2500,2/))
-            !!    print *, "reshaped_amrflag", reshaped_amrflag
-            !    deallocate(reshaped_amrflag)
-            !endif
-            !
-            !if (mype_world == 0) then
-            !    deallocate(recvbuf)
-            !endif
         endif
     endif
     endif

@@ -93,7 +93,13 @@ program amr2
 
     ! Data modules
     use geoclaw_module, only: set_geo
+#ifdef USE_PDAF_CHILE
+    use topo_module, only: read_topo_settings, read_dtopo_settings, &
+    dtopowork
+#else
     use topo_module, only: read_topo_settings, read_dtopo_settings
+#endif
+
     use qinit_module, only: set_qinit
     use fixedgrids_module, only: set_fixed_grids
     use refinement_module, only: set_refinement
@@ -159,6 +165,18 @@ program amr2
     integer, parameter :: root = 0
 #endif
     
+#ifdef USE_PDAF_CHILE
+    integer :: n, clock
+    real(kind=8) :: pert_mu = 0.0D+00
+    real(kind=8),allocatable :: rand_pert(:)
+    integer(kind=4) :: seed
+    real(kind=8) :: pert_sigma
+    !real(kind=8) :: r8_normal_ab
+    !character(len=1) :: ensstr
+    real(kind=8) :: recv_random_pert = 0.0
+    integer, parameter :: root1 = 0
+    logical :: mpierr1
+#endif
 
 
 #ifdef USE_PDAF
@@ -525,6 +543,27 @@ program amr2
         call set_geo()                    ! sets basic parameters g and coord system
         call set_refinement()             ! sets refinement control parameters
         call read_dtopo_settings()        ! specifies file with dtopo from earthquake
+
+#ifdef USE_PDAF_CHILE
+        !Initial perturbation in topo itself
+        pert_sigma = 0.05D+00
+        if(mype_world == 0) then
+            !seed = clock
+            seed=123456789
+
+            allocate(rand_pert(n_modeltasks))
+            call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
+            !print *, "printing random number", r, mype_world
+            call r8vec_print(n_modeltasks, rand_pert, ' Vector of Normal AB values:')
+        endif
+
+        call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
+        root1, mpi_comm_world, mpierr)
+
+        dtopowork(:) = dtopowork(:)*(1 + recv_random_pert) !dtopo is negative
+        !dtopowork(:) = dtopowork(:) + recv_random_pert !dtopo is negative
+        !print *, dtopowork(:)
+#endif
         call read_topo_settings()         ! specifies topography (bathymetry) files
         call set_qinit()                  ! specifies file with dh if this used instead
         call set_fixed_grids()            ! Fixed grid settings
