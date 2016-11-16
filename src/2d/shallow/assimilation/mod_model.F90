@@ -25,8 +25,9 @@ MODULE mod_model
   !REAL(KIND=8):: ylow,yhigh
   INTEGER :: total_steps          ! Total number of time steps
   !REAL(KIND=8), ALLOCATABLE :: field(:,:) ! Model field
-  REAL(KIND=8), ALLOCATABLE :: field(:) ! Model field
   REAL(KIND=8), ALLOCATABLE :: reshaped_recv_ic(:,:) ! Model field
+  REAL(KIND=8), ALLOCATABLE :: field(:) ! Model field
+  INTEGER, ALLOCATABLE :: wet_cell_index(:)
 !  REAL :: dtinit                  ! Time step size
 !  REAL :: time                    ! Model time
 

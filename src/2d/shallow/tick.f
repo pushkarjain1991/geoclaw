@@ -10,7 +10,7 @@ c
       !use mapdomain
       use mod_parallel, only: mype_world, mpierr, mpi_comm_world
       use mod_assimilation, only: stepnow_pdaf, assimilate_step,
-     & regrid_assim, second_valout
+     & regrid_assim, second_valout, analyze_water
       use mod_model, only: field
 #endif
       use refinement_module, only: varRefTime
@@ -388,18 +388,20 @@ c
 #ifdef USE_PDAF
           stepnow_pdaf = stepnow_pdaf + 1
           regrid_assim=.true.
-          if (mype_world==0) then
-              print *, "stepnow = ",stepnow_pdaf
-              print *, "assimilate_step = ", assimilate_step
-          endif
+          !if (mype_world==0) then
+          !    print *, "stepnow = ",stepnow_pdaf
+          !    print *, "assimilate_step = ", assimilate_step
+          !endif
           
           !Ready for assimilation
           if (stepnow_pdaf == assimilate_step) then
               ! Perform regridding with regrid_assim True
               ! This is to get the ensembles obtain same flagging 
               ! and hence same patches
-              print *, "Regridding first time"
-              print *, "lbase = ", lbase
+              call mpi_barrier(mpi_comm_world, mpierr)
+              print *, "Regridding first time ", mype_world 
+              call mpi_barrier(mpi_comm_world, mpierr)
+              !print *, "lbase = ", lbase
               call regrid(nvar,lbase,cut,naux,start_time)
               call setbestsrc()     ! need at every grid change
           
@@ -413,16 +415,41 @@ c
                   enddo
               endif
 
+              ! Put the geoclaw alloc values to PDAF field
+              ! Next step is to use the field for assimilation
+              call mpi_barrier(mpi_comm_world, mpierr)
+              call alloc2field(nvar,naux,analyze_water)
               call mpi_barrier(mpi_comm_world, mpierr)
               
               ! Update dim_state_p and state
+              call mpi_barrier(mpi_comm_world, mpierr)
               call update_dim_state_p(nvar, naux)
+              call mpi_barrier(mpi_comm_world, mpierr)
 
           endif
           
           ! Perform assimilation
+          ! 1. alloc2field
+          ! 2. Put state
+          ! 3. Update
+          ! 4. field2alloc
           call assimilate_pdaf(nvar, naux, mxnest, time)
 
+          if (stepnow_pdaf == assimilate_step) then
+          
+            ! Put the assimilated values from field to alloc
+            call mpi_barrier(mpi_comm_world, mpierr)
+            call field2alloc(nvar,naux, analyze_water)!not for output purpose
+            call mpi_barrier(mpi_comm_world, mpierr)
+            deallocate(field) 
+
+            if (mxlevel /=1) then
+              do ii=mxlevel -1, 1
+                call update(ii,nvar,naux)
+              enddo
+            endif
+
+          endif
           
 #endif
       if ( .not.vtime) goto 201
@@ -472,15 +499,16 @@ c             ! use same alg. as when setting refinement when first make new fin
 
 #ifdef USE_PDAF
 
+       ! Output state_ana
        if (mype_world == 0) then
            if ((mod(ncycle,iout).eq.0) .or. dumpout) then
-
-
+               
                ! Copy original alloc to field
-               call alloc2field(nvar, naux)
+               call alloc2field(nvar, naux,analyze_water)
+               call update_dim_state_p(nvar, naux)
+               field_size = size(field)
 
                ! Copy original field to temporary field
-               field_size = size(field)
                allocate(temp_field(field_size))
                temp_field(:) = field(:)
 
@@ -493,40 +521,42 @@ c             ! use same alg. as when setting refinement when first make new fin
                
                ! Assign state_step_ana to field
                print *, "field has size = ", field_size
-               read(20,*) field(:)
+               read(20,"(e26.16)") field(:)
                close(20)
 
                ! Perform field to alloc
-               call field2alloc(nvar, naux)
+               call field2alloc(nvar, naux,analyze_water)
                
                ! Perform valout
+               print *, "valout state_ana "
                call valout(1,lfine,time,nvar,naux)
-
-               ! Assign temporary field to field
-               field(:) = temp_field(:)
-
-               ! Assign field to alloc
-               call field2alloc(nvar, naux)
-
-               ! Deallocate temp_field
-               deallocate(temp_field)
-               deallocate(field)
-
+               ! Perform gauge output
                if (printout) call outtre(mstart,.true.,nvar,naux)
                if (num_gauges .gt. 0) then
                    do ii = 1, num_gauges
                        call print_gauges_and_reset_nextLoc(ii, nvar)
                    end do
                endif
+
+               ! Assign temporary field to field
+               field(:) = temp_field(:)
+
+               ! Assign field to alloc
+               call field2alloc(nvar, naux, analyze_water)
+
+               ! Deallocate temp_field
+               deallocate(temp_field)
+               deallocate(field)
+
            endif
        endif
-       print *, "At valout - ", mype_world
        call mpi_barrier(mpi_comm_world, mpierr)
           
        regrid_assim=.false.          
        if (stepnow_pdaf == assimilate_step) then
           print *, "Regridding second time"
-          print *, "lbase = ", lbase
+          call mpi_barrier(mpi_comm_world, mpierr)
+          !print *, "lbase = ", lbase
           call regrid(nvar,lbase,cut,naux,start_time)
           call setbestsrc()     ! need at every grid change
           do ii=mxlevel-1,1
@@ -536,8 +566,13 @@ c             ! use same alg. as when setting refinement when first make new fin
 
        ! Output for every ensemble  
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+           call mpi_barrier(mpi_comm_world, mpierr)
+           print *, "valout for ens ", mype_world
+           call mpi_barrier(mpi_comm_world, mpierr)
+           
            write(ensstr2, '(i2.1)') mype_world
-       inquire(file="_output_"//trim(adjustl(ensstr2)),exist=dir_exists)
+           inquire(file="_output_"//trim(adjustl(ensstr2)), 
+     &     exist=dir_exists)
            if(dir_exists .eqv. .false.) then
                call system('mkdir _output_'// trim(adjustl(ensstr2)))
            endif

@@ -15,9 +15,6 @@
 
 # Root directory of PDAF package
 BASEDIR = /h2/pkjain/Desktop/Pushkar/clawpack/geoclaw/examples/tsunami/PDAF-D_V1.11.1
-#AMR_MODULE=/home/shawn/clawpack-5.3.1/amrclaw/src/2d/
-#GEO_MODULE=/home/shawn/clawpack-5.3.1/geoclaw/src/2d/shallow/pkj_geoclaw
-#          /home/shawn/clawpack-5.3.1/amrclaw/src/2d
 # Include machine-specific definitions
 # For available include files see directory make.arch
 # To choose a file, set PDAF_ARCH either here or by an
@@ -70,7 +67,7 @@ OBJ_USER_GEN  = init_ens.o \
 		collect_state_pdaf.o \
 		init_dim_obs_pdaf.o \
 		obs_op_pdaf.o \
-		init_obs_pdaf.o 
+		init_obs_pdaf.o \
 
 # User-supplied routines for ESTKF/SEIK/ETKF
 OBJ_USER_SEIK = prodrinva_pdaf.o \
@@ -78,7 +75,7 @@ OBJ_USER_SEIK = prodrinva_pdaf.o \
 
 # User-supplied routines for EnKF
 OBJ_USER_ENKF = add_obs_error_pdaf.o \
-		init_obscovar_pdaf.o 
+		init_obscovar_pdaf.o \
 
 # User-supplied routines for localized analysis (LESTKF/LSEIK/LETKF)
 OBJ_USER_LOCAL = init_n_domains_pdaf.o \
@@ -129,7 +126,7 @@ model_pdaf : libpdaf-d.a \
 	$(MODULES) $(MOD_ASSIM) $(OBJ_MODEL_PDAF) $(OBJ_PDAF_INT) $(OBJ_PDAF_USER)
 	$(LD)  $(OPT_LNK)  -o $@ \
 	$(MODULES) $(MOD_ASSIM) $(OBJ_MODEL_PDAF) $(OBJ_PDAF_INT) $(OBJ_PDAF_USER) \
-	-L$(BASEDIR)/lib -lpdaf-d $(LINK_LIBS)
+	-L$(BASEDIR)/lib  -lpdaf-d $(LINK_LIBS)
 
 ######################################################
 

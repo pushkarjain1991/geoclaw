@@ -56,7 +56,4 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
   DO i = 1, dim_obs_p
      m_state_p(i) = state_p(obs_index(i))
   END DO
- !print *,state_p(7501)
-! print *,'HX'
- !CALL MPI_barrier(MPI_COMM_WORLD,MPIerr)
 END SUBROUTINE obs_op_pdaf

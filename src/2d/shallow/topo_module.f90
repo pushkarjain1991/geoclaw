@@ -19,6 +19,9 @@
 module topo_module
 
     use amr_module, only: tstart_thisrun
+#ifdef USE_PDAF_CHILE             
+    use mod_parallel, only: mype_world
+#endif
     implicit none
 
     logical, private :: module_setup = .false.
@@ -78,6 +81,10 @@ module topo_module
     real(kind=8), allocatable :: topo0work(:)
     integer, allocatable :: i0topo0(:),topo0ID(:)
     integer :: mtopo0size,mtopo0files
+
+#ifdef USE_PDAF_CHILE
+    character(len=2) :: ensstr
+#endif
 
 contains
 
@@ -949,6 +956,11 @@ contains
 
         do i=1,num_dtopo
             read(iunit,*) dtopofname(i)
+#ifdef USE_PDAF_CHILE
+            write(ensstr,'(i2.1)') mype_world
+            dtopofname(i) = trim(dtopofname(i))//"_ens_"//trim(adjustl(ensstr))
+            print *, "Read dtopo ", dtopofname(i)
+#endif
             read(iunit,*) dtopotype(i),minleveldtopo(i), maxleveldtopo(i)
             write(GEO_PARM_UNIT,*) '   fname:',dtopofname(i)
             write(GEO_PARM_UNIT,*) '   topo type:',dtopotype(i)

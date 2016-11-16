@@ -92,9 +92,12 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
    if (stepnow_pdaf==assimilate_step) then
        print *, "mypeyhmm1", mype_world
        
-       ! Put the geoclaw alloc values to PDAF field
-       ! Next step is to use the field for assimilation
-       call alloc2field(nvar,naux)
+!       ! Put the geoclaw alloc values to PDAF field
+!       ! Next step is to use the field for assimilation
+!       call alloc2field(nvar,naux)
+!
+!       !Update dim state_p and state
+!       call update_dim_state_p(nvar, naux)
 
        print *, "mypeyhmm2abc", mype_world
 
@@ -160,17 +163,17 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
             distribute_state_pdaf,prepoststep_ens_pdaf,status_pdaf)
 
 
-            ! Put the assimilated values from field to alloc
-            call field2alloc(nvar,naux)!not for output purpose
-            deallocate(field)
+!            ! Put the assimilated values from field to alloc
+!            call field2alloc(nvar,naux)!not for output purpose
+!            deallocate(field)
              
-            ! Use geoclaw update step to 'update' assimilated values at all
-            ! levels 
-            if (mxlevel /=1) then
-                do ii=mxlevel -1, 1
-                    call update(ii,nvar,naux)
-                enddo
-            endif
+!            ! Use geoclaw update step to 'update' assimilated values at all
+!            ! levels 
+!            if (mxlevel /=1) then
+!                do ii=mxlevel -1, 1
+!                    call update(ii,nvar,naux)
+!                enddo
+!            endif
         ELSE
             WRITE (*,'(/1x,a6,i3,a43,i4,a1/)') &
             'ERROR ', status_pdaf, &

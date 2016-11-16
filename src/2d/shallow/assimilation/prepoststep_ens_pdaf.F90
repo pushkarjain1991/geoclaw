@@ -193,7 +193,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
             status = 'replace')
 
         DO i = 1, size(field1)
-            WRITE (20, *) field1(i)
+            WRITE (20, "(e26.16)") field1(i)
         ENDDO
 
         CLOSE(20)
@@ -216,7 +216,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
          status = 'replace')
 
      DO i = 1, size(field1)
-         WRITE (20, *) field1(i)
+         WRITE (20, "(e26.16)") field1(i)
      ENDDO
 
      CLOSE(20)

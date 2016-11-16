@@ -119,7 +119,8 @@ program amr2
     random_pert
     use mod_parallel, only: MPIerr, mpi_comm_world, mype_world, &
     npes_world, MPI_INTEGER, MPIstatus, n_modeltasks
-    use mod_assimilation, only: dim_state_p, dim_ens, regrid_assim
+    use mod_assimilation, only: dim_state_p, dim_ens, regrid_assim,&
+    analyze_water
 #endif
 
     implicit none
@@ -167,7 +168,7 @@ program amr2
     
 #ifdef USE_PDAF_CHILE
     integer :: n, clock
-    real(kind=8) :: pert_mu = 0.0D+00
+    real(kind=8) :: pert_mu
     real(kind=8),allocatable :: rand_pert(:)
     integer(kind=4) :: seed
     real(kind=8) :: pert_sigma
@@ -544,12 +545,13 @@ program amr2
         call set_refinement()             ! sets refinement control parameters
         call read_dtopo_settings()        ! specifies file with dtopo from earthquake
 
-#ifdef USE_PDAF_CHILE
+#ifdef USE_PDAF_CHILE2
         !Initial perturbation in topo itself
-        pert_sigma = 0.05D+00
+        pert_sigma = .0005D+00
+        pert_mu = 0.0D+00
         if(mype_world == 0) then
-            !seed = clock
-            seed=123456789
+            seed = clock
+            !seed=123456789
 
             allocate(rand_pert(n_modeltasks))
             call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
@@ -702,22 +704,27 @@ program amr2
 #ifdef USE_PDAF
     total_steps = nstop
     !call get_dim_state()
-    dim_state_p = 0
-    do i = 1, lfine
-        dim_state_p = dim_state_p + numcells(i)
-    enddo
+    !dim_state_p = 0
+    !do i = 1, lfine
+    !    dim_state_p = dim_state_p + numcells(i)
+    !enddo
+    
+    call alloc2field(nvar, naux, analyze_water)
+    !call update_dim_state_p(nvar, naux)
+    dim_state_p = size(field)
+    
+    call mpi_barrier(mpi_comm_world, mpierr)
     print *, "Initial dim_state_p = ", mype_world, dim_state_p
-    call alloc2field(nvar, naux)
+    call mpi_barrier(mpi_comm_world, mpierr)
     
     write(ensstr1, '(i3.1)') mype_world
     open(unit=57, file='init_ens'//trim(adjustl(ensstr1)), status='replace')
-    write(57,*) field(:)
+    do i=1,size(field) 
+        write(57,*) field(i)
+    enddo
     close(57)
-    
     call mpi_barrier(mpi_comm_world, mpierr)
-    !Assign field to ens_p
-
-   
+    
     !Gather the initial conditions to root processor
     if (mype_world == 0) allocate(recv_ic(dim_state_p*n_modeltasks))
     print *, "Reading IC, ", mype_world
@@ -744,16 +751,11 @@ program amr2
         WRITE (*, '(10x,a,i4)') 'Time steps', total_steps
     endif
     CALL init_pdaf()
-    call mpi_barrier(mpi_comm_world, mpierr)
 #endif
 
     ! --------------------------------------------------------
     !  Tick is the main routine which drives the computation:
     ! --------------------------------------------------------
-    !CALL  MPI_Barrier(mpi_comm_world,MPIerr)
-    !print *, "mype", mype_world
-    !CALL  MPI_Barrier(mpi_comm_world,MPIerr)
-    !stop
     
     call tick(nvar,cut,nstart,vtime,time,naux,t0,rest,dt_max)
     ! --------------------------------------------------------
