@@ -161,9 +161,12 @@ program amr2
     character(len=*), parameter :: parmfile = 'fort.parameters'
 #ifdef USE_PDAF
     character(len=1):: mype_str
-    character(len=6):: ensstr1
+    character(len=3):: ensstr1
+    character(len=3):: ensstr3
+    character(len=255) :: cwd
     real(kind=8), allocatable :: recv_ic(:)
     integer, parameter :: root = 0
+    logical :: dir_exists1
 #endif
     
 #ifdef USE_PDAF_CHILE
@@ -574,6 +577,24 @@ program amr2
         call set_storm()                  ! Set storm parameters
         call set_regions()                ! Set refinement regions
         call set_gauges(rest, nvar)       ! Set gauge output
+!#ifdef USE_PDAF_CHILE
+!        write(ensstr3, '(i3.1)') mype_world
+!        call getcwd(cwd)
+!        print *, cwd
+!        inquire(file="_output_"//trim(adjustl(ensstr3))//"_ana",&     
+!        exist=dir_exists1)
+!        if(dir_exists1 .eqv. .false.) then
+!          call system('mkdir _output_'//&
+!          trim(adjustl(ensstr3))//'_ana')
+!          call chdir('_output_'//&
+!          trim(adjustl(ensstr3))//'_ana')
+!          call system('cp ../gauges.data .')
+!          call set_gauges(rest, nvar)       ! Set gauge output
+!          open(12,file='gauge32412.txt',status='new')
+!          close(12)
+!          call chdir('../')
+!        endif
+!#endif
         call set_fgmax()
 
         cflmax = 0.d0   ! otherwise use previously heckpointed val
@@ -696,7 +717,13 @@ program amr2
     call cpu_time(cpu_start)
 
     if (output_t0) then
+#ifdef USE_PDAF_CHILE
+     if(mype_world == 0) then
         call valout(1,lfine,time,nvar,naux)
+    endif
+#else
+        call valout(1,lfine,time,nvar,naux)
+#endif
     endif
     close(parmunit)
 

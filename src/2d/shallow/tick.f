@@ -12,6 +12,7 @@ c
       use mod_assimilation, only: stepnow_pdaf, assimilate_step,
      & regrid_assim, second_valout, analyze_water
       use mod_model, only: field
+      use gauges_module, only: set_gauges
 #endif
       use refinement_module, only: varRefTime
       use amr_module
@@ -552,6 +553,26 @@ c             ! use same alg. as when setting refinement when first make new fin
        endif
        call mpi_barrier(mpi_comm_world, mpierr)
           
+!       ! Forecast output for every ensemble  
+!       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+!           call mpi_barrier(mpi_comm_world, mpierr)
+!           print *, "Analysis valout for ens ", mype_world
+!           call mpi_barrier(mpi_comm_world, mpierr)
+!           
+!           write(ensstr2, '(i2.1)') mype_world
+!           inquire(file="_output_"//trim(adjustl(ensstr2))//"_for", 
+!     &     exist=dir_exists)
+!           if(dir_exists .eqv. .false.) then
+!               call system('mkdir _output_'// 
+!     &     trim(adjustl(ensstr2))//"_for")
+!           endif
+!           call chdir("_output_"//trim(adjustl(ensstr2))//"_for")
+!           second_valout = .true.
+!           call valout(1,lfine,time,nvar,naux)
+!           second_valout = .false.
+!           call chdir("../")
+!      endif
+
        regrid_assim=.false.          
        if (stepnow_pdaf == assimilate_step) then
           print *, "Regridding second time"
@@ -564,24 +585,37 @@ c             ! use same alg. as when setting refinement when first make new fin
           enddo
        endif
 
-       ! Output for every ensemble  
+       ! Analysis output for every ensemble  
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
            call mpi_barrier(mpi_comm_world, mpierr)
-           print *, "valout for ens ", mype_world
+           print *, "Analysis valout for ens ", mype_world
            call mpi_barrier(mpi_comm_world, mpierr)
            
            write(ensstr2, '(i2.1)') mype_world
-           inquire(file="_output_"//trim(adjustl(ensstr2)), 
+           inquire(file="_output_"//trim(adjustl(ensstr2))//"_ana", 
      &     exist=dir_exists)
            if(dir_exists .eqv. .false.) then
-               call system('mkdir _output_'// trim(adjustl(ensstr2)))
+               call system('mkdir _output_'// 
+     &         trim(adjustl(ensstr2))//"_ana")
+           
+               !call chdir("_output_"//trim(adjustl(ensstr2))//"_ana")
+               !call set_gauges(rest, nvar, "../gauges.data")
+               !call chdir("../")
            endif
-           call chdir("_output_"//trim(adjustl(ensstr2)))
+           call chdir("_output_"//trim(adjustl(ensstr2))//"_ana")
            second_valout = .true.
            call valout(1,lfine,time,nvar,naux)
            second_valout = .false.
+
            call chdir("../")
        endif
+!!       call chdir("_output_"//trim(adjustl(ensstr2))//"_ana")
+!!       if (num_gauges .gt. 0) then
+!!         do ii = 1, num_gauges
+!!           call print_gauges_and_reset_nextLoc(ii, nvar)
+!!         end do
+!!       endif
+!!       call chdir("../")
 
           
        !VERY VERY IMPORTANT
@@ -646,11 +680,14 @@ c
          ! check if just did it so dont do it twice
          if (.not. dumpchk) call check(ncycle,time,nvar,naux)
       endif
+
+#ifndef USE_PDAF
       if (num_gauges .gt. 0) then
          do ii = 1, num_gauges
             call print_gauges_and_reset_nextLoc(ii, nvar)
          end do
       endif
+#endif
 
       write(6,*) "Done integrating to time ",time
       return

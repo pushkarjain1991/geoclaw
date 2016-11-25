@@ -304,7 +304,7 @@ c
       close(unit=matunit2)
       if (output_format == 3) then
           close(unit=matunit4)
-          endif
+      endif
 
        call system_clock(clock_finish,clock_rate)
        timeValout = timeValout + clock_finish - clock_start

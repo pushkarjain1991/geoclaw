@@ -117,7 +117,7 @@ SUBROUTINE init_pdaf()
    endif
  stepnow_pdaf=0
  assimilate_step=delt_obs
-  subtype = 0       ! subtype of filter:
+  subtype = 1       ! subtype of filter:
                     !   ESTKF:
                     !     (0) Standard form of ESTKF
                     !   LESTKF:

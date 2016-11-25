@@ -61,7 +61,10 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs_p, C_p)
 ! *************************************
 
   DO i = 1, dim_obs_p
+     print *, i, "Before adding variance HPH = ", C_p(i,i)
      C_p(i, i) = C_p(i, i) + variance_obs
+     print *, i, "After adding variance HPH = ", C_p(i,i)
   ENDDO
+
 
 END SUBROUTINE add_obs_error_pdaf

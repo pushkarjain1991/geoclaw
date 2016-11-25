@@ -331,6 +331,7 @@ SUBROUTINE PDAF_enkf_analysis_rsm(step, dim_p, dim_obs_p, dim_ens, rank_ana, &
 
   ! Allgather residual
   CALL PDAF_enkf_gather_resid(dim_obs, dim_obs_p, dim_ens, resid_p, resid)
+  print *, "Y - HX = ", resid(:,:)
 
   DEALLOCATE(resid_p)
 
@@ -499,6 +500,8 @@ SUBROUTINE PDAF_enkf_analysis_rsm(step, dim_p, dim_obs_p, dim_ens, rank_ana, &
 ! ********************
 ! *** Finishing up ***
 ! ********************
+
+  print *, "HP_P = ", maxval(HP_p)
 
   DEALLOCATE(HP_p)
   DEALLOCATE(HPH)

@@ -62,6 +62,9 @@ module topo_module
 
     ! File data parameters
     character*150, allocatable :: dtopofname(:)
+#ifdef USE_PDAF_CHILE
+    character*150, allocatable :: temp_dtopofname(:)
+#endif
     real(kind=8), allocatable :: xlowdtopo(:),ylowdtopo(:),xhidtopo(:)
     real(kind=8), allocatable :: yhidtopo(:),t0dtopo(:),tfdtopo(:)
     real(kind=8), allocatable :: dxdtopo(:),dydtopo(:),dtdtopo(:)
@@ -83,7 +86,7 @@ module topo_module
     integer :: mtopo0size,mtopo0files
 
 #ifdef USE_PDAF_CHILE
-    character(len=2) :: ensstr
+    character(len=3) :: ensstr
 #endif
 
 contains
@@ -943,6 +946,9 @@ contains
 
         ! Allocate and read in dtopo info
         allocate(dtopofname(num_dtopo),minleveldtopo(num_dtopo))
+#ifdef USE_PDAF_CHILE
+        allocate(temp_dtopofname(num_dtopo))
+#endif
         allocate(maxleveldtopo(num_dtopo),mxdtopo(num_dtopo))
         allocate(mydtopo(num_dtopo),mtdtopo(num_dtopo),mdtopo(num_dtopo))
         allocate(xlowdtopo(num_dtopo),ylowdtopo(num_dtopo),t0dtopo(num_dtopo))
@@ -957,8 +963,9 @@ contains
         do i=1,num_dtopo
             read(iunit,*) dtopofname(i)
 #ifdef USE_PDAF_CHILE
-            write(ensstr,'(i2.1)') mype_world
-            dtopofname(i) = trim(dtopofname(i))//"_ens_"//trim(adjustl(ensstr))
+            write(ensstr,'(i3.1)') mype_world
+            temp_dtopofname(i) = trim(dtopofname(i))//"_ens_"//trim(adjustl(ensstr))
+            dtopofname(i) = temp_dtopofname(i)
             print *, "Read dtopo ", dtopofname(i)
 #endif
             read(iunit,*) dtopotype(i),minleveldtopo(i), maxleveldtopo(i)

@@ -91,16 +91,16 @@ subroutine field2alloc(nvar,naux,analyze_water)
               do j_pkj = nghost+1, mjtot-nghost
                 do i_pkj = nghost+1, mitot-nghost
                   alloc(iadd(1,i_pkj,j_pkj)) = &
-                  field(cell_cnt) - alloc(iaddaux(1,i_pkj, j_pkj))
+                  field(cell_cnt)
                   cell_cnt = cell_cnt + 1
 
-                  if(first_water_analysis) then
-                     !wse update might cause total hieght /= 0 
-                     if (abs(alloc(iadd(1,i_pkj,j_pkj))) < dry_tolerance) then
-                         print *, "alloc non negative activated"
-                         alloc(iadd(1,i_pkj,j_pkj)) = 0.d0
-                     endif
-                  endif
+!                  if(first_water_analysis) then
+!                     !wse update might cause total hieght /= 0 
+!                     if (abs(alloc(iadd(1,i_pkj,j_pkj))) < dry_tolerance) then
+!                         print *, "alloc non negative activated"
+!                         alloc(iadd(1,i_pkj,j_pkj)) = 0.d0
+!                     endif
+!                  endif
                              
                 enddo
               enddo

@@ -127,7 +127,7 @@ subroutine alloc2field(nvar,naux, analyze_water)
                do j_pkj = nghost+1, mjtot-nghost
                  do i_pkj = nghost+1, mitot-nghost
                    field(cell_cnt) =&
-                   alloc(iadd(1,i_pkj,j_pkj)) +alloc(iaddaux(1,i_pkj, j_pkj))
+                   alloc(iadd(1,i_pkj,j_pkj))
                    cell_cnt = cell_cnt + 1
                  enddo
                enddo
