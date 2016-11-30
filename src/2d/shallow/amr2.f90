@@ -182,6 +182,10 @@ program amr2
     logical :: mpierr1
 #endif
 
+#ifdef USE_PDAF_CHILE_PERT_RESTART
+    real(kind=8), allocatable :: temp_field(:)
+#endif
+
 
 #ifdef USE_PDAF
     ! Add parallelization
@@ -506,6 +510,9 @@ program amr2
         open(outunit, file=outfile, status='unknown', position='append', &
                       form='formatted')
 
+#ifdef USE_PDAF
+        regrid_assim = .true.
+#endif
         call restrt(nsteps,time,nvar,naux)
         nstart  = nsteps
         tstart_thisrun = time
@@ -513,6 +520,8 @@ program amr2
         print *, 'Restarting from previous run'
         print *, '   at time = ',time
         print *, ' '
+
+
         ! Call user routine to set up problem parameters:
         call setprob()
 
@@ -529,6 +538,35 @@ program amr2
         call set_regions()                ! Set refinement regions
         call set_gauges(rest, nvar)       ! Set gauge output
         call set_fgmax()
+        call print_num_cells(nvar, naux)
+
+!#ifdef USE_PDAF_CHILE_PERT_RESTART
+!        pert_sigma = .0001D+00
+!        pert_mu = 0.0D+00
+!        if(mype_world == 0) then
+!            seed = clock
+!            !seed=123456789
+!
+!            allocate(rand_pert(n_modeltasks))
+!            call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
+!            !print *, "printing random number", r, mype_world
+!            call r8vec_print(n_modeltasks, rand_pert, ' Vector of Normal AB values:')
+!        endif
+!
+!        call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
+!        root1, mpi_comm_world, mpierr)
+!        call alloc2field(nvar, naux, analyze_water)
+!        temp_field = field + 0.01*mype_world
+!        !temp_field = field + recv_random_pert
+!        where((field > 0.1 .and. field < 0.3) .or. (field > -0.3 .and. field<-0.1))
+!          field = temp_field
+!        endwhere
+!        !field = temp_field
+!        call field2alloc(nvar, naux, analyze_water)
+!#endif
+#ifdef USE_PDAF
+        regrid_assim = .false.
+#endif
 
     else
 !This is for setting same level at initial time t=0
@@ -727,6 +765,31 @@ program amr2
     endif
     close(parmunit)
 
+
+#ifdef USE_PDAF_CHILE_PERT_RESTART
+        pert_sigma = .005D+00
+        pert_mu = 0.0D+00
+        if(mype_world == 0) then
+            seed = clock
+            !seed=123456789
+
+            allocate(rand_pert(n_modeltasks))
+            call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
+            !print *, "printing random number", r, mype_world
+            call r8vec_print(n_modeltasks, rand_pert, ' Vector of Normal AB values:')
+        endif
+
+        call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
+        root1, mpi_comm_world, mpierr)
+call alloc2field(nvar, naux, analyze_water)
+!temp_field = field + 0.01*mype_world
+temp_field = field + recv_random_pert
+where((field > 0.1 .and. field < 0.3) .or. (field > -0.3 .and. field<-0.1))
+   field = temp_field
+endwhere
+!field = temp_field
+call field2alloc(nvar, naux, analyze_water)
+#endif
 
 #ifdef USE_PDAF
     total_steps = nstop

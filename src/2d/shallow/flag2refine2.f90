@@ -239,6 +239,7 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 #ifdef USE_PDAF
     !write(ensstr,*) mype_world
     if(regrid_assim .eqv. .true.) then
+        print *, "reached here12 ", mype_world
     if (stepnow_pdaf == assimilate_step .or. t == t0) then
         print *, "reached here123 ", mype_world
         if (level == 1) then

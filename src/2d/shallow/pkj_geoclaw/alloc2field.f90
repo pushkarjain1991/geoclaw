@@ -5,7 +5,7 @@
 !    > Created Time: Mon 01 Aug 2016 04:04:44 PM CDT
 ! ************************************************************************/
 
-subroutine alloc2field(nvar,naux, analyze_water)
+subroutine alloc2field(nvar,naux, analyze_water, get_total_height)
     use amr_module
     use geoclaw_module, only: dry_tolerance
 
@@ -21,6 +21,7 @@ subroutine alloc2field(nvar,naux, analyze_water)
         integer,intent(in)::nvar
         integer,intent(in)::naux
         logical,intent(in)::analyze_water
+        logical, optional::get_total_height
         integer :: ii,mptr,Ntot,Ntot_l,j_pkj,i_pkj
         integer :: i_mod,j_mod,loc,locaux,mitot,mjtot,nx,ny 
         integer :: ivar,i,j,iaux
@@ -31,9 +32,16 @@ subroutine alloc2field(nvar,naux, analyze_water)
         real(kind=8),allocatable :: temp_field(:)
         integer,allocatable :: temp_wet_cell_index(:)
         integer :: wet_cell_cnt
+        logical :: field_is_total_height
 
         iadd(ivar,i,j)=loc+ivar-1+nvar*((j-1)*mitot+i-1)
         iaddaux(iaux,i,j)=locaux+iaux-1+naux*(i-1)+naux*mitot*(j-1)
+
+        if(present(get_total_height)) then
+          field_is_total_height = get_total_height
+        else
+          field_is_total_height = .false.
+        endif
 
          !Count the total number of cells
          !The value will be used to allocate field
@@ -126,8 +134,14 @@ subroutine alloc2field(nvar,naux, analyze_water)
 
                do j_pkj = nghost+1, mjtot-nghost
                  do i_pkj = nghost+1, mitot-nghost
-                   field(cell_cnt) =&
-                   alloc(iadd(1,i_pkj,j_pkj))
+
+                   !if(field_is_total_height .eqv. .true.) then
+                   !  field(cell_cnt) =&
+                   !  alloc(iadd(1,i_pkj,j_pkj))
+                   !else
+                     field(cell_cnt) =&
+                     alloc(iadd(1,i_pkj,j_pkj)) +alloc(iaddaux(1,i_pkj, j_pkj))
+                   !endif
                    cell_cnt = cell_cnt + 1
                  enddo
                enddo

@@ -5,7 +5,7 @@
 !    > Created Time: Mon 01 Aug 2016 04:07:06 PM CDT
 ! ************************************************************************/
 
-subroutine field2alloc(nvar,naux,analyze_water)
+subroutine field2alloc(nvar,naux,analyze_water, put_total_height)
         use amr_module
 
 #ifdef USE_PDAF
@@ -21,6 +21,7 @@ subroutine field2alloc(nvar,naux,analyze_water)
         integer,intent(in) :: nvar
         integer,intent(in) :: naux
         logical,intent(in) :: analyze_water
+        logical, optional :: put_total_height
 
 !        integer,allocatable :: mptr_array(:)
 !        integer,allocatable :: ordered_mptr_array(:)
@@ -33,11 +34,19 @@ subroutine field2alloc(nvar,naux,analyze_water)
         integer :: level
         integer :: wet_index_ptr
         logical :: first_water_analysis=.true.
+        logical :: field_is_total_height
 
         iadd(ivar,i,j)=loc+ivar-1+nvar*((j-1)*mitot+i-1)
         iaddaux(iaux,i,j)=locaux+iaux-1+naux*(i-1)+naux*mitot*(j-1)
 
+        if(present(put_total_height)) then
+          field_is_total_height = put_total_height
+        else
+          field_is_total_height = .false.
+        endif
+
         if(analyze_water) then
+
           cell_cnt = 1
           level = 1
           wet_index_ptr = 1
@@ -90,8 +99,14 @@ subroutine field2alloc(nvar,naux,analyze_water)
 
               do j_pkj = nghost+1, mjtot-nghost
                 do i_pkj = nghost+1, mitot-nghost
-                  alloc(iadd(1,i_pkj,j_pkj)) = &
-                  field(cell_cnt)
+
+                  !if(field_is_total_height .eqv. .true.) then
+                  !  alloc(iadd(1,i_pkj,j_pkj)) = &
+                  !  field(cell_cnt)
+                  !else
+                    alloc(iadd(1,i_pkj,j_pkj)) = &
+                    field(cell_cnt) - alloc(iaddaux(1,i_pkj, j_pkj))
+                  !endif
                   cell_cnt = cell_cnt + 1
 
 !                  if(first_water_analysis) then

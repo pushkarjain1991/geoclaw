@@ -19,7 +19,7 @@
 module topo_module
 
     use amr_module, only: tstart_thisrun
-#ifdef USE_PDAF_CHILE             
+#ifdef USE_PDAF_CHILE_PERT_TOPO             
     use mod_parallel, only: mype_world
 #endif
     implicit none
@@ -62,8 +62,9 @@ module topo_module
 
     ! File data parameters
     character*150, allocatable :: dtopofname(:)
-#ifdef USE_PDAF_CHILE
+#ifdef USE_PDAF_CHILE_PERT_TOPO
     character*150, allocatable :: temp_dtopofname(:)
+    character(len=3) :: ensstr
 #endif
     real(kind=8), allocatable :: xlowdtopo(:),ylowdtopo(:),xhidtopo(:)
     real(kind=8), allocatable :: yhidtopo(:),t0dtopo(:),tfdtopo(:)
@@ -84,10 +85,6 @@ module topo_module
     real(kind=8), allocatable :: topo0work(:)
     integer, allocatable :: i0topo0(:),topo0ID(:)
     integer :: mtopo0size,mtopo0files
-
-#ifdef USE_PDAF_CHILE
-    character(len=3) :: ensstr
-#endif
 
 contains
 
@@ -946,7 +943,7 @@ contains
 
         ! Allocate and read in dtopo info
         allocate(dtopofname(num_dtopo),minleveldtopo(num_dtopo))
-#ifdef USE_PDAF_CHILE
+#ifdef USE_PDAF_CHILE_PERT_TOPO
         allocate(temp_dtopofname(num_dtopo))
 #endif
         allocate(maxleveldtopo(num_dtopo),mxdtopo(num_dtopo))
@@ -962,7 +959,7 @@ contains
 
         do i=1,num_dtopo
             read(iunit,*) dtopofname(i)
-#ifdef USE_PDAF_CHILE
+#ifdef USE_PDAF_CHILE_PERT_TOPO
             write(ensstr,'(i3.1)') mype_world
             temp_dtopofname(i) = trim(dtopofname(i))//"_ens_"//trim(adjustl(ensstr))
             dtopofname(i) = temp_dtopofname(i)

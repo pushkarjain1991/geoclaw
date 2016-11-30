@@ -157,6 +157,7 @@ MODULE mod_assimilation
   LOGICAL :: regrid_assim=.false.
   LOGICAL :: second_valout=.false.
   LOGICAL :: analyze_water=.false.
+  REAL(KIND=8) :: assimilation_time
 
 !$OMP threadprivate (obs_index_l,coords_l,coords_l_1d,coords_l_2d)
 END MODULE mod_assimilation

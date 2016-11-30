@@ -10,7 +10,8 @@ c
       !use mapdomain
       use mod_parallel, only: mype_world, mpierr, mpi_comm_world
       use mod_assimilation, only: stepnow_pdaf, assimilate_step,
-     & regrid_assim, second_valout, analyze_water
+     & regrid_assim, second_valout, analyze_water, 
+     & assimilation_time
       use mod_model, only: field
       use gauges_module, only: set_gauges
 #endif
@@ -386,7 +387,11 @@ c
           ncycle  = ncycle + 1
           call conck(1,nvar,naux,time,rest)
 
+          print *, "timetime ", time
+          call print_num_cells(nvar, naux)
+
 #ifdef USE_PDAF
+          assimilation_time = outtime
           stepnow_pdaf = stepnow_pdaf + 1
           regrid_assim=.true.
           !if (mype_world==0) then
@@ -395,15 +400,19 @@ c
           !endif
           
           !Ready for assimilation
-          if (stepnow_pdaf == assimilate_step) then
+          !if (stepnow_pdaf == assimilate_step) then
+          if (time == assimilation_time) then
+              !Adhoc thingy. Should be replaced
+              stepnow_pdaf = assimilate_step
               ! Perform regridding with regrid_assim True
               ! This is to get the ensembles obtain same flagging 
               ! and hence same patches
               call mpi_barrier(mpi_comm_world, mpierr)
-              print *, "Regridding first time ", mype_world 
+              print *, "Regridding first time ya", mype_world 
               call mpi_barrier(mpi_comm_world, mpierr)
               !print *, "lbase = ", lbase
-              call regrid(nvar,lbase,cut,naux,start_time)
+              !call regrid(nvar,lbase,cut,naux,start_time)
+              call regrid(nvar,1,cut,naux,start_time)
               call setbestsrc()     ! need at every grid change
           
 !          if (rprint .and. lbase .lt. lfine) then
@@ -436,7 +445,8 @@ c
           ! 4. field2alloc
           call assimilate_pdaf(nvar, naux, mxnest, time)
 
-          if (stepnow_pdaf == assimilate_step) then
+          !if (stepnow_pdaf == assimilate_step) then
+          if (time == assimilation_time) then
           
             ! Put the assimilated values from field to alloc
             call mpi_barrier(mpi_comm_world, mpierr)
@@ -574,11 +584,13 @@ c             ! use same alg. as when setting refinement when first make new fin
 !      endif
 
        regrid_assim=.false.          
-       if (stepnow_pdaf == assimilate_step) then
+       !if (stepnow_pdaf == assimilate_step) then
+       if (time == assimilation_time) then
           print *, "Regridding second time"
           call mpi_barrier(mpi_comm_world, mpierr)
           !print *, "lbase = ", lbase
-          call regrid(nvar,lbase,cut,naux,start_time)
+          !call regrid(nvar,lbase,cut,naux,start_time)
+          call regrid(nvar,1,cut,naux,start_time)
           call setbestsrc()     ! need at every grid change
           do ii=mxlevel-1,1
               call update(ii, nvar, naux)
@@ -619,10 +631,12 @@ c             ! use same alg. as when setting refinement when first make new fin
 
           
        !VERY VERY IMPORTANT
-       if (stepnow_pdaf == assimilate_step) then
+       !if (stepnow_pdaf == assimilate_step) then
+       if (time == assimilation_time) then
            stepnow_pdaf = 0
        endif
        print *, "reached yo2", mype_world, stepnow_pdaf
+       call mpi_barrier(mpi_comm_world, mpierr)
 #else
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
          call valout(1,lfine,time,nvar,naux)

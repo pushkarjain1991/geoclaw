@@ -4,7 +4,7 @@
 ! !ROUTINE: assimilate_pdaf - Routine to control perform analysis step
 !
 ! !INTERFACE:
-SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
+SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,geoclaw_time)
 
 ! !DESCRIPTION:
 ! This routine is called during the model integrations at each time 
@@ -22,7 +22,8 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
 !  use PDAF_mod_filter, only: cnt_steps,nsteps,type_filter
   use mod_parallel, only: mype_world,abort_parallel,mpi_comm_world,mpierr
   USE mod_assimilation, &      ! Variables for assimilation
-       ONLY: filtertype, stepnow_pdaf, assimilate_step
+       ONLY: filtertype, stepnow_pdaf, assimilate_step, &
+       assimilation_time
    use mod_model,only: field
 
   IMPLICIT NONE
@@ -40,7 +41,7 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
   INTEGER :: steps=0
   INTEGER :: doexit
   INTEGER :: ii,jj
-  REAL(8) :: time_geoclaw
+  REAL(8) :: geoclaw_time
   REAL(8) :: time_pdaf
 
   CHARACTER(len=3) :: cyclestr
@@ -89,7 +90,8 @@ SUBROUTINE assimilate_pdaf(nvar,naux,mxlevel,time_geoclaw)
 !  assimilate_level(1)=mxlevel;assimilate_level(2)=1
    !stepnow_pdaf=stepnow_pdaf+1 !Moving to tick so that can update flags at
    !assimilation
-   if (stepnow_pdaf==assimilate_step) then
+   !if (stepnow_pdaf==assimilate_step) then
+   if(assimilation_time == geoclaw_time) then
        print *, "mypeyhmm1", mype_world
        
 !       ! Put the geoclaw alloc values to PDAF field
