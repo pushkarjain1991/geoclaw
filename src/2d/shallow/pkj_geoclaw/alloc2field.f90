@@ -37,11 +37,11 @@ subroutine alloc2field(nvar,naux, analyze_water, get_total_height)
         iadd(ivar,i,j)=loc+ivar-1+nvar*((j-1)*mitot+i-1)
         iaddaux(iaux,i,j)=locaux+iaux-1+naux*(i-1)+naux*mitot*(j-1)
 
-        if(present(get_total_height)) then
-          field_is_total_height = get_total_height
-        else
-          field_is_total_height = .false.
-        endif
+        !if(present(get_total_height)) then
+        !  field_is_total_height = get_total_height
+        !else
+        !  field_is_total_height = .false.
+        !endif
 
          !Count the total number of cells
          !The value will be used to allocate field
@@ -64,57 +64,6 @@ subroutine alloc2field(nvar,naux, analyze_water, get_total_height)
          go to 66
  91      continue
 
-         if(analyze_water) then
-           if (allocated(temp_field)) deallocate (temp_field)
-           allocate(temp_field(ncells_temp))
-           if (allocated(temp_wet_cell_index)) deallocate (temp_wet_cell_index)
-           allocate(temp_wet_cell_index(ncells_temp))
-
-           ! Values from alloc to field
-           cell_cnt=1
-           wet_cell_cnt = 0
-           level = 1
- 65        if (level .gt. lfine) go to 90
-             mptr = lstart(level)
- 70          if (mptr .eq. 0) go to 80
-               nx = node(ndihi,mptr) - node(ndilo, mptr) + 1
-               ny = node(ndjhi,mptr) - node(ndjlo, mptr) + 1
-               mitot   = nx + 2*nghost
-               mjtot   = ny + 2*nghost
-               loc     = node(store1, mptr)
-               locaux  = node(storeaux,mptr)
-
-               do j_pkj = nghost+1, mjtot-nghost
-                 do i_pkj = nghost+1, mitot-nghost
-                        
-                   if(abs(alloc(iadd(1,i_pkj,j_pkj))) > dry_tolerance) then
-                     wet_cell_cnt = wet_cell_cnt + 1
-                     temp_wet_cell_index(wet_cell_cnt) = cell_cnt
-                     temp_field(wet_cell_cnt) =&
-                     alloc(iadd(1,i_pkj,j_pkj)) +alloc(iaddaux(1,i_pkj, j_pkj))
-                   endif
-                   cell_cnt = cell_cnt + 1
-                 enddo
-               enddo
-               mptr = node(levelptr, mptr)
-               go to 70
- 80          level = level + 1
-           go to 65
-
- 90        continue
-
-           if(allocated(field)) deallocate(field)
-           allocate(field(wet_cell_cnt))
-           field(:) = temp_field(1:wet_cell_cnt)
-
-           if(allocated(wet_cell_index)) deallocate(wet_cell_index)
-           allocate(wet_cell_index(wet_cell_cnt))
-           wet_cell_index(:) = temp_wet_cell_index(1:wet_cell_cnt)
-         
-           print *, "After alloc2field, cell_cnt. wet_cell_cnt = ", &
-           cell_cnt, wet_cell_cnt, mype_world 
-         
-         else
            print *, "Running alloc2field ", mype_world
            if (allocated(field)) deallocate (field)
            allocate(field(ncells_temp))
@@ -135,13 +84,10 @@ subroutine alloc2field(nvar,naux, analyze_water, get_total_height)
                do j_pkj = nghost+1, mjtot-nghost
                  do i_pkj = nghost+1, mitot-nghost
 
-                   !if(field_is_total_height .eqv. .true.) then
-                   !  field(cell_cnt) =&
-                   !  alloc(iadd(1,i_pkj,j_pkj))
-                   !else
-                     field(cell_cnt) =&
-                     alloc(iadd(1,i_pkj,j_pkj)) +alloc(iaddaux(1,i_pkj, j_pkj))
-                   !endif
+                   !field(cell_cnt) =&
+                   !alloc(iadd(1,i_pkj,j_pkj))
+                   field(cell_cnt) =&
+                   alloc(iadd(1,i_pkj,j_pkj)) +alloc(iaddaux(1,i_pkj, j_pkj))
                    cell_cnt = cell_cnt + 1
                  enddo
                enddo
@@ -152,7 +98,6 @@ subroutine alloc2field(nvar,naux, analyze_water, get_total_height)
 
  92        continue
 
-         endif
 #endif
 
 

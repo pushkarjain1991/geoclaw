@@ -106,13 +106,11 @@ program amr2
     use storm_module, only: set_storm
     use friction_module, only: setup_variable_friction
     use gauges_module, only: set_gauges, num_gauges
-    use regions_module, only: set_regions
+    use regions_module, only: set_regions, regions, num_regions
     use fgmax_module, only: set_fgmax, FG_num_fgrids
     use multilayer_module, only: set_multilayer
 
 #ifdef USE_PDAF
-    !use mod_model, only : nx,ny, field,total_steps, dtinit, time, &
-    !xlow,xhigh,ylow,yhigh
     use mpi, only: mpi_real8
     use amr_module, only: numcells
     use mod_model, only : field, total_steps, reshaped_recv_ic, &
@@ -121,6 +119,8 @@ program amr2
     npes_world, MPI_INTEGER, MPIstatus, n_modeltasks
     use mod_assimilation, only: dim_state_p, dim_ens, regrid_assim,&
     analyze_water
+    use common_level, only: set_original_regions
+    use gauges_module, only: setbestsrc
 #endif
 
     implicit none
@@ -130,17 +130,9 @@ program amr2
     ! Local variables
     integer :: i, iaux, mw, level
     integer :: ndim, nvar, naux, mcapa1, mindim, dimensional_split
-!#ifdef USE_PDAF
-!    integer :: nstart, nsteps, nv1, lentotsave, num_gauge_SAVE
-!#else
     integer :: nstart, nsteps, nv1, nx, ny, lentotsave, num_gauge_SAVE
-!#endif
     integer :: omp_get_max_threads, maxthreads
-!#ifdef USE_PDAF
-!    real(kind=8) :: ratmet, cut, dt_max
-!#else
     real(kind=8) :: time, ratmet, cut, dtinit, dt_max
-!#endif
     logical :: vtime, rest, output_t0    
 
     ! Timing variables
@@ -160,7 +152,6 @@ program amr2
     character(len=*), parameter :: matfile = 'fort.nplot'
     character(len=*), parameter :: parmfile = 'fort.parameters'
 #ifdef USE_PDAF
-    character(len=1):: mype_str
     character(len=3):: ensstr1
     character(len=3):: ensstr3
     character(len=255) :: cwd
@@ -510,9 +501,6 @@ program amr2
         open(outunit, file=outfile, status='unknown', position='append', &
                       form='formatted')
 
-#ifdef USE_PDAF
-        regrid_assim = .true.
-#endif
         call restrt(nsteps,time,nvar,naux)
         nstart  = nsteps
         tstart_thisrun = time
@@ -538,42 +526,15 @@ program amr2
         call set_regions()                ! Set refinement regions
         call set_gauges(rest, nvar)       ! Set gauge output
         call set_fgmax()
-        call print_num_cells(nvar, naux)
 
-!#ifdef USE_PDAF_CHILE_PERT_RESTART
-!        pert_sigma = .0001D+00
-!        pert_mu = 0.0D+00
-!        if(mype_world == 0) then
-!            seed = clock
-!            !seed=123456789
-!
-!            allocate(rand_pert(n_modeltasks))
-!            call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
-!            !print *, "printing random number", r, mype_world
-!            call r8vec_print(n_modeltasks, rand_pert, ' Vector of Normal AB values:')
-!        endif
-!
-!        call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
-!        root1, mpi_comm_world, mpierr)
-!        call alloc2field(nvar, naux, analyze_water)
-!        temp_field = field + 0.01*mype_world
-!        !temp_field = field + recv_random_pert
-!        where((field > 0.1 .and. field < 0.3) .or. (field > -0.3 .and. field<-0.1))
-!          field = temp_field
-!        endwhere
-!        !field = temp_field
-!        call field2alloc(nvar, naux, analyze_water)
-!#endif
 #ifdef USE_PDAF
         regrid_assim = .false.
+        call set_original_regions()
 #endif
 
     else
 !This is for setting same level at initial time t=0
 ! regrid_Assim will be switched off after setting initial domain
-#ifdef USE_PDAF
-        regrid_assim = .true.
-#endif
         open(outunit, file=outfile, status='unknown', form='formatted')
 
         tstart_thisrun = t0
@@ -663,9 +624,6 @@ program amr2
         call setgrd(nvar,cut,naux,dtinit,t0)
         num_gauges = num_gauge_SAVE
 
-#ifdef USE_PDAF
-        regrid_assim = .false.
-#endif
 
 ! commented out to match 4-x version
 !!$        if (possk(1) .gt. dtinit*cflv1/cfl .and. vtime) then
@@ -679,6 +637,12 @@ program amr2
 
         time = t0
         nstart = 0
+#ifdef USE_PDAF
+        regrid_assim = .false.
+        if(num_regions /= 0) then 
+           call set_original_regions()
+        endif
+#endif
     endif
 
 
@@ -793,11 +757,6 @@ call field2alloc(nvar, naux, analyze_water)
 
 #ifdef USE_PDAF
     total_steps = nstop
-    !call get_dim_state()
-    !dim_state_p = 0
-    !do i = 1, lfine
-    !    dim_state_p = dim_state_p + numcells(i)
-    !enddo
     
     call alloc2field(nvar, naux, analyze_water)
     !call update_dim_state_p(nvar, naux)
@@ -808,33 +767,31 @@ call field2alloc(nvar, naux, analyze_water)
     call mpi_barrier(mpi_comm_world, mpierr)
     
     write(ensstr1, '(i3.1)') mype_world
+    print *, "writing init_ens# file"
     open(unit=57, file='init_ens'//trim(adjustl(ensstr1)), status='replace')
     do i=1,size(field) 
         write(57,*) field(i)
     enddo
     close(57)
+    print *, "Done writing init_ens# file"
     call mpi_barrier(mpi_comm_world, mpierr)
     
     !Gather the initial conditions to root processor
-    if (mype_world == 0) allocate(recv_ic(dim_state_p*n_modeltasks))
     print *, "Reading IC, ", mype_world
+    print *, "Allocating space for recv_ic"
+    if (mype_world == 0) allocate(recv_ic(dim_state_p*n_modeltasks))
+    print *, "Done allocating space for recv_ic"
     call mpi_barrier(mpi_comm_world, mpierr)
+    print *, "Performing initial condition gathering..."
     call mpi_gather(field, dim_state_p, mpi_real8, recv_ic, dim_state_p,&
     mpi_real8, root, mpi_comm_world, mpierr) 
+    print *, "Done Performing initial condition gathering..."
     
     if (mype_world == 0) then
         reshaped_recv_ic = reshape(recv_ic, (/dim_state_p, n_modeltasks/))
         deallocate(recv_ic)
     endif
 
-!    !Write the initial conditions to ens files
-!    write(mype_str, '(i1)') mype_world
-!    ensstr = "ens_0"//mype_str
-!    open(unit = 56, file=ensstr, status='replace')
-!    do i=1,dim_state_p
-!        write(56,*) field(i)
-!    enddo
-!    close(56)
     if (mype_world==0) then
         WRITE (*, '(1x, a)') 'INITIALIZE GEOCLAW with PDAF'
         WRITE (*, '(10x,a,i4,1x,a1,1x,i4)') 'Grid size:', nx, 'x', ny

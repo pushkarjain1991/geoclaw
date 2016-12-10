@@ -133,6 +133,7 @@ COMMON_SOURCES += \
   $(GEOLIB)/update.f \
   $(GEOLIB)/setaux.f90 \
   $(GEOLIB)/flag2refine2.f90  \
+  $(GEOLIB)/flag2refine2_assim.f90  \
   $(GEOLIB)/allowflag.f90  \
   $(GEOLIB)/b4step2.f90 \
   $(GEOLIB)/upbnd.f  \

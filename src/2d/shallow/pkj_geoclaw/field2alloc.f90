@@ -39,52 +39,6 @@ subroutine field2alloc(nvar,naux,analyze_water, put_total_height)
         iadd(ivar,i,j)=loc+ivar-1+nvar*((j-1)*mitot+i-1)
         iaddaux(iaux,i,j)=locaux+iaux-1+naux*(i-1)+naux*mitot*(j-1)
 
-        if(present(put_total_height)) then
-          field_is_total_height = put_total_height
-        else
-          field_is_total_height = .false.
-        endif
-
-        if(analyze_water) then
-
-          cell_cnt = 1
-          level = 1
-          wet_index_ptr = 1
- 65       if (level .gt. lfine) go to 90
-            mptr = lstart(level)
- 70         if (mptr .eq. 0) go to 80
-              nx = node(ndihi,mptr) - node(ndilo, mptr) + 1
-              ny = node(ndjhi,mptr) - node(ndjlo, mptr) + 1
-              mitot   = nx + 2*nghost
-              mjtot   = ny + 2*nghost
-              loc     = node(store1, mptr)
-              locaux  = node(storeaux,mptr)
-
-              do j_pkj = nghost+1, mjtot-nghost
-                do i_pkj = nghost+1, mitot-nghost
-                  if (cell_cnt == wet_cell_index(wet_index_ptr)) then   
-                    alloc(iadd(1,i_pkj,j_pkj)) = &
-                    field(wet_index_ptr) - alloc(iaddaux(1,i_pkj, j_pkj))
-                    wet_index_ptr = wet_index_ptr + 1
-                  endif
-                  cell_cnt = cell_cnt + 1
-
-!                     !wse update might cause total hieght /= 0 
-!                     if (abs(alloc(iadd(1,i_pkj,j_pkj))) < 1.0) then
-!                         print *, "alloc non negative activated"
-!                         alloc(iadd(1,i_pkj,j_pkj)) = 0.d0
-!                     endif
-                             
-                enddo
-              enddo
-              mptr = node(levelptr, mptr)
-            go to 70
- 80         level = level + 1
-          go to 65
-
- 90       continue
-     
-        else
           cell_cnt = 1
           level = 1
  66       if (level .gt. lfine) go to 91
@@ -99,24 +53,11 @@ subroutine field2alloc(nvar,naux,analyze_water, put_total_height)
 
               do j_pkj = nghost+1, mjtot-nghost
                 do i_pkj = nghost+1, mitot-nghost
-
-                  !if(field_is_total_height .eqv. .true.) then
-                  !  alloc(iadd(1,i_pkj,j_pkj)) = &
-                  !  field(cell_cnt)
-                  !else
-                    alloc(iadd(1,i_pkj,j_pkj)) = &
-                    field(cell_cnt) - alloc(iaddaux(1,i_pkj, j_pkj))
-                  !endif
+                  !alloc(iadd(1,i_pkj,j_pkj)) = &
+                  !field(cell_cnt)
+                  alloc(iadd(1,i_pkj,j_pkj)) = &
+                  field(cell_cnt) - alloc(iaddaux(1,i_pkj, j_pkj))
                   cell_cnt = cell_cnt + 1
-
-!                  if(first_water_analysis) then
-!                     !wse update might cause total hieght /= 0 
-!                     if (abs(alloc(iadd(1,i_pkj,j_pkj))) < dry_tolerance) then
-!                         print *, "alloc non negative activated"
-!                         alloc(iadd(1,i_pkj,j_pkj)) = 0.d0
-!                     endif
-!                  endif
-                             
                 enddo
               enddo
               mptr = node(levelptr, mptr)
@@ -125,8 +66,6 @@ subroutine field2alloc(nvar,naux,analyze_water, put_total_height)
           go to 66
 
  91     continue
-!        first_water_analysis=.false.
 
-     endif
 #endif
      end subroutine field2alloc

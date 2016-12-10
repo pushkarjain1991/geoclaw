@@ -1,4 +1,4 @@
-c
+!c
 c  -------------------------------------------------------------
 c
       subroutine tick(nvar,cut,nstart,vtime,time,naux,start_time,
@@ -14,6 +14,7 @@ c
      & assimilation_time
       use mod_model, only: field
       use gauges_module, only: set_gauges
+      use regions_module, only: regions
 #endif
       use refinement_module, only: varRefTime
       use amr_module
@@ -40,6 +41,7 @@ c
       integer :: curr_tot_step
       integer :: num_ex = 1
       integer :: field_size
+      integer :: wanted_level_num_region = 0
 #endif
 
 c
@@ -235,6 +237,12 @@ c
 
           call system_clock(clock_start,clock_rate)
           call cpu_time(cpu_start)
+#ifdef USE_PDAF
+              print *, mype_world, "Regridding non-assimilation.... 
+     &       lbase = ", lbase
+          regrid_assim = .false.
+          call extract_regions(time, regrid_assim) 
+#endif
           call regrid(nvar,lbase,cut,naux,start_time)
           call system_clock(clock_finish,clock_rate)
           call cpu_time(cpu_finish)
@@ -388,12 +396,10 @@ c
           call conck(1,nvar,naux,time,rest)
 
           print *, "timetime ", time
-          call print_num_cells(nvar, naux)
 
 #ifdef USE_PDAF
           assimilation_time = outtime
           stepnow_pdaf = stepnow_pdaf + 1
-          regrid_assim=.true.
           !if (mype_world==0) then
           !    print *, "stepnow = ",stepnow_pdaf
           !    print *, "assimilate_step = ", assimilate_step
@@ -401,19 +407,33 @@ c
           
           !Ready for assimilation
           !if (stepnow_pdaf == assimilate_step) then
-          if (time == assimilation_time) then
+          !if (time == assimilation_time) then
+          if (abs(time - assimilation_time) < 1.0D-06) then
               !Adhoc thingy. Should be replaced
               stepnow_pdaf = assimilate_step
+          
+          print *, "Assimilating data at time = ", assimilation_time
+              !call extract_regions(assimilation_time, regrid_assim) 
+              regrid_assim=.true.
+              call extract_regions(time, regrid_assim)
+
               ! Perform regridding with regrid_assim True
               ! This is to get the ensembles obtain same flagging 
               ! and hence same patches
-              call mpi_barrier(mpi_comm_world, mpierr)
+              !call mpi_barrier(mpi_comm_world, mpierr)
               print *, "Regridding first time ya", mype_world 
-              call mpi_barrier(mpi_comm_world, mpierr)
-              !print *, "lbase = ", lbase
-              !call regrid(nvar,lbase,cut,naux,start_time)
+              call print_num_cells(nvar, naux)
+              if(mype_world == 2) then
+                  print *, regions(:)
+              endif
+              print *, "yo123"
               call regrid(nvar,1,cut,naux,start_time)
               call setbestsrc()     ! need at every grid change
+              call regrid(nvar,2,cut,naux,start_time)
+              call setbestsrc()     ! need at every grid change
+              call print_num_cells(nvar, naux)
+              !endif
+              print *, "yo1234"
           
 !          if (rprint .and. lbase .lt. lfine) then
 !             call outtre(lstart(lbase+1),.false.,nvar,naux)
@@ -427,14 +447,15 @@ c
 
               ! Put the geoclaw alloc values to PDAF field
               ! Next step is to use the field for assimilation
-              call mpi_barrier(mpi_comm_world, mpierr)
+              !call mpi_barrier(mpi_comm_world, mpierr)
               call alloc2field(nvar,naux,analyze_water)
-              call mpi_barrier(mpi_comm_world, mpierr)
+              print *, "field size = ", size(field)
+              !call mpi_barrier(mpi_comm_world, mpierr)
               
               ! Update dim_state_p and state
-              call mpi_barrier(mpi_comm_world, mpierr)
+              !call mpi_barrier(mpi_comm_world, mpierr)
               call update_dim_state_p(nvar, naux)
-              call mpi_barrier(mpi_comm_world, mpierr)
+              !call mpi_barrier(mpi_comm_world, mpierr)
 
           endif
           
@@ -445,13 +466,13 @@ c
           ! 4. field2alloc
           call assimilate_pdaf(nvar, naux, mxnest, time)
 
-          !if (stepnow_pdaf == assimilate_step) then
-          if (time == assimilation_time) then
+          !if (time == assimilation_time) then
+          if (abs(time - assimilation_time) < 1.0D-06) then
           
             ! Put the assimilated values from field to alloc
-            call mpi_barrier(mpi_comm_world, mpierr)
+            !call mpi_barrier(mpi_comm_world, mpierr)
             call field2alloc(nvar,naux, analyze_water)!not for output purpose
-            call mpi_barrier(mpi_comm_world, mpierr)
+            !call mpi_barrier(mpi_comm_world, mpierr)
             deallocate(field) 
 
             if (mxlevel /=1) then
@@ -561,7 +582,7 @@ c             ! use same alg. as when setting refinement when first make new fin
 
            endif
        endif
-       call mpi_barrier(mpi_comm_world, mpierr)
+       !call mpi_barrier(mpi_comm_world, mpierr)
           
 !       ! Forecast output for every ensemble  
 !       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
@@ -583,15 +604,14 @@ c             ! use same alg. as when setting refinement when first make new fin
 !           call chdir("../")
 !      endif
 
-       regrid_assim=.false.          
        !if (stepnow_pdaf == assimilate_step) then
-       if (time == assimilation_time) then
+       if (abs(time - assimilation_time) < 1.0D-06) then
+          regrid_assim=.false.          
+          call extract_regions(assimilation_time, regrid_assim) 
           print *, "Regridding second time"
-          call mpi_barrier(mpi_comm_world, mpierr)
-          !print *, "lbase = ", lbase
-          !call regrid(nvar,lbase,cut,naux,start_time)
           call regrid(nvar,1,cut,naux,start_time)
           call setbestsrc()     ! need at every grid change
+          print *, "regrid after assimilation"
           do ii=mxlevel-1,1
               call update(ii, nvar, naux)
           enddo
@@ -599,9 +619,9 @@ c             ! use same alg. as when setting refinement when first make new fin
 
        ! Analysis output for every ensemble  
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
-           call mpi_barrier(mpi_comm_world, mpierr)
+           !call mpi_barrier(mpi_comm_world, mpierr)
            print *, "Analysis valout for ens ", mype_world
-           call mpi_barrier(mpi_comm_world, mpierr)
+           !call mpi_barrier(mpi_comm_world, mpierr)
            
            write(ensstr2, '(i2.1)') mype_world
            inquire(file="_output_"//trim(adjustl(ensstr2))//"_ana", 
@@ -632,11 +652,12 @@ c             ! use same alg. as when setting refinement when first make new fin
           
        !VERY VERY IMPORTANT
        !if (stepnow_pdaf == assimilate_step) then
-       if (time == assimilation_time) then
+       !if (time == assimilation_time) then
+       if (abs(time - assimilation_time) < 1.0D-06) then
            stepnow_pdaf = 0
        endif
        print *, "reached yo2", mype_world, stepnow_pdaf
-       call mpi_barrier(mpi_comm_world, mpierr)
+       !call mpi_barrier(mpi_comm_world, mpierr)
 #else
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
          call valout(1,lfine,time,nvar,naux)

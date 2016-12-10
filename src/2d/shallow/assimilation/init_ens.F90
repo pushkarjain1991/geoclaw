@@ -49,7 +49,6 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 ! *** local variables ***
   INTEGER :: i, j, member  ! Counters
   INTEGER, SAVE :: allocflag = 0      ! Flag for memory counting
-!  REAL, ALLOCATABLE :: field(:)     ! global model field
   CHARACTER(len=3) :: ensstr          ! String for ensemble member
   !INTEGER :: index_2d_pdaf(2)
   !INTEGER :: index_2d_row, index_2d_col
@@ -67,6 +66,7 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 !
 DO member = 1, dim_ens
     ens_p(:, member) = reshaped_recv_ic(:,member)
+    print *, "shape of ens_p", shape(ens_p)
 enddo
     
 ! ****************

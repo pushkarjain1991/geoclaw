@@ -73,8 +73,6 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
 ! *** local variables ***
   INTEGER :: i, j, member             ! Counters
-  INTEGER, SAVE :: allocflag = 0      ! Flag for memory counting
-  LOGICAL, SAVE :: firstio = .TRUE.   ! File output is peformed for first time?
   LOGICAL, SAVE :: firsttime = .TRUE. ! Routine is called for first time?
   REAL :: invdim_ens                  ! Inverse ensemble size
   REAL :: invdim_ensm1                ! Inverse of ensemble size minus 1
@@ -200,14 +198,6 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
      END DO
      print *, "prepost done"
      
-    !field1(:)=variance(:)
-
-    !WRITE (ensstr, '(i3.2)') member
-
-    !OPEN(20, file = 'variance_'//TRIM(ADJUSTL(stepstr))//'_'//TRIM(anastr)//'.txt', &
-    !    status = 'replace')
-    !WRITE(20,*) field1(:)
-    !CLOSE(20)
 
     ! Write analysis state
     field1(:) = state_p(:)
