@@ -284,6 +284,8 @@ SUBROUTINE PDAF_enkf_analysis_rlm(step, dim_p, dim_obs_p, dim_ens, rank_ana, &
 
   CALL PDAF_timeit(15, 'new')
   ! observation ensemble is initialized into the residual matrix
+  print *, "dimobs = ", dim_obs
+  print *, "dimobs_p = ", dim_obs_p
   CALL PDAF_enkf_obs_ensemble(step, dim_obs_p, dim_obs, dim_ens, resid_p, &
        U_init_obs, U_init_obs_covar, screen, flag)
   CALL PDAF_timeit(15, 'old')

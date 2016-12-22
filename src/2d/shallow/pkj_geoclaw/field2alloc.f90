@@ -5,36 +5,24 @@
 !    > Created Time: Mon 01 Aug 2016 04:07:06 PM CDT
 ! ************************************************************************/
 
-subroutine field2alloc(nvar,naux,analyze_water, put_total_height)
+subroutine field2alloc(nvar,naux)
         use amr_module
+        use mod_model,only:field
 
-#ifdef USE_PDAF
-        use mod_model,only:field, wet_cell_index
-        use geoclaw_module, only: dry_tolerance
-!        use mod_assimilation,only: first_assimilation
-!       use sortarr
-!        use mapdomain,only: get_ordered_array
-!        use mod_assimilation, only: ordered_mptr_array
-
-        implicit none
+        !implicit none
+        implicit double precision (a-h,o-z)
         
         integer,intent(in) :: nvar
         integer,intent(in) :: naux
-        logical,intent(in) :: analyze_water
-        logical, optional :: put_total_height
 
-!        integer,allocatable :: mptr_array(:)
-!        integer,allocatable :: ordered_mptr_array(:)
-        integer :: mptr, j_pkj, i_pkj
-        integer :: i_mod, j_mod, loc, locaux
-        integer :: mitot, mjtot,nx,ny 
-        integer :: ivar,i,j,iaux
-        integer :: iadd,iaddaux
+        integer :: j_pkj, i_pkj
+        !integer :: mptr
+        !integer :: loc, locaux
+        !integer :: mitot, mjtot,nx,ny 
+        !integer :: ivar,i,j,iaux
+        !integer :: iadd,iaddaux
         integer :: cell_cnt
-        integer :: level
-        integer :: wet_index_ptr
-        logical :: first_water_analysis=.true.
-        logical :: field_is_total_height
+        !integer :: level
 
         iadd(ivar,i,j)=loc+ivar-1+nvar*((j-1)*mitot+i-1)
         iaddaux(iaux,i,j)=locaux+iaux-1+naux*(i-1)+naux*mitot*(j-1)
@@ -67,5 +55,4 @@ subroutine field2alloc(nvar,naux,analyze_water, put_total_height)
 
  91     continue
 
-#endif
      end subroutine field2alloc

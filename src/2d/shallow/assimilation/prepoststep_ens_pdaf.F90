@@ -78,7 +78,6 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   REAL :: invdim_ensm1                ! Inverse of ensemble size minus 1
   REAL :: rmserror_est                ! estimated RMS error
   REAL, ALLOCATABLE :: variance(:)    ! model state variances
-  !REAL, ALLOCATABLE :: field1(:,:)     ! global model field
   REAL, ALLOCATABLE :: field1(:)     ! global model field
   CHARACTER(len=3) :: ensstr          ! String for ensemble member
   CHARACTER(len=3) :: stepstr         ! String for time step
@@ -170,7 +169,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
      WRITE (*, '(8x, a)') '--- write ensemble and state estimate'
 
-     ALLOCATE(field1(dim_p))
+     !ALLOCATE(field1(dim_p))
 
     !Set string for time step
      IF (step>=0) THEN
@@ -183,36 +182,37 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
      ! Write analysis ensemble
      DO member = 1, dim_ens
 
-        field1(:) = ens_p(:,member)
+        !field1(:) = ens_p(:,member)
 
         WRITE (ensstr, '(i3.2)') member
 
         OPEN(20, file ='ens_'//TRIM(ADJUSTL(ensstr))//'_step'//TRIM(ADJUSTL(stepstr))//'_'// TRIM(anastr)//'.txt',&
             status = 'replace')
 
-        DO i = 1, size(field1)
-            WRITE (20, "(e26.16)") field1(i)
+        !DO i = 1, size(field1)
+        DO i = 1, dim_p
+            !WRITE (20, "(e26.16)") field1(i)
+            WRITE (20, "(e26.16)") ens_p(i,member)
         ENDDO
 
         CLOSE(20)
      END DO
-     print *, "prepost done"
      
-
     ! Write analysis state
-    field1(:) = state_p(:)
+    !field1(:) = state_p(:)
 
      OPEN(20, file = 'state_step'//TRIM(ADJUSTL(stepstr))//'_'//TRIM(anastr)//'.txt', &
          status = 'replace')
 
-     DO i = 1, size(field1)
-         WRITE (20, "(e26.16)") field1(i)
+     !DO i = 1, size(field1)
+     DO i = 1, dim_p
+         !WRITE (20, "(e26.16)") field1(i)
+         WRITE (20, "(e26.16)") state_p(i)
      ENDDO
 
      CLOSE(20)
 
-
-     DEALLOCATE(field1)
+     !DEALLOCATE(field1)
   END IF
 
 

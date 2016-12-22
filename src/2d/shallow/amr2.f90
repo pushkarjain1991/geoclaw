@@ -93,7 +93,7 @@ program amr2
 
     ! Data modules
     use geoclaw_module, only: set_geo
-#ifdef USE_PDAF_CHILE
+#ifdef USE_PDAF_CHILE2
     use topo_module, only: read_topo_settings, read_dtopo_settings, &
     dtopowork
 #else
@@ -112,20 +112,16 @@ program amr2
 
 #ifdef USE_PDAF
     use mpi, only: mpi_real8
-    use amr_module, only: numcells
     use mod_model, only : field, total_steps, reshaped_recv_ic, &
     random_pert
     use mod_parallel, only: MPIerr, mpi_comm_world, mype_world, &
-    npes_world, MPI_INTEGER, MPIstatus, n_modeltasks
-    use mod_assimilation, only: dim_state_p, dim_ens, regrid_assim,&
-    analyze_water
+    n_modeltasks
+    use mod_assimilation, only: dim_state_p, dim_ens, regrid_assim
     use common_level, only: set_original_regions
     use gauges_module, only: setbestsrc
 #endif
 
     implicit none
-
-
 
     ! Local variables
     integer :: i, iaux, mw, level
@@ -175,6 +171,7 @@ program amr2
 
 #ifdef USE_PDAF_CHILE_PERT_RESTART
     real(kind=8), allocatable :: temp_field(:)
+    integer :: ii
 #endif
 
 
@@ -549,7 +546,7 @@ program amr2
 
 #ifdef USE_PDAF_CHILE2
         !Initial perturbation in topo itself
-        pert_sigma = .0005D+00
+        pert_sigma = .005D+00
         pert_mu = 0.0D+00
         if(mype_world == 0) then
             seed = clock
@@ -731,7 +728,7 @@ program amr2
 
 
 #ifdef USE_PDAF_CHILE_PERT_RESTART
-        pert_sigma = .005D+00
+        pert_sigma = .01D+00
         pert_mu = 0.0D+00
         if(mype_world == 0) then
             seed = clock
@@ -745,26 +742,39 @@ program amr2
 
         call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
         root1, mpi_comm_world, mpierr)
-call alloc2field(nvar, naux, analyze_water)
-!temp_field = field + 0.01*mype_world
-temp_field = field + recv_random_pert
-where((field > 0.1 .and. field < 0.3) .or. (field > -0.3 .and. field<-0.1))
-   field = temp_field
-endwhere
-!field = temp_field
-call field2alloc(nvar, naux, analyze_water)
+        call alloc2field(nvar, naux)
+        !temp_field = field + 0.01*mype_world
+        temp_field = field + recv_random_pert
+        where((field > 0.1 .and. field < 0.3) .or. (field > -0.3 .and. field<-0.1))
+            field = temp_field
+        endwhere
+        !field(:) = temp_field(:)
+        call field2alloc(nvar, naux)
+        
+        !regrid_assim = .true.
+        !call extract_regions(t0, regrid_assim)
+        !call regrid(nvar,1,cut,naux,t0)
+        !call setbestsrc()     ! need at every grid change
+        
+        !print *, "lfine intiially = ", lfine
+        !if (lfine /=1) then
+        !  do ii=lfine-1,1
+        !    call update(ii, nvar, naux)
+        !  enddo
+        !  print *, "Update done initially"
+        !endif
 #endif
 
 #ifdef USE_PDAF
     total_steps = nstop
     
-    call alloc2field(nvar, naux, analyze_water)
+    call alloc2field(nvar, naux)
     !call update_dim_state_p(nvar, naux)
     dim_state_p = size(field)
     
-    call mpi_barrier(mpi_comm_world, mpierr)
+    !call mpi_barrier(mpi_comm_world, mpierr)
     print *, "Initial dim_state_p = ", mype_world, dim_state_p
-    call mpi_barrier(mpi_comm_world, mpierr)
+    !call mpi_barrier(mpi_comm_world, mpierr)
     
     write(ensstr1, '(i3.1)') mype_world
     print *, "writing init_ens# file"
@@ -774,21 +784,26 @@ call field2alloc(nvar, naux, analyze_water)
     enddo
     close(57)
     print *, "Done writing init_ens# file"
-    call mpi_barrier(mpi_comm_world, mpierr)
+    !call mpi_barrier(mpi_comm_world, mpierr)
     
     !Gather the initial conditions to root processor
     print *, "Reading IC, ", mype_world
     print *, "Allocating space for recv_ic"
     if (mype_world == 0) allocate(recv_ic(dim_state_p*n_modeltasks))
+    !!PARALLEL_DEBUG
     print *, "Done allocating space for recv_ic"
-    call mpi_barrier(mpi_comm_world, mpierr)
+    !call mpi_barrier(mpi_comm_world, mpierr)
     print *, "Performing initial condition gathering..."
     call mpi_gather(field, dim_state_p, mpi_real8, recv_ic, dim_state_p,&
     mpi_real8, root, mpi_comm_world, mpierr) 
     print *, "Done Performing initial condition gathering..."
+    print *, "dim_state_p, n_modeltasks = ", dim_state_p, n_modeltasks
     
     if (mype_world == 0) then
-        reshaped_recv_ic = reshape(recv_ic, (/dim_state_p, n_modeltasks/))
+        if(allocated(reshaped_recv_ic)) deallocate(reshaped_recv_ic)
+        allocate(reshaped_recv_ic(dim_state_p, n_modeltasks))
+        reshaped_recv_ic(:,:) = reshape(recv_ic, (/dim_state_p, n_modeltasks/))
+        !print *, "reshaped_recv_ic = ", reshaped_recv_ic(:,:)
         deallocate(recv_ic)
     endif
 

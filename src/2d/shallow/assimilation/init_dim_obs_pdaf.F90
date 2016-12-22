@@ -27,7 +27,7 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
 ! ARGUMENTS:
   INTEGER, INTENT(in)  :: step      ! Current time step
-  INTEGER :: dim_obs_p ! Dimension of full observation vector
+  INTEGER, INTENT(inout) :: dim_obs_p ! Dimension of full observation vector
 ! LOCAL variables
   CHARACTER(len=20) :: fname
   CHARACTER(len=4) :: stepstr         ! String for time step
@@ -39,8 +39,8 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
   INTERFACE
       SUBROUTINE get_obs(xx,yy,qq,dim_obs_p)
-          REAL(KIND=8),ALLOCATABLE :: xx(:),yy(:),qq(:)
-          INTEGER :: dim_obs_p
+          REAL(KIND=8), intent(in) :: xx(:),yy(:),qq(:)
+          INTEGER, intent(inout) :: dim_obs_p
       END SUBROUTINE get_obs
   END INTERFACE
 

@@ -6,7 +6,6 @@
 ! ************************************************************************/
 
       subroutine get_obs(x,y,q,cnt)
-#ifdef USE_PDAF
           use amr_module
           !use mod_assimilation,only: obs,obs_index, coords_obs
           use mod_assimilation, only: obs, obs_index
@@ -16,7 +15,7 @@
           real(kind=8),intent(in) :: x(:)
           real(kind=8),intent(in) :: y(:)
           real(kind=8),intent(in) :: q(:)
-          integer :: cnt
+          integer, intent(inout) :: cnt
 !         Local variables          
           integer :: i,j,mptr,nx,ny,level,row,coln,cnt0,cnt1
           real(8) :: dx,dy,xlow,ylow,left,right,up,down
@@ -24,11 +23,11 @@
           real(8), allocatable :: q_local(:)
           logical :: obs_flag(size(x))
           logical :: obs_in_domain
-          cnt = 0 
+           
 
           print *, "Running get_obs"
 
-         ! Count number of observations at finest mesh
+         cnt = 0
          level = 1
  65      if (level .gt. lfine) go to 90
             mptr = lstart(level)
@@ -64,9 +63,6 @@
         allocate(obs_index(cnt))
         if (allocated(obs)) deallocate(obs)
         allocate(obs(cnt))
-          !if (.not. allocated(obs_index)) allocate(obs_index(cnt))
-          !if (.not. allocated(obs)) allocate(obs(cnt))
-          !if (.not. allocated(coords_obs)) allocate(coords_obs(2,cnt))
 
         cnt0=0
         cnt1=0
@@ -96,9 +92,11 @@
                 cnt1=cnt1+1
                 obs_index(cnt1)=cnt0
 
-                q_local=pack(q,obs_flag)
-                obs(cnt1)=sum(q_local)/size(q_local)
-                !obs(cnt1)=0.01
+                !q_local=pack(q,obs_flag)
+                !obs(cnt1)=sum(q_local)/size(q_local)
+                
+               obs(cnt1)=sum(pack(q, obs_flag))/&
+               size(pack(q, obs_flag))
 
 
                 !call ind1d_to_coord2d(cnt0,temp_coord_obs_2d)
@@ -120,7 +118,6 @@
         !print *, "obs after get_obs = ", obs
         !print *, mype_world, " obs_index = ", obs_index
         print *, "Finished running get_obs"
-#endif
       end subroutine get_obs
 
 

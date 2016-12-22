@@ -80,7 +80,7 @@ SUBROUTINE init_pdaf()
   !delt_obs = 20     ! Number of time steps between analysis/assimilation steps
 
 ! *** IO options ***
-  screen      = 2  ! Write screen output (1) for output, (2) add timings
+  screen      = 3  ! Write screen output (1) for output, (2) add timings
 
   
 ! *** Filter specific variables
@@ -117,7 +117,7 @@ SUBROUTINE init_pdaf()
    endif
  stepnow_pdaf=0
  assimilate_step=delt_obs
-  subtype = 1       ! subtype of filter:
+  subtype = 0       ! subtype of filter:
                     !   ESTKF:
                     !     (0) Standard form of ESTKF
                     !   LESTKF:

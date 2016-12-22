@@ -42,14 +42,6 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
     use regions_module, only: num_regions, regions
     use refinement_module
 
-!#ifdef USE_PDAF
-!      use mod_parallel, only: mype_world, MPIerr, mpi_comm_world, n_modeltasks
-!      use mpi, only: mpi_real8
-!      use mod_assimilation, only: stepnow_pdaf, assimilate_step, &
-!      dim_ens, regrid_assim
-!      !USE PDAF_mod_filtermpi, only: MPI_REALTYPE
-!#endif
-
     implicit none
 
     ! Subroutine arguments
@@ -74,27 +66,6 @@ subroutine flag2refine2(mx,my,mbc,mbuff,meqn,maux,xlower,ylower,dx,dy,t,level, &
 
     ! Storm specific variables
     real(kind=8) :: R_eye(2), wind_speed
-
-#ifdef USE_PDAF
-    integer :: gsize
-    !real(kind=8), dimension(5000) :: recvbuf = 0
-    !real(kind=8), dimension(2500) :: sendbuf = 0
-    real(kind=8), allocatable :: recvbuf(:)
-    real(kind=8), allocatable, dimension(:,:) :: reshaped_buffer
-    real(kind=8), allocatable :: sendbuf(:)
-    real(kind=8), allocatable :: flagunion(:)
-    logical, allocatable :: mask(:)
-    integer :: alloc_stat
-    
-    integer :: sendcount, recvcount
-    integer, parameter :: root = 0
-    integer :: recvsize
-    character(len=1) :: ensstr
-    character(len=7) :: file1
-    character(len=7) :: file2
-    character(len=17) :: filename
-    integer :: csize
-#endif
 
     ! Initialize flags
     amrflags = DONTFLAG

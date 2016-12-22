@@ -50,9 +50,6 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
   INTEGER :: i, j, member  ! Counters
   INTEGER, SAVE :: allocflag = 0      ! Flag for memory counting
   CHARACTER(len=3) :: ensstr          ! String for ensemble member
-  !INTEGER :: index_2d_pdaf(2)
-  !INTEGER :: index_2d_row, index_2d_col
-  !INTEGER :: index_1d_pdaf
 
 
 ! **********************

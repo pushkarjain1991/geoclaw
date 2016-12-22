@@ -14,8 +14,8 @@
 
 
 # Compiler, Linker, and Archiver
-FC = mpif90
-LD = mpif90
+FC = mpifort
+LD = mpifort
 AR = ar
 RANLIB = ranlib 
 

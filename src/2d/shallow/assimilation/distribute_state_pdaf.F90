@@ -50,8 +50,7 @@ SUBROUTINE distribute_state_pdaf(dim_p, state_p)
 ! *******************************************
 ! *** Initialize model fields from state  ***
 !********************************************
-
-  !if (.not. allocated(field)) allocate(field(dim_p))
+  print *, "In distribute, size(state_p) = ", size(state_p)
   if (allocated(field)) deallocate(field)
   allocate(field(dim_p))
   field(:) = state_p(:)

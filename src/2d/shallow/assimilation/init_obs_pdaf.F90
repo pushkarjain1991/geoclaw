@@ -22,15 +22,14 @@ SUBROUTINE init_obs_pdaf(step, dim_obs_p, observation_p)
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_assimilation, &
-       ONLY: obs
+  USE mod_assimilation, ONLY: obs
 
   IMPLICIT NONE
 
 ! !ARGUMENTS:
   INTEGER, INTENT(in) :: step             ! Current time step
   INTEGER, INTENT(in) :: dim_obs_p        ! PE-local dimension of obs. vector
-  REAL, INTENT(out)   :: observation_p(dim_obs_p) ! PE-local observation vector
+  REAL(kind=8), INTENT(out)   :: observation_p(dim_obs_p) ! PE-local observation vector
 
 ! !CALLING SEQUENCE:
 ! Called by: PDAF_seek_analysis    (as U_init_obs)
@@ -42,8 +41,9 @@ SUBROUTINE init_obs_pdaf(step, dim_obs_p, observation_p)
 ! ******************************
 ! *** Initialize observation ***
 ! ******************************
-  
-  observation_p = obs
+  print *, "Running init_obs 1" 
+  observation_p(:) = obs(:)
+  print *, "Running init_obs 2" 
 
 END SUBROUTINE init_obs_pdaf
 
