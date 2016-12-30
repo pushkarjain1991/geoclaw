@@ -117,7 +117,7 @@ program amr2
     use mod_parallel, only: MPIerr, mpi_comm_world, mype_world, &
     n_modeltasks
     use mod_assimilation, only: dim_state_p, dim_ens, regrid_assim
-    use common_level, only: set_original_regions
+    !use common_level, only: set_original_regions
     use gauges_module, only: setbestsrc
 #endif
 
@@ -526,7 +526,7 @@ program amr2
 
 #ifdef USE_PDAF
         regrid_assim = .false.
-        call set_original_regions()
+        !call set_original_regions()
 #endif
 
     else
@@ -636,9 +636,9 @@ program amr2
         nstart = 0
 #ifdef USE_PDAF
         regrid_assim = .false.
-        if(num_regions /= 0) then 
-           call set_original_regions()
-        endif
+        !if(num_regions /= 0) then 
+        !   call set_original_regions()
+        !endif
 #endif
     endif
 

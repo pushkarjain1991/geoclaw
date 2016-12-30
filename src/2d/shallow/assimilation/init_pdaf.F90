@@ -117,7 +117,7 @@ SUBROUTINE init_pdaf()
    endif
  stepnow_pdaf=0
  assimilate_step=delt_obs
-  subtype = 0       ! subtype of filter:
+  subtype = 1       ! subtype of filter:
                     !   ESTKF:
                     !     (0) Standard form of ESTKF
                     !   LESTKF:
@@ -136,7 +136,7 @@ SUBROUTINE init_pdaf()
                     !   (0) fixed
                     !   (1) global adaptive
                     !   (2) local adaptive for LSEIK/LETKF/LESTKF
-  forget  = 1.0     ! Forgetting factor
+  forget  = 0.5     ! Forgetting factor
   type_sqrt = 0     ! Type of transform matrix square-root
                     !   (0) symmetric square root, (1) Cholesky decomposition
   incremental = 0   ! (1) to perform incremental updating (only in SEIK/LSEIK!)

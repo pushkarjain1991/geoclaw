@@ -9,10 +9,10 @@ c
       use mod_parallel, only: mype_world, mpierr, mpi_comm_world
       use mod_assimilation, only: stepnow_pdaf, assimilate_step,
      & regrid_assim, second_valout, analyze_water, 
-     & assimilation_time
+     & assimilation_time, same_final_grid
       use mod_model, only: field
       use gauges_module, only: set_gauges
-      use regions_module, only: regions
+      use common_level, only: regions_assim
 #endif
       use refinement_module, only: varRefTime
       use amr_module
@@ -39,6 +39,7 @@ c
       integer :: curr_tot_step
       integer :: num_ex = 1
       integer :: field_size
+      integer :: i
 #endif
 
 c
@@ -238,9 +239,13 @@ c
               print *, mype_world, "Regridding non-assimilation.... 
      &       lbase = ", lbase
           regrid_assim = .false.
-          call extract_regions(time, regrid_assim) 
 #endif
           call regrid(nvar,lbase,cut,naux,start_time)
+#ifdef USE_PDAF
+          !call mpi_barrier(mpi_comm_world, mpierr)
+          call print_num_cells(nvar, naux)
+          !call mpi_barrier(mpi_comm_world, mpierr)
+#endif
           call system_clock(clock_finish,clock_rate)
           call cpu_time(cpu_finish)
           timeRegridding = timeRegridding + clock_finish - clock_start
@@ -405,7 +410,6 @@ c
           
               print *, "Assimilating data at time = ", assimilation_time
               regrid_assim=.true.
-              call extract_regions(time, regrid_assim)
 
               ! Perform regridding with regrid_assim True
               ! This is to get the ensembles obtain same flagging 
@@ -414,13 +418,21 @@ c
               print *, "Regridding first time ya", mype_world 
               call print_num_cells(nvar, naux)
               print *, "yo123"
-              call regrid(nvar,1,cut,naux,start_time)
-              call setbestsrc()     ! need at every grid change
-              call regrid(nvar,2,cut,naux,start_time)
-              call setbestsrc()     ! need at every grid change
+              do i = 1, mxnest-1
+                call extract_regions()
+                call regrid(nvar,1,1.0,naux,start_time)
+                call setbestsrc()     ! need at every grid change
+              enddo
+              !call extract_regions()
+              !call regrid(nvar,2,0.9,naux,start_time)
+              !call setbestsrc()     ! need at every grid change
+              !call mpi_barrier(mpi_comm_world, mpierr)
+              call print_num_cells(nvar, naux)
+              !call mpi_barrier(mpi_comm_world, mpierr)
+              !same_final_grid = .true.
               !call regrid(nvar,2,cut,naux,start_time)
               !call setbestsrc()     ! need at every grid change
-              call print_num_cells(nvar, naux)
+              !same_final_grid = .false.
               print *, "yo1234"
               
           
@@ -428,12 +440,14 @@ c
 !             call outtre(lstart(lbase+1),.false.,nvar,naux)
 !          endif
 
-              if (lfine /=1) then
-                  do ii=lfine-1,1,-1
-                      call update(ii, nvar, naux)
-                  enddo
-                  print *, "Update done"
-              endif
+              !if (mxnest <= 3) then
+              !  if (lfine /=1) then
+              !    do ii=lfine-1,1,-1
+              !        call update(ii, nvar, naux)
+              !    enddo
+              !    print *, "Update done"
+              !  endif
+              !endif
 
               ! Put the geoclaw alloc values to PDAF field
               ! Next step is to use the field for assimilation
@@ -463,10 +477,12 @@ c
               !call mpi_barrier(mpi_comm_world, mpierr)
               deallocate(field) 
 
-              !if (lfine /=1) then
-              !    do ii=lfine -1, 1, -1
-              !        call update(ii,nvar,naux)
-              !    enddo
+              !if (mxnest <= 3) then
+                !if (lfine /=1) then
+                !  do ii=lfine -1, 1, -1
+                !      call update(ii,nvar,naux)
+                !  enddo
+                !endif
               !endif
               
           endif
@@ -520,7 +536,7 @@ c             ! use same alg. as when setting refinement when first make new fin
 #ifdef USE_PDAF
 
        ! Output state_ana
-       if (mype_world == 1) then
+       if (mype_world == 0) then
            if ((mod(ncycle,iout).eq.0) .or. dumpout) then
                
                ! Copy original alloc to field
@@ -597,21 +613,6 @@ c             ! use same alg. as when setting refinement when first make new fin
            call chdir("../")
       endif
 
-       !if (abs(time - assimilation_time) < 1.0D-06) then
-       !   regrid_assim=.false.          
-       !   call extract_regions(assimilation_time, regrid_assim) 
-       !   print *, "Regridding second time"
-       !   call regrid(nvar,1,cut,naux,start_time)
-       !   call setbestsrc()     ! need at every grid change
-       !   call regrid(nvar,2,cut,naux,start_time)
-       !   call setbestsrc()     ! need at every grid change
-       !   print *, "regrid after assimilation"
-       !   if (lfine /=1) then
-       !     do ii=lfine-1,1, -1
-       !       call update(ii, nvar, naux)
-       !     enddo
-       !   endif
-       !endif
 
 !       ! Analysis output for every ensemble  
 !       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
