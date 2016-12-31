@@ -420,7 +420,7 @@ c
               print *, "yo123"
               do i = 1, mxnest-1
                 call extract_regions()
-                call regrid(nvar,1,1.0,naux,start_time)
+                call regrid(nvar,1,0.7,naux,start_time)
                 call setbestsrc()     ! need at every grid change
               enddo
               !call extract_regions()
@@ -428,6 +428,7 @@ c
               !call setbestsrc()     ! need at every grid change
               !call mpi_barrier(mpi_comm_world, mpierr)
               call print_num_cells(nvar, naux)
+              call check_ensemble_grid()
               !call mpi_barrier(mpi_comm_world, mpierr)
               !same_final_grid = .true.
               !call regrid(nvar,2,cut,naux,start_time)

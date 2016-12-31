@@ -728,11 +728,12 @@ program amr2
 
 
 #ifdef USE_PDAF_CHILE_PERT_RESTART
+        !pert_sigma = .01D+00
         pert_sigma = .01D+00
         pert_mu = 0.0D+00
         if(mype_world == 0) then
-            seed = clock
-            !seed=123456789
+            !seed = clock
+            seed=123456789
 
             allocate(rand_pert(n_modeltasks))
             call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
