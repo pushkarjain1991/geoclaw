@@ -269,7 +269,7 @@ CONTAINS
 ! *** Finalize ***
     IF (modified) THEN
        logvalue = parsed_log
-       IF (mype == 0) WRITE (*, '(2x, a, a, a, l)') &
+       IF (mype == 0) WRITE (*, '(2x, a, a, a, l1)') &
             'PARSER: ', TRIM(handle), '=', parsed_log
     END IF
   END SUBROUTINE parse_logical

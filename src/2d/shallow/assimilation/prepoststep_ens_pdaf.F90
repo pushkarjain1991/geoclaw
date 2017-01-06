@@ -10,25 +10,25 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 ! !DESCRIPTION:
 ! User-supplied routine for PDAF.
 ! Used in the filters: SEIK/EnKF/LSEIK/ETKF/LETKF/ESTKF/LESTKF
-!
+! 
 ! The routine is called for global filters (e.g. SEIK)
 ! before the analysis and after the ensemble transformation.
 ! For local filters (e.g. LSEIK) the routine is called
 ! before and after the loop over all local analysis
 ! domains.
-! The routine provides full access to the state
+! The routine provides full access to the state 
 ! estimate and the state ensemble to the user.
-! Thus, user-controlled pre- and poststep
-! operations can be performed here. For example
+! Thus, user-controlled pre- and poststep 
+! operations can be performed here. For example 
 ! the forecast and the analysis states and ensemble
-! covariance matrix can be analyzed, e.g. by
-! computing the estimated variances.
+! covariance matrix can be analyzed, e.g. by 
+! computing the estimated variances. 
 ! For the offline mode, this routine is the place
 ! in which the writing of the analysis ensemble
 ! can be performed.
 !
-! If a user considers to perform adjustments to the
-! estimates (e.g. for balances), this routine is
+! If a user considers to perform adjustments to the 
+! estimates (e.g. for balances), this routine is 
 ! the right place for it.
 !
 ! Implementation for the 2D offline example
@@ -39,9 +39,6 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_assimilation, &
-       ONLY: incremental, filename, subtype, covartype
-  !USE mod_model, ONLY: nx, ny
 
   IMPLICIT NONE
 
@@ -78,7 +75,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   REAL :: invdim_ensm1                ! Inverse of ensemble size minus 1
   REAL :: rmserror_est                ! estimated RMS error
   REAL, ALLOCATABLE :: variance(:)    ! model state variances
-  REAL, ALLOCATABLE :: field1(:)     ! global model field
+  !REAL, ALLOCATABLE :: field1(:)     ! global model field
   CHARACTER(len=3) :: ensstr          ! String for ensemble member
   CHARACTER(len=3) :: stepstr         ! String for time step
   CHARACTER(len=3) :: anastr          ! String for call type (initial, forecast, analysis)
@@ -87,7 +84,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 ! **********************
 ! *** INITIALIZATION ***
 ! **********************
-!print *, 'I am process ',mype_world
+
   IF (firsttime) THEN
      WRITE (*, '(8x, a)') 'Analyze initial state ensemble'
      anastr = 'ini'
@@ -106,7 +103,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
   ! Initialize numbers
   rmserror_est  = 0.0
-  invdim_ens    = 1.0 / REAL(dim_ens)
+  invdim_ens    = 1.0 / REAL(dim_ens)  
   invdim_ensm1  = 1.0 / REAL(dim_ens - 1)
 
 
@@ -160,7 +157,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   WRITE (*, '(12x, a, es12.4)') &
        'RMS error according to sampled variance: ', rmserror_est
 
-
+  
 ! *******************
 ! *** File output ***
 ! *******************
@@ -171,9 +168,8 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
      !ALLOCATE(field1(dim_p))
 
-    !Set string for time step
+     ! Set string for time step
      IF (step>=0) THEN
-        !WRITE (stepstr, '(i2.2)') step
         WRITE (stepstr, '(i3.1)') step
      ELSE
         WRITE (stepstr, '(i3.1)') -step

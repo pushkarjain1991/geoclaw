@@ -289,12 +289,12 @@ def setrun(claw_pkg='geoclaw'):
     amrdata = rundata.amrdata
 
     # max number of refinement levels:
-    amrdata.amr_levels_max = 1
+    amrdata.amr_levels_max = 2
 
     # List of refinement ratios at each level (length at least mxnest-1)
-    amrdata.refinement_ratios_x = [2,6]
-    amrdata.refinement_ratios_y = [2,6]
-    amrdata.refinement_ratios_t = [2,6]
+    amrdata.refinement_ratios_x = [2,2,2,2,2]
+    amrdata.refinement_ratios_y = [2,2,2,2,2]
+    amrdata.refinement_ratios_t = [2,2,2,2,2]
 
 
     # Specify type of each aux variable in amrdata.auxtype.
@@ -343,8 +343,9 @@ def setrun(claw_pkg='geoclaw'):
     rundata.regiondata.regions = []
     # to specify regions of refinement append lines of the form
     #  [minlevel,maxlevel,t1,t2,x1,x2,y1,y2]
-    rundata.regiondata.regions.append([3, 3, 0., 10000., -85,-72,-38,-25])
-    rundata.regiondata.regions.append([3, 3, 8000., 26000., -90,-80,-30,-15])
+    #rundata.regiondata.regions.append([1, 3, 0., 10000., -85,-72,-38,-25])
+    #rundata.regiondata.regions.append([1, 3, 8000., 26000., -90,-80,-30,-15])
+    #rundata.regiondata.regions.append([1, 3, 8000., 26000., -90,-80,-30,-15])
 
     # ---------------
     # Gauges:
@@ -352,6 +353,8 @@ def setrun(claw_pkg='geoclaw'):
     rundata.gaugedata.gauges = []
     # for gauges append lines of the form  [gaugeno, x, y, t1, t2]
     rundata.gaugedata.gauges.append([32412, -86.392, -17.975, 0., 1.e10])
+    rundata.gaugedata.gauges.append([12, -88.0, -3.975, 0., 1.e10])
+    rundata.gaugedata.gauges.append([13, -105.0, -20.0, 0., 1.e10])
     
 
     return rundata

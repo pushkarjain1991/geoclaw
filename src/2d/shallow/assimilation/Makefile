@@ -97,7 +97,7 @@ OBJ_USER_LOCAL = init_n_domains_pdaf.o \
 # Full list of user-supplied routines for online modes
 #OBJ_PDAF_USER = $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL)
 #OBJ_PDAF_USER = $(OBJ_USER_DOMAIN) $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL)
-OBJ_PDAF_USER = $(OBJ_USER_DOMAIN) $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF)
+OBJ_PDAF_USER = $(OBJ_USER_DOMAIN) $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL)
 
 ######################################################
 
@@ -135,8 +135,7 @@ libpdaf-d.a:
 	@cd $(BASEDIR)/src; make;
 
 #libonline: libpdaf-d.a $(MODULES) $(OBJ_MPI) $(MOD_ASSIM) $(OBJ_PDAF_INT) $(OBJ_USER_GEN) $(OBJ_USER_ENKF) $(OBJ_USER_SEIK)
-#libonline: libpdaf-d.a $(MODULES) $(OBJ_USER_DOMAIN) $(OBJ_MPI) $(MOD_ASSIM) $(OBJ_PDAF_INT) $(OBJ_USER_GEN) $(OBJ_USER_ENKF) $(OBJ_USER_SEIK) $(OBJ_USER_LOCAL)
-libonline: libpdaf-d.a $(MODULES) $(OBJ_USER_DOMAIN) $(OBJ_MPI) $(MOD_ASSIM) $(OBJ_PDAF_INT) $(OBJ_USER_GEN) $(OBJ_USER_ENKF) $(OBJ_USER_SEIK)
+libonline: libpdaf-d.a $(MODULES) $(OBJ_USER_DOMAIN) $(OBJ_MPI) $(MOD_ASSIM) $(OBJ_PDAF_INT) $(OBJ_USER_GEN) $(OBJ_USER_ENKF) $(OBJ_USER_SEIK) $(OBJ_USER_LOCAL)
 	@echo "++++++ Generate assimilation library ++++++"
 	@cp $(BASEDIR)/lib/libpdaf-d.a .
 	@ar r $^

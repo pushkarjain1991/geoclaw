@@ -119,7 +119,8 @@ def setrun(claw_pkg='geoclaw'):
     # the OUTDIR indicated in Makefile.
 
     clawdata.restart = True               # True to restart from prior results
-    clawdata.restart_file = 'fort.chk00074'  # File to use for restart data
+    clawdata.restart_file = 'fort.chk00073'  # File to use for restart data Level2,3
+    #clawdata.restart_file = 'fort.chk00073'  # File to use for restart data Level 1
 
     # -------------
     # Output times:
@@ -287,7 +288,7 @@ def setrun(claw_pkg='geoclaw'):
     amrdata = rundata.amrdata
 
     # max number of refinement levels:
-    amrdata.amr_levels_max = 3
+    amrdata.amr_levels_max = 2
 
     # List of refinement ratios at each level (length at least mxnest-1)
     amrdata.refinement_ratios_x = [2,2,2,2,2]
@@ -345,10 +346,8 @@ def setrun(claw_pkg='geoclaw'):
     rundata.regiondata.regions = []
     # to specify regions of refinement append lines of the form
     #  [minlevel,maxlevel,t1,t2,x1,x2,y1,y2]
-    rundata.regiondata.regions.append([3, 3, 0., 10000., -85,-72,-38,-25])
-    rundata.regiondata.regions.append([3, 3, 8000., 26000., -90,-80,-30,-15])
-    rundata.regiondata.regions.append([4, 4, 0., 26000., -85,-80,-38,-15])
-    rundata.regiondata.regions.append([5, 5, 0., 40000., -100,-85,-25,-15])
+    rundata.regiondata.regions.append([2, 2, 0., 10000., -85,-72,-38,-25])
+    rundata.regiondata.regions.append([2, 2, 0.0, 1.0e10, -90,-80,-30,-15])
     #rundata.regiondata.regions.append([1, 3, 0., 40000., -100,-85,-25,-15])
 
     # ---------------
@@ -357,6 +356,8 @@ def setrun(claw_pkg='geoclaw'):
     rundata.gaugedata.gauges = []
     # for gauges append lines of the form  [gaugeno, x, y, t1, t2]
     rundata.gaugedata.gauges.append([32412, -86.392, -17.975, 0., 1.e10])
+    rundata.gaugedata.gauges.append([12, -88.0, -3.975, 0., 1.e10])
+    rundata.gaugedata.gauges.append([13, -105.0, -20.0, 0., 1.e10])
     
 
     return rundata
@@ -435,7 +436,6 @@ def setgeo(rundata):
 def set_PDAF(rundata):
     import clawpack.geoclaw.data
     rundata.add_data(clawpack.geoclaw.data.PDAFData(), 'pdaf_data')
-    rundata.pdaf_data.filtertype = 2
     #(0) SEEK
     #(1) SEIK
     #(2) EnKF
@@ -444,10 +444,22 @@ def set_PDAF(rundata):
     #(5) LETKF
     #(6) ESTKF
     #(7) LESTKF
-    rundata.pdaf_data.num_ensembles = 16
-    #rundata.pdaf_data.rms_obs = 0.005
-    rundata.pdaf_data.rms_obs = 0.005
+    rundata.pdaf_data.filtertype = 7
+    rundata.pdaf_data.num_ensembles = 5
+    rundata.pdaf_data.rms_obs = 0.001
+    rundata.pdaf_data.subtype = 0
+    rundata.pdaf_data.forget = 0.9
+    
+    rundata.pdaf_data.type_trans = 0
+    rundata.pdaf_data.type_forget = 0
     rundata.pdaf_data.delt_obs = 1
+    rundata.pdaf_data.type_sqrt = 0
+    rundata.pdaf_data.incremental = 0
+    rundata.pdaf_data.covartype = 1
+    rundata.pdaf_data.rank_analysis_enkf = 0
+    rundata.pdaf_data.int_rediag = 1
+    rundata.pdaf_data.locweight = 2
+    rundata.pdaf_data.local_range = 20.0
     return rundata
 
 if __name__ == '__main__':

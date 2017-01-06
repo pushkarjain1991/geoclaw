@@ -4,7 +4,7 @@
 ! !ROUTINE: init_dim_obs_pdaf --- Compute number of observations
 !
 ! !INTERFACE:
-SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
+SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
 
 ! !DESCRIPTION:
 ! User-supplied routine for PDAF.
@@ -25,9 +25,10 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 ! !USES:
   IMPLICIT NONE
 
-! ARGUMENTS:
+! !ARGUMENTS:
   INTEGER, INTENT(in)  :: step      ! Current time step
-  INTEGER, INTENT(inout) :: dim_obs_p ! Dimension of full observation vector
+  INTEGER, INTENT(out) :: dim_obs_f ! Dimension of full observation vector
+
 ! LOCAL variables
   CHARACTER(len=20) :: fname
   CHARACTER(len=4) :: stepstr         ! String for time step
@@ -38,21 +39,13 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
 
   INTERFACE
-      SUBROUTINE get_obs(xx,yy,qq,dim_obs_p)
+      SUBROUTINE get_obs(xx,yy,qq,dim_obs_f)
           REAL(KIND=8), intent(in) :: xx(:),yy(:),qq(:)
-          INTEGER, intent(inout) :: dim_obs_p
+          INTEGER, intent(inout) :: dim_obs_f
       END SUBROUTINE get_obs
   END INTERFACE
 
 
-
-! !CALLING SEQUENCE:
-! Called by: PDAF_seek_analysis    (as U_init_dim_obs)
-! Called by: PDAF_seik_analysis, PDAF_seik_analysis_newT
-! Called by: PDAF_enkf_analysis_rlm, PDAF_enkf_analysis_rsm
-! Called by: PDAF_etkf_analysis, PDAF_etkf_analysis_T
-! Called by: PDAF_estkf_analysis, PDAF_estkf_analysis_fixed
-!EOP
 
    print *, "Running init_dim_obs_pdaf"
 
@@ -84,9 +77,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
    enddo
    close(12)
 
-   call get_obs(xx,yy,qq,dim_obs_p) 
-   print *, "dim_obs_p = ", dim_obs_p
+   call get_obs(xx,yy,qq,dim_obs_f) 
+   print *, "in init_dim_obs_f_pdaf, dim_obs_f = ", dim_obs_f
 
    print *, "Finished running init_dim_obs_pdaf"
 
-END SUBROUTINE init_dim_obs_pdaf
+END SUBROUTINE init_dim_obs_f_pdaf

@@ -69,8 +69,8 @@ def setplot(plotdata):
     #plotitem.plot_var = geoplot.surface
     plotitem.plot_var = geoplot.surface_or_depth
     plotitem.pcolor_cmap = geoplot.tsunami_colormap
-    plotitem.pcolor_cmin = -0.2
-    plotitem.pcolor_cmax = 0.2
+    plotitem.pcolor_cmin = -0.3
+    plotitem.pcolor_cmax = 0.3
     #plotitem.pcolor_cmin = -2.0
     #plotitem.pcolor_cmax = 2.0
     plotitem.add_colorbar = True

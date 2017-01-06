@@ -45,11 +45,6 @@ SUBROUTINE collect_state_pdaf(dim_p, state_p)
 ! *** Initialize state vector from model fields ***
 ! *************************************************
 
-  !DO j = 1, nx
-  !   state_p(1 + (j-1)*ny : j*ny) = field(1:ny, j)
-  !DO i = 1, ny
-  !  state_p(1 + (i-1)*nx : i*nx) = field(i,1:nx) 
-  !END DO
   state_p(:) = field(:)
   
 END SUBROUTINE collect_state_pdaf

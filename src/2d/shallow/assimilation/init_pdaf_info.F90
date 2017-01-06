@@ -20,10 +20,8 @@ SUBROUTINE init_pdaf_info()
 !
 ! !USES:
   USE mod_assimilation, & ! Variables for assimilation
-       ONLY: screen, filtertype, subtype, dim_ens, delt_obs, &
-       rms_obs, model_error, model_err_amp, incremental, covartype, &
-       type_forget, forget, epsilon, rank_analysis_enkf, locweight, &
-       local_range, srange, int_rediag, filename, type_trans
+       ONLY: filtertype, subtype, dim_ens, delt_obs, model_error, &
+       model_err_amp, forget, rank_analysis_enkf, int_rediag
 
   IMPLICIT NONE
 

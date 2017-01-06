@@ -118,7 +118,7 @@ program amr2
     n_modeltasks
     use mod_assimilation, only: dim_state_p, dim_ens, regrid_assim
     !use common_level, only: set_original_regions
-    use gauges_module, only: setbestsrc
+    !use gauges_module, only: setbestsrc
 #endif
 
     implicit none
@@ -573,24 +573,6 @@ program amr2
         call set_storm()                  ! Set storm parameters
         call set_regions()                ! Set refinement regions
         call set_gauges(rest, nvar)       ! Set gauge output
-!#ifdef USE_PDAF_CHILE
-!        write(ensstr3, '(i3.1)') mype_world
-!        call getcwd(cwd)
-!        print *, cwd
-!        inquire(file="_output_"//trim(adjustl(ensstr3))//"_ana",&     
-!        exist=dir_exists1)
-!        if(dir_exists1 .eqv. .false.) then
-!          call system('mkdir _output_'//&
-!          trim(adjustl(ensstr3))//'_ana')
-!          call chdir('_output_'//&
-!          trim(adjustl(ensstr3))//'_ana')
-!          call system('cp ../gauges.data .')
-!          call set_gauges(rest, nvar)       ! Set gauge output
-!          open(12,file='gauge32412.txt',status='new')
-!          close(12)
-!          call chdir('../')
-!        endif
-!#endif
         call set_fgmax()
 
         cflmax = 0.d0   ! otherwise use previously heckpointed val
@@ -728,17 +710,15 @@ program amr2
 
 
 #ifdef USE_PDAF_CHILE_PERT_RESTART
-        !pert_sigma = .01D+00
-        pert_sigma = .01D+00
+        pert_sigma = .05D+00
         pert_mu = 0.0D+00
         if(mype_world == 0) then
-            !seed = clock
-            seed=123456789
+          !seed = clock
+          seed=123456789
 
-            allocate(rand_pert(n_modeltasks))
-            call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
-            !print *, "printing random number", r, mype_world
-            call r8vec_print(n_modeltasks, rand_pert, ' Vector of Normal AB values:')
+          allocate(rand_pert(n_modeltasks))
+          call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
+          call r8vec_print(n_modeltasks, rand_pert, ' Vector of Normal AB values:')
         endif
 
         call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
@@ -758,12 +738,12 @@ program amr2
         !call setbestsrc()     ! need at every grid change
         
         !print *, "lfine intiially = ", lfine
-        !if (lfine /=1) then
-        !  do ii=lfine-1,1
-        !    call update(ii, nvar, naux)
-        !  enddo
-        !  print *, "Update done initially"
-        !endif
+        if (lfine /=1) then
+          do ii=lfine-1,1
+            call update(ii, nvar, naux)
+          enddo
+          print *, "Update done initially"
+        endif
 #endif
 
 #ifdef USE_PDAF

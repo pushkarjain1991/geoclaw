@@ -31,17 +31,12 @@ MODULE mod_assimilation
   INTEGER :: dim_state_p         ! Model state dimension for PE-local domain
   INTEGER, ALLOCATABLE :: local_dims(:)  ! Array for local state dimensions
 
-  REAL(kind=8), ALLOCATABLE    :: obs(:)          ! Vector holding all observations
+  REAL, ALLOCATABLE    :: obs(:)          ! Vector holding all observations
   INTEGER, ALLOCATABLE :: obs_index(:)    ! Vector holding state-vector indices of observations
   INTEGER, ALLOCATABLE :: obs_index_l(:)  ! Vector holding local state-vector indices of observations
-  !REAL, ALLOCATABLE :: coords_obs(:,:) ! Array for observation coordinates
+  REAL, ALLOCATABLE :: coords_obs(:,:) ! Array for observation coordinates
   INTEGER :: coords_l(2)                  ! Coordinates of local analysis domain
   INTEGER, ALLOCATABLE :: local_dims_obs(:) ! Array for process-local observation dimensions
-
-  !INTEGER :: coords_l_1d
-  !REAL :: coords_l_2d(2)
-  !INTEGER, ALLOCATABLE :: coords_obs_1d(:) ! Array for observation coordinates
-  !REAL, ALLOCATABLE :: coords_obs_2d(:,:) ! Array for observation coordinates
 
 
 
@@ -145,20 +140,17 @@ MODULE mod_assimilation
                            ! of P has also to be specified in PDAF_filter_init.
                            ! Only for upward-compatibility of PDAF!
   REAL    :: time          ! model time
-!  REAL    :: dum_ncycle    ! Cycle number
   
   INTEGER :: stepnow_pdaf
   INTEGER :: assimilate_step
   INTEGER :: ncycle_pdaf
   LOGICAL :: global_assimilation=.false.
-!  integer,allocatable :: mptr_array(:)
-!  integer,allocatable :: ordered_mptr_array(:) 
 
   LOGICAL :: regrid_assim=.false.
   LOGICAL :: second_valout=.false.
   LOGICAL :: analyze_water=.false.
   REAL(KIND=8) :: assimilation_time
   LOGICAL :: same_final_grid=.false. 
+  REAL, ALLOCATABLE :: global_coordinate(:,:)
 
-!$OMP threadprivate (obs_index_l,coords_l,coords_l_1d,coords_l_2d)
 END MODULE mod_assimilation

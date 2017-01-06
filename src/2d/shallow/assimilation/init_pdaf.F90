@@ -27,10 +27,10 @@ SUBROUTINE init_pdaf()
        MPI_COMM_WORLD, MPIErr
   USE mod_assimilation, & ! Variables for assimilation
        ONLY: dim_state_p, screen, filtertype, subtype, dim_ens, &
-       rms_obs, model_error, model_err_amp, incremental, covartype, &
-       type_forget, forget, dim_bias, rank_analysis_enkf, &
-       locweight, local_range, srange, int_rediag, filename, &
-       type_trans, type_sqrt, delt_obs,assimilate_step,stepnow_pdaf
+       rms_obs, incremental, covartype, type_forget, forget, &
+       rank_analysis_enkf, locweight, local_range, srange, int_rediag, &
+       filename, type_trans, type_sqrt, delt_obs, &
+       assimilate_step,stepnow_pdaf
 
   IMPLICIT NONE
 
@@ -54,10 +54,10 @@ SUBROUTINE init_pdaf()
   ! External subroutines
   EXTERNAL :: init_ens         ! Ensemble initialization
   EXTERNAL :: next_observation_pdaf, & ! Provide time step, model time,
-  !                                     ! and dimension of next observation
+                                       ! and dimension of next observation
        distribute_state_pdaf, &        ! Routine to distribute a state vector to model fields
        prepoststep_ens_pdaf            ! User supplied pre/poststep routine
-
+  
 
 ! ***************************
 ! ***   Initialize PDAF   ***
@@ -67,9 +67,6 @@ SUBROUTINE init_pdaf()
      WRITE (*,'(/1x,a)') 'INITIALIZE PDAF - ONLINE MODE'
   END IF
 
-  ! *** Define state dimension ***
-! dim_state_p = 10000
-!print *,dim_state_p
 
 
 ! **********************************************************
@@ -85,17 +82,17 @@ SUBROUTINE init_pdaf()
   
 ! *** Filter specific variables
 
-   inquire(FILE=filename_pdaf, EXIST=there)
-   if (.NOT. there) then
-      print *, "pdaf.data not found"
-      stop
-   else
-       call opendatafile(22, filename_pdaf)
+  inquire(FILE=filename_pdaf, EXIST=there)
+  if (.NOT. there) then
+    stop "pdaf.data not found"
+  endif
+   
+  call opendatafile(22, filename_pdaf)
 
-!``1 *** Forecast length (time interval between analysis steps) ***
+! *** Forecast length (time interval between analysis steps) ***
   !filtertype = 2    ! Type of filter
-       read(22,"(i1)") filtertype
-!    filtertype= 6   !   (0) SEEK
+  read(22,"(i1)") filtertype
+!    filtertype= 6  !   (0) SEEK
                     !   (1) SEIK
                     !   (2) EnKF
                     !   (3) LSEIK
@@ -103,26 +100,23 @@ SUBROUTINE init_pdaf()
                     !   (5) LETKF
                     !   (6) ESTKF
                     !   (7) LESTKF
-       read(22, "(i2)") delt_obs   ! Number of time steps between analysis/assimilation steps
+  read(22, "(i2)") delt_obs   ! Number of time steps between analysis/assimilation steps
 !  delt_obs=20
+
 ! *** specifications for observations ***
   ! avg. observation error (used for assimilation)
-       read(22,*) rms_obs     ! This error is the standard deviation
+  read(22,*) rms_obs     ! This error is the standard deviation
 !   rms_obs=0.0001                ! for the Gaussian distribution
 
-       read(22, *) dim_ens   ! Size of ensemble for all ensemble filters
-!    dim_ens=5   ! Number of EOFs to be used for SEEK
-!       read(22, *) local_range! Size of ensemble for all ensemble filters
-   close(22)
-   endif
- stepnow_pdaf=0
- assimilate_step=delt_obs
-  subtype = 1       ! subtype of filter:
+  read(22, *) dim_ens   ! Size of ensemble for all ensemble filters
+  read(22,"(i1)") subtype
+!  subtype = 0       ! subtype of filter:
                     !   ESTKF:
                     !     (0) Standard form of ESTKF
                     !   LESTKF:
                     !     (0) Standard form of LESTKF
-  type_trans = 0    ! Type of ensemble transformation
+  read(22, "(i1)") type_trans
+!  type_trans = 0    ! Type of ensemble transformation
                     !   SEIK/LSEIK and ESTKF/LESTKF:
                     !     (0) use deterministic omega
                     !     (1) use random orthonormal omega orthogonal to (1,...,1)^T
@@ -132,33 +126,45 @@ SUBROUTINE init_pdaf()
                     !     (0) use deterministic symmetric transformation
                     !     (2) use product of (0) with random orthonormal matrix with
                     !         eigenvector (1,...,1)^T
-  type_forget = 0   ! Type of forgetting factor in SEIK/LSEIK/ETKF/LETKF/ESTKF/LESTKF
+  read(22, "(i1)") type_forget
+!  type_forget = 0   ! Type of forgetting factor in SEIK/LSEIK/ETKF/LETKF/ESTKF/LESTKF
                     !   (0) fixed
                     !   (1) global adaptive
                     !   (2) local adaptive for LSEIK/LETKF/LESTKF
-  forget  = 0.5     ! Forgetting factor
-  type_sqrt = 0     ! Type of transform matrix square-root
+  read(22, *) forget
+!  forget  = 1.0     ! Forgetting factor
+  read(22, "(i1)") type_sqrt
+!  type_sqrt = 0     ! Type of transform matrix square-root
                     !   (0) symmetric square root, (1) Cholesky decomposition
-  incremental = 0   ! (1) to perform incremental updating (only in SEIK/LSEIK!)
-  covartype = 1     ! Definition of factor in covar. matrix used in SEIK
+  read(22, "(i1)") incremental
+!  incremental = 0   ! (1) to perform incremental updating (only in SEIK/LSEIK!)
+  read(22, "(i1)") covartype
+!  covartype = 1     ! Definition of factor in covar. matrix used in SEIK
                     !   (0) for dim_ens^-1 (old SEIK)
                     !   (1) for (dim_ens-1)^-1 (real ensemble covariance matrix)
                     !   This parameter has also to be set internally in PDAF_init.
-  rank_analysis_enkf = 0   ! rank to be considered for inversion of HPH
+  read(22, "(i1)") rank_analysis_enkf
+!  rank_analysis_enkf = 0   ! rank to be considered for inversion of HPH
                     ! in analysis of EnKF; (0) for analysis w/o eigendecomposition
-  int_rediag = 1    ! Interval of analysis steps to perform 
+  read(22, "(i1)") int_rediag
+!  int_rediag = 1    ! Interval of analysis steps to perform 
                     !    re-diagonalization in SEEK
-  locweight = 0     ! Type of localizating weighting
+  read(22, "(i1)") locweight
+!  locweight = 0     ! Type of localizating weighting
                     !   (0) constant weight of 1
                     !   (1) exponentially decreasing with SRANGE
                     !   (2) use 5th-order polynomial
                     !   (3) regulated localization of R with mean error variance
                     !   (4) regulated localization of R with single-point error variance
 
-  local_range = 8 ! Range in grid points for observation domain in local filters
+  read(22, *) local_range
+!  local_range = 8 ! Range in grid points for observation domain in local filters
   srange = local_range  ! Support range for 5th-order polynomial
                     ! or range for 1/e for exponential weighting
 
+  close(22)
+  stepnow_pdaf=0
+  assimilate_step=delt_obs
 ! *** File names
   filename = 'output.dat'
 
@@ -239,7 +245,7 @@ SUBROUTINE init_pdaf()
 ! ******************************'***
 ! *** Prepare ensemble forecasts ***
 ! ******************************'***
-  print *, "I am here"
+
   CALL PDAF_get_state(steps, timenow, doexit, next_observation_pdaf, &
        distribute_state_pdaf, prepoststep_ens_pdaf, status_pdaf)
 

@@ -43,9 +43,9 @@ for i,j in enumerate(wse_array):
     savefile = "obs_step" + str(i+1) + ".txt"
     with open(savefile, 'w') as f1:
         f1.write(str(x_coord) + " " + str(y_coord) + " " + str(j))
-        #f1.write(str(x_coord) + " " + str(y_coord) + " " + str(0.0))
+        #f1.write(str(x_coord) + " " + str(y_coord) + " " + str(2.0))
         f1.write("\n")
-        #f1.write("-110.0 -40.0 3840.0")
+        #f1.write("-110.0 -40.0 .01")
 
 #for i,j in enumerate(obs_time_list):
 #    obs_file = "obs_step"+str(int(j))+".txt"

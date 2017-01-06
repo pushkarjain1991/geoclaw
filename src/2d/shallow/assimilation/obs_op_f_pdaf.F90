@@ -1,25 +1,33 @@
-!$Id: obs_op_pdaf.F90 1443 2013-10-04 10:52:09Z lnerger $
+!$Id: obs_op_f_pdaf.F90 1565 2015-02-28 17:04:41Z lnerger $
 !BOP
 !
-! !ROUTINE: obs_op_pdaf --- Implementation of observation operator
+! !ROUTINE: obs_op_f_pdaf --- Implementation of observation operator
 !
 ! !INTERFACE:
-SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_p)
+SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
 
 ! !DESCRIPTION:
 ! User-supplied routine for PDAF.
-! Used in the filters: SEEK/SEIK/EnKF/ETKF/ESTKF
+! Used in the filters: LSEIK/LETKF/LESTKF
 !
-! The routine is called during the analysis step.
-! It has to perform the operation of the
-! observation operator acting on a state vector.
-! For domain decomposition, the action is on the
-! PE-local sub-domain of the state and has to 
-! provide the observed sub-state for the PE-local 
-! domain.
+! The routine is called in PDAF\_X\_update
+! before the loop over all local analysis domains
+! is entered.  The routine has to perform the 
+! operation of the observation operator acting on 
+! a state vector.  The full vector of all 
+! observations required for the localized analysis
+! on the PE-local domain has to be initialized.
+! This is usually data on the PE-local domain plus 
+! some region surrounding the PE-local domain. 
+! This data is gathered by MPI operations. The 
+! gathering has to be done here, since in the loop 
+! through all local analysis domains, no global
+! MPI operations can be performed, because the 
+! number of local analysis domains can vary from 
+! PE to PE.
 !
 ! Implementation for the 2D online example
-! with or without parallelization.
+! without parallelization.
 !
 ! !REVISION HISTORY:
 ! 2013-02 - Lars Nerger - Initial code
@@ -32,16 +40,16 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_p)
   IMPLICIT NONE
 
 ! !ARGUMENTS:
-  INTEGER, INTENT(in) :: step               ! Currrent time step
-  INTEGER, INTENT(in) :: dim_p              ! PE-local dimension of state
-  INTEGER, INTENT(in) :: dim_obs_f          ! Dimension of observed state
-  REAL, INTENT(in)    :: state_p(dim_p)     ! PE-local model state
-  REAL, INTENT(out) :: m_state_p(dim_obs_f) ! PE-local observed state
+  INTEGER, INTENT(in) :: step                 ! Current time step
+  INTEGER, INTENT(in) :: dim_p                ! PE-local dimension of state
+  INTEGER, INTENT(in) :: dim_obs_f            ! Dimension of observed state
+  REAL, INTENT(in)    :: state_p(dim_p)       ! PE-local model state
+  REAL, INTENT(inout) :: m_state_f(dim_obs_f) ! PE-local observed state
 
 ! !CALLING SEQUENCE:
-! Called by: PDAF_seek_analysis   (as U_obs_op)
-! Called by: PDAF_seik_analysis, PDAF_seik_analysis_newT
-! Called by: PDAF_enkf_analysis_rlm, PDAF_enkf_analysis_rsm
+! Called by: PDAF_lseik_update   (as U_obs_op)
+! Called by: PDAF_lestkf_update  (as U_obs_op)
+! Called by: PDAF_letkf_update   (as U_obs_op)
 !EOP
 
 ! *** local variables ***
@@ -54,8 +62,7 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_p)
 ! *********************************************
 
   DO i = 1, dim_obs_f
-     m_state_p(i) = state_p(obs_index(i))
-!          print *,state_p(7501)
+     m_state_f(i) = state_p(obs_index(i))
   END DO
 
 END SUBROUTINE obs_op_f_pdaf

@@ -30,12 +30,10 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps_pdaf, doexit, time)
 !
 ! !USES:
   USE mod_assimilation, ONLY: delt_obs
-       !ONLY: delt_obs, mod_time => time, have_obs
   USE mod_parallel, &
        ONLY: mype_world
   USE mod_model, &
        ONLY: total_steps
-       !ONLY: total_steps, dt => dtinit
 
   IMPLICIT NONE
 
@@ -67,12 +65,13 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps_pdaf, doexit, time)
           stepnow, 'Next observation at time step', stepnow + nsteps_pdaf
   
   ELSE
-      ! End of assimilation
-      if (mype_world==0) WRITE (*, '(i7, 3x, a)') &
-          stepnow, 'No more observations - end assimilation'
-  nsteps_pdaf = 0
-  doexit = 1
+     nsteps_pdaf = 0
+     doexit = 1
   !have_obs = .FALSE.
+     
+     ! End of assimilation
+     if (mype_world==0) WRITE (*, '(i7, 3x, a)') &
+     stepnow, 'No more observations - end assimilation'
 
   END IF
 

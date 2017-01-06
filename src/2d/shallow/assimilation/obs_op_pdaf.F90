@@ -28,7 +28,7 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 ! !USES:
   USE mod_assimilation, &
        ONLY: obs_index
-  use mod_parallel,only: MPI_COMM_WORLD,MPIerr
+
   IMPLICIT NONE
 
 ! !ARGUMENTS:
@@ -53,9 +53,8 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 ! *** operator H on vector or matrix column ***
 ! *********************************************
 
-  !print *, "In obs op, size of state = ", size(state_p)
   DO i = 1, dim_obs_p
      m_state_p(i) = state_p(obs_index(i))
   END DO
-  !print *, "Done obs op, ", size(m_state_p)
+
 END SUBROUTINE obs_op_pdaf

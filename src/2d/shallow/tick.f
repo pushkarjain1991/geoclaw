@@ -9,7 +9,7 @@ c
       use mod_parallel, only: mype_world, mpierr, mpi_comm_world
       use mod_assimilation, only: stepnow_pdaf, assimilate_step,
      & regrid_assim, second_valout, analyze_water, 
-     & assimilation_time, same_final_grid
+     & assimilation_time, same_final_grid, global_coordinate
       use mod_model, only: field
       use gauges_module, only: set_gauges
       use common_level, only: regions_assim
@@ -444,7 +444,7 @@ c
               !if (mxnest <= 3) then
               !  if (lfine /=1) then
               !    do ii=lfine-1,1,-1
-              !        call update(ii, nvar, naux)
+                      call update(1, nvar, naux)
               !    enddo
               !    print *, "Update done"
               !  endif
@@ -459,8 +459,16 @@ c
               
               ! Update dim_state_p and state
               !call mpi_barrier(mpi_comm_world, mpierr)
-              call update_dim_state_p(nvar, naux)
+              call update_dim_state_p()
               !call mpi_barrier(mpi_comm_world, mpierr)
+
+              field_size = size(field)
+              !Set global coordinate - For localization only
+              if(allocated(global_coordinate)) then
+                deallocate(global_coordinate)
+              endif
+              allocate(global_coordinate(2,field_size))
+       call set_global_coordinate_array(field_size, global_coordinate)
 
           
           ! Perform assimilation
@@ -470,6 +478,7 @@ c
           ! 4. field2alloc
               print *, "time =" , time
               call assimilate_pdaf(time)
+              call mpi_barrier(mpi_comm_world, mpierr)
 
             
               ! Put the assimilated values from field to alloc
@@ -479,12 +488,14 @@ c
               deallocate(field) 
 
               !if (mxnest <= 3) then
-                !if (lfine /=1) then
-                !  do ii=lfine -1, 1, -1
-                !      call update(ii,nvar,naux)
-                !  enddo
-                !endif
+               !if (lfine /=1) then
+               !   do ii=lfine -1, 1, -1
+                      call put2zero(nvar,naux)
+                      call update(1,nvar,naux)
+               !   enddo
+               ! endif
               !endif
+              !call mpi_barrier(mpi_comm_world, mpierr)
               
           endif
           

@@ -20,7 +20,6 @@ MODULE mod_parallel
 ! Later revisions - see svn log
 !
 ! !USES:
-
   IMPLICIT NONE
   SAVE 
 

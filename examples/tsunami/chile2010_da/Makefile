@@ -72,6 +72,8 @@ SOURCES = \
   $(GEOLIB)/pkj_geoclaw/flag2refine2_assim.f90 \
   $(GEOLIB)/pkj_geoclaw/flagregions2_assim.f90 \
   $(GEOLIB)/pkj_geoclaw/checker_ensemble_grid.f90 \
+  $(GEOLIB)/pkj_geoclaw/put2zero.f90 \
+  $(GEOLIB)/pkj_geoclaw/set_global_coordinate_array.f90 \
   $(GEOLIB)/pkj_geoclaw/extract_regions.f90
   
   #$(GEOLIB)/pkj_geoclaw/oned_to_twod.f90 \
@@ -80,6 +82,7 @@ SOURCES = \
 # Include Makefile containing standard definitions and make options:
 include $(CLAWMAKE)
 
+RESTART = True
 # Construct the topography data
 .PHONY: topo all
 topo:

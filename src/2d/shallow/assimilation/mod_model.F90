@@ -5,7 +5,7 @@
 MODULE mod_model
 
 ! !DESCRIPTION:
-! This module provides variables needed for the
+! This module provides variables needed for the 
 ! 2-dimensional tutorial model without parallelization.
 !
 ! !REVISION HISTORY:
@@ -23,9 +23,6 @@ MODULE mod_model
   INTEGER :: total_steps          ! Total number of time steps
   REAL(KIND=8), ALLOCATABLE :: reshaped_recv_ic(:,:) ! Model field
   REAL(KIND=8), ALLOCATABLE :: field(:) ! Model field
-!  REAL :: dtinit                  ! Time step size
-!  REAL :: time                    ! Model time
-
   REAL(KIND=8) :: random_pert
   
 END MODULE mod_model
