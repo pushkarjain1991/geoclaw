@@ -122,12 +122,11 @@ SUBROUTINE PDAF_assimilate_lestkf(U_collect_state, U_distribute_state, &
 
      ! *** Prepare start of next ensemble forecast ***
 
-     !print *, "hi1"
      IF (outflag==0) THEN
         CALL PDAF_get_state(steps, time, doexit, U_next_observation, U_distribute_state, &
              U_prepoststep, outflag)
      END IF
-     print *, "hi1"
+     !print *, "hi1"
 
      nsteps = steps
 

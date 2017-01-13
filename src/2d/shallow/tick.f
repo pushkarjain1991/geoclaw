@@ -8,11 +8,13 @@ c
 #ifdef USE_PDAF
       use mod_parallel, only: mype_world, mpierr, mpi_comm_world
       use mod_assimilation, only: stepnow_pdaf, assimilate_step,
-     & regrid_assim, second_valout, analyze_water, 
-     & assimilation_time, same_final_grid, global_coordinate
+     & regrid_assim, second_valout, assimilation_time, 
+     & global_coordinate
       use mod_model, only: field
-      use gauges_module, only: set_gauges
       use common_level, only: regions_assim
+#endif
+#ifdef CHILE_GEN_ENS
+      use mod_parallel_ens_gen
 #endif
       use refinement_module, only: varRefTime
       use amr_module
@@ -39,6 +41,12 @@ c
       integer :: curr_tot_step
       integer :: num_ex = 1
       integer :: field_size
+      integer :: i
+#endif
+
+#ifdef CHILE_GEN_ENS
+      character(len=2) :: ensstr2
+      logical :: dir_exists
       integer :: i
 #endif
 
@@ -287,6 +295,9 @@ c Output time info
 #ifdef USE_PDAF
           time_format = "(' Ens_num ',i1, ' AMRCLAW: level ',i2,' 
      & CFL = ',e8.3," //"'  dt = ',e10.4,  '  final t = ',e12.6)"
+#elif CHILE_GEN_ENS
+          time_format = "(' Ens_num ',i1, ' AMRCLAW: level ',i2,' 
+     & CFL = ',e8.3," //"'  dt = ',e10.4,  '  final t = ',e12.6)"
 #else
           time_format = "(' AMRCLAW: level ',i2,'  CFL = ',e8.3," //
      &                  "'  dt = ',e10.4,  '  final t = ',e12.6)"
@@ -300,6 +311,9 @@ c Output time info
 #ifdef USE_PDAF
               write(outunit, time_format) mype_world, level, cfl_level, 
      &                                    possk(level), timenew
+#elif CHILE_GEN_ENS
+              write(outunit, time_format) mype_world, level, cfl_level, 
+     &                                    possk(level), timenew
 #else
               write(outunit, time_format) level, cfl_level, 
      &                                    possk(level), timenew
@@ -308,6 +322,9 @@ c Output time info
 
           if (method(4).ge.level) then
 #ifdef USE_PDAF
+              print time_format, mype_world, level, cfl_level, 
+     & possk(level), timenew
+#elif CHILE_GEN_ENS
               print time_format, mype_world, level, cfl_level, 
      & possk(level), timenew
 #else
@@ -423,17 +440,8 @@ c
                 call regrid(nvar,1,0.7,naux,start_time)
                 call setbestsrc()     ! need at every grid change
               enddo
-              !call extract_regions()
-              !call regrid(nvar,2,0.9,naux,start_time)
-              !call setbestsrc()     ! need at every grid change
-              !call mpi_barrier(mpi_comm_world, mpierr)
               call print_num_cells(nvar, naux)
               call check_ensemble_grid()
-              !call mpi_barrier(mpi_comm_world, mpierr)
-              !same_final_grid = .true.
-              !call regrid(nvar,2,cut,naux,start_time)
-              !call setbestsrc()     ! need at every grid change
-              !same_final_grid = .false.
               print *, "yo1234"
               
           
@@ -441,14 +449,14 @@ c
 !             call outtre(lstart(lbase+1),.false.,nvar,naux)
 !          endif
 
-              !if (mxnest <= 3) then
-              !  if (lfine /=1) then
-              !    do ii=lfine-1,1,-1
+              if (mxnest <= 3) then
+                if (lfine /=1) then
+                  do ii=lfine-1,1,-1
                       call update(1, nvar, naux)
-              !    enddo
-              !    print *, "Update done"
-              !  endif
-              !endif
+                  enddo
+                  print *, "Update done"
+                endif
+              endif
 
               ! Put the geoclaw alloc values to PDAF field
               ! Next step is to use the field for assimilation
@@ -650,6 +658,26 @@ c             ! use same alg. as when setting refinement when first make new fin
 !           call chdir("../")
 !       endif
           
+#elif CHILE_GEN_ENS
+       ! Forecast output for every ensemble  
+       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+           !call mpi_barrier(mpi_comm_world, mpierr)
+           print *, "Analysis valout for ens ", mype_world
+           !call mpi_barrier(mpi_comm_world, mpierr)
+           
+           write(ensstr2, '(i2.1)') mype_world
+           inquire(file="_output_"//trim(adjustl(ensstr2))//"_for", 
+     &     exist=dir_exists)
+           if(dir_exists .eqv. .false.) then
+               call system('mkdir _output_'// 
+     &     trim(adjustl(ensstr2))//"_for")
+           endif
+           call chdir("_output_"//trim(adjustl(ensstr2))//"_for")
+           second_valout = .true.
+           call valout(1,lfine,time,nvar,naux)
+           second_valout = .false.
+           call chdir("../")
+      endif
 #else
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
          call valout(1,lfine,time,nvar,naux)

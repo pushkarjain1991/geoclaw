@@ -23,6 +23,7 @@ BASEDIR = /h2/pkjain/Desktop/Pushkar/clawpack/geoclaw/examples/tsunami/PDAF-D_V1
 #PDAF_ARCH=linux_gfortran
 include $(BASEDIR)/make.arch/$(PDAF_ARCH).h
 
+#OPT = -g -O3 -fdefault-real-8  -pedantic -Wall -fcheck=bounds
 
 # End of user specifications
 ######################################################
@@ -68,6 +69,7 @@ OBJ_USER_GEN  = init_ens.o \
 		init_dim_obs_pdaf.o \
 		obs_op_pdaf.o \
 		init_obs_pdaf.o \
+		init_ens_eof.o
 
 # User-supplied routines for ESTKF/SEIK/ETKF
 OBJ_USER_SEIK = prodrinva_pdaf.o \

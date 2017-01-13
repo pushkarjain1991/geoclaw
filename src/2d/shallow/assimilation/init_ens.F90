@@ -27,7 +27,9 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_model, ONLY: reshaped_recv_ic
+  USE mod_model, ONLY: reshaped_recv_ic, field
+  use mod_assimilation, only: type_ensinit
+  
 
   IMPLICIT NONE
 
@@ -61,14 +63,28 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
   WRITE (*, '(9x, a)') '--- read ensemble from files'
   WRITE (*, '(9x, a, i5)') '--- Ensemble size:  ', dim_ens
 !
-DO member = 1, dim_ens
-    ens_p(:, member) = reshaped_recv_ic(:,member)
-    print *, "shape of ens_p", shape(ens_p)
-enddo
+  
+  state_p = field
+  IF (TRIM(type_ensinit) == 'eof') THEN
+     ! Initialize by 2nd-order exact sampling from EOFs
+     print *, "type_ensinit is EOF"
+     CALL init_ens_eof(dim_p, dim_ens, state_p, ens_p, flag)
+!  ELSE IF (TRIM(type_ensinit) == 'rnd') THEN
+!     ! Initialize by random sampling from state trajectory
+!     CALL init_ens_rnd(dim_p, dim_ens, state_p, ens_p, flag)
+   ELSE 
+      stop "No type_ensinit specified"
+  END IF
+
+
+!DO member = 1, dim_ens
+!    ens_p(:, member) = reshaped_recv_ic(:,member)
+!    print *, "shape of ens_p", shape(ens_p)
+!enddo
     
 ! ****************
 ! *** clean up ***
 ! ****************
-deallocate(reshaped_recv_ic)
+!deallocate(reshaped_recv_ic)
 
 END SUBROUTINE init_ens

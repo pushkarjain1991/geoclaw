@@ -79,6 +79,9 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   CHARACTER(len=3) :: ensstr          ! String for ensemble member
   CHARACTER(len=3) :: stepstr         ! String for time step
   CHARACTER(len=3) :: anastr          ! String for call type (initial, forecast, analysis)
+  INTEGER :: variance_count = 0
+  CHARACTER(len=3) :: variance_count_str         ! String for variance file
+  
 
 
 ! **********************
@@ -137,6 +140,17 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
   END DO
   variance(:) = invdim_ensm1 * variance(:)
 
+  !Output variance
+  if((step .ge. 0) .and. (.not. firsttime)) then
+    variance_count = variance_count + 1
+    write(variance_count_str, '(i3.1)') variance_count
+    open(22, file = 'variance_' // trim(adjustl(variance_count_str)), &
+         status='new')
+    do j = 1, dim_p
+      write(22, *) variance(j)
+    enddo
+    close(22)
+  endif
 
 ! ************************************************************
 ! *** Compute RMS errors according to sampled covar matrix ***

@@ -152,5 +152,9 @@ MODULE mod_assimilation
   REAL(KIND=8) :: assimilation_time
   LOGICAL :: same_final_grid=.false. 
   REAL, ALLOCATABLE :: global_coordinate(:,:)
+  CHARACTER(len=3) :: type_ensinit ='eof'! Type of ensemble initialization:
+                                   ! 'eof': Initialize by 2nd-order exact sampling from EOFs
+                                  ! 'rnd': Initialize by random sampling from state trajectory
+
 
 END MODULE mod_assimilation

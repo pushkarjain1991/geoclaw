@@ -9,6 +9,7 @@ Call functions with makeplots==True to create plots of topo, slip, and dtopo.
 """
 
 import os
+import sys
 
 import clawpack.clawutil.data
 
@@ -54,21 +55,24 @@ def make_dtopo(pert, filename, makeplots=False):
     # of a single subfault:
 
     usgs_subfault = dtopotools.SubFault()
-    usgs_subfault.strike = 16.
-    usgs_subfault.length = 450.e3
-    usgs_subfault.width = 100.e3
-    usgs_subfault.depth = 35.e3
-    usgs_subfault.slip = 15. + pert
-    usgs_subfault.rake = 104.
-    usgs_subfault.dip = 14.
-    usgs_subfault.longitude = -72.668
-    usgs_subfault.latitude = -35.826
+    usgs_subfault.strike = 16. + pert[0]
+    usgs_subfault.length = 450.e3 + pert[1]
+    usgs_subfault.width = 100.e3 + pert[2]
+    usgs_subfault.depth = 35.e3 + pert[3]
+    usgs_subfault.slip = 15. + pert[4]
+    usgs_subfault.rake = 104. + pert[5]
+    usgs_subfault.dip = 14. + pert[6]
+    usgs_subfault.longitude = -72.668 + pert[7]
+    usgs_subfault.latitude = -35.826 + pert[8]
     usgs_subfault.coordinate_specification = "top center"
 
     fault = dtopotools.Fault()
     fault.subfaults = [usgs_subfault]
 
     print "Mw = ",fault.Mw()
+    if(fault.Mw() == 0.0):
+        sys.exist("No tsunami formed")
+        
 
     if os.path.exists(dtopo_fname):
         print "*** Not regenerating dtopo file (already exists): %s" \
@@ -109,13 +113,25 @@ def make_dtopo(pert, filename, makeplots=False):
 if __name__=='__main__':
     import numpy as np
     get_topo(False)
-    mu = 0
-    sigma = 0.5
-    dim_ens = 9
-    np.random.seed(123456)
-    s = np.random.normal(mu,sigma, dim_ens)
+    var_strike = 4.
+    var_length = 150.e3
+    var_width = 50.e3
+    var_depth = 10.e3
+    var_slip = 5.
+    var_rake = 20.
+    var_dip = 4.
+    var_longitude = 3.
+    var_latitude = 3.
+    
+    mu = np.zeros(9)
+    sigma = np.diagflat([var_strike, var_length, var_width, var_depth, var_slip, var_rake, var_dip, var_longitude, var_latitude])
 
-    print "max_val = " + str(np.max(s))
-    for num, pert in enumerate(s):
+    dim_ens = 64
+    np.random.seed(123456)
+    #s = np.random.normal(mu,sigma, dim_ens)
+
+    for num in range(dim_ens):
         filename = "ens_" + str(num)
+        pert = np.random.multivariate_normal(mu,sigma)
         make_dtopo(pert, filename, makeplots=False)
+        print pert

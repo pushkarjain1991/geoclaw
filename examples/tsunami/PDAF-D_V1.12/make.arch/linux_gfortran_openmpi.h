@@ -34,7 +34,8 @@ CPP_DEFS = -DUSE_PDAF
 # Optimization specs for compiler
 #   (You should explicitly define double precision for floating point
 #   variables in the compilation)  
-OPT = -O3 -fdefault-real-8
+#OPT = -O3 -fdefault-real-8
+OPT = -O2 -g -Wall -pedantic -fbounds-check -ffpe-trap=invalid,overflow,zero -fdefault-real-8
 
 # Optimization specifications for Linker
 OPT_LNK = $(OPT)

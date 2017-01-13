@@ -8,6 +8,10 @@ c
       use mod_assimilation, only: second_valout
       use mod_parallel, only: mype_world
 #endif
+
+#ifdef CHILE_ENS_GEN
+      use mod_parallel_ens_gen
+#endif
       implicit double precision (a-h,o-z)
       character*10  fname1, fname2, fname3, fname4
 
@@ -35,6 +39,14 @@ c
       call system_clock(clock_start,clock_rate)
 
 #ifdef USE_PDAF
+      if(mype_world == 0) then
+          if(second_valout .eqv. .true.) then
+              matlabu = matlabu - 1
+          endif
+      endif
+#endif
+
+#ifdef CHILE_ENS_GEN
       if(mype_world == 0) then
           if(second_valout .eqv. .true.) then
               matlabu = matlabu - 1

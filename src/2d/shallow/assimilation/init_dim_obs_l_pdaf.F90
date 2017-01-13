@@ -58,7 +58,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   !coords_l(2) = domain_p - (coords_l(1)-1)*ny
   coords_l(1) = global_coordinate(1, domain_p) ! 1D to 2D
   coords_l(2) = global_coordinate(2, domain_p) ! 1D to 2D
-  print *, "domain_p = ", domain_p, global_coordinate(:, domain_p)
+  !print *, "domain_p = ", domain_p, global_coordinate(:, domain_p)
 
   !Determine coordinate limits for observation domain
   !limits_x(1) = coords_l(1) - INT(local_range)
@@ -119,7 +119,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
         END IF
      END IF
   END DO
-  print *, "Done init_dim_ovbs_l_pdaf"
+  !print *, "Done init_dim_ovbs_l_pdaf"
 
 
 END SUBROUTINE init_dim_obs_l_pdaf

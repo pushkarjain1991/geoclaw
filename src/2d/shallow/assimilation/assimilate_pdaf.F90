@@ -82,8 +82,8 @@ SUBROUTINE assimilate_pdaf()
                  prepoststep_ens_pdaf, add_obs_error_pdaf,&
                  init_obscovar_pdaf,next_observation_pdaf,&
                  status_pdaf)
-        else if (filtertype==5) then
-        CALL PDAF_assimilate_letkf(collect_state_pdaf,&
+      else if (filtertype==3) then
+        CALL PDAF_assimilate_lseik(collect_state_pdaf,&
                  distribute_state_pdaf, init_dim_obs_f_pdaf,&
                  obs_op_f_pdaf, init_obs_f_pdaf,&
                  init_obs_l_pdaf, prepoststep_ens_pdaf, &
@@ -100,6 +100,17 @@ SUBROUTINE assimilate_pdaf()
                  prepoststep_ens_pdaf, prodRinvA_pdaf,&
                  init_obscovar_pdaf,next_observation_pdaf,&
                  status_pdaf)
+      else if (filtertype==5) then
+        CALL PDAF_assimilate_letkf(collect_state_pdaf,&
+                 distribute_state_pdaf, init_dim_obs_f_pdaf,&
+                 obs_op_f_pdaf, init_obs_f_pdaf,&
+                 init_obs_l_pdaf, prepoststep_ens_pdaf, &
+                 prodRinvA_l_pdaf,init_n_domains_pdaf,&
+                 init_dim_l_pdaf, init_dim_obs_l_pdaf, &
+                 g2l_state_pdaf, l2g_state_pdaf, &
+                 g2l_obs_pdaf, init_obsvar_pdaf, &
+                 init_obsvar_l_pdaf, next_observation_pdaf,&
+                 status_pdaf)
       else if (filtertype==6) then
         CALL PDAF_assimilate_estkf(collect_state_pdaf,&
                  distribute_state_pdaf, init_dim_obs_pdaf,&
@@ -107,13 +118,6 @@ SUBROUTINE assimilate_pdaf()
                  prepoststep_ens_pdaf, prodRinvA_pdaf,&
                  init_obscovar_pdaf,next_observation_pdaf,&
                  status_pdaf)
-      !else if (filtertype==8) then
-      !  CALL PDAF_assimilate_netf(collect_state_pdaf,&
-      !           distribute_state_pdaf, init_dim_obs_pdaf,&
-      !           obs_op_pdaf, init_obs_pdaf,&
-      !           prepoststep_ens_pdaf, prodRinvA_pdaf,&
-      !           init_obscovar_pdaf,next_observation_pdaf,&
-      !           status_pdaf)
         else if (filtertype==7) then
         CALL PDAF_assimilate_lestkf(collect_state_pdaf,&
                  distribute_state_pdaf, init_dim_obs_f_pdaf,&
@@ -124,6 +128,13 @@ SUBROUTINE assimilate_pdaf()
                  g2l_state_pdaf, l2g_state_pdaf,g2l_obs_pdaf,&
                  init_obsvar_pdaf,init_obsvar_l_pdaf, &
                  next_observation_pdaf, status_pdaf)
+      !else if (filtertype==8) then
+      !  CALL PDAF_assimilate_netf(collect_state_pdaf,&
+      !           distribute_state_pdaf, init_dim_obs_pdaf,&
+      !           obs_op_pdaf, init_obs_pdaf,&
+      !           prepoststep_ens_pdaf, prodRinvA_pdaf,&
+      !           init_obscovar_pdaf,next_observation_pdaf,&
+      !           status_pdaf)
       else
         if (mype_world==0) print *,"invalid filter type"
         CALL  abort_parallel()

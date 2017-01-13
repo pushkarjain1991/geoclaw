@@ -244,9 +244,9 @@ contains
         integer :: i,j, p, Reason
         real(kind=8) :: xim,x,xip,yjm,y,yjp
         integer next_ens_number, ens_number
-        character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw&
-        /examples/tsunami/PDAF-D_V1.11.1/testsuite/&
-        simplified_offline_geoclaw/python_script/"
+        character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw" // &
+        "/examples/tsunami/PDAF-D_V1.12/testsuite/" // &
+        "simplified_offline_geoclaw/python_script/"
         character(145) :: fileplace2
         character(100) :: totallength
         character(2) :: str_ens_number
@@ -358,9 +358,9 @@ contains
         integer :: i,j, p, Reason
         real(kind=8) :: xim,x,xip,yjm,y,yjp
         integer next_ens_number, ens_number
-        character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw&
-        /examples/tsunami/PDAF-D_V1.11.1/testsuite/&
-        simplified_offline_geoclaw/python_script/"
+        character(*), parameter :: fileplace = "/h2/pkjain/Desktop/Pushkar/clawpack/" // &
+        "geoclaw/examples/tsunami/PDAF-D_V1.11.1/testsuite/simplified_offline_geoclaw/" // &
+        "python_script/"
         character(144) :: fileplace2
         !character(100) :: totallength
         character(1) :: str_ens_number

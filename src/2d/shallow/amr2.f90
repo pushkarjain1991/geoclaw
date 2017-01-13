@@ -121,6 +121,13 @@ program amr2
     !use gauges_module, only: setbestsrc
 #endif
 
+#ifdef CHILE_GEN_ENS
+    use mod_parallel_ens_gen
+    !integer :: mpierr, dim_ens, mype_world
+    !integer :: status(MPI_Status_size)
+#endif
+
+
     implicit none
 
     ! Local variables
@@ -149,11 +156,8 @@ program amr2
     character(len=*), parameter :: parmfile = 'fort.parameters'
 #ifdef USE_PDAF
     character(len=3):: ensstr1
-    character(len=3):: ensstr3
-    character(len=255) :: cwd
     real(kind=8), allocatable :: recv_ic(:)
     integer, parameter :: root = 0
-    logical :: dir_exists1
 #endif
     
 #ifdef USE_PDAF_CHILE
@@ -162,11 +166,7 @@ program amr2
     real(kind=8),allocatable :: rand_pert(:)
     integer(kind=4) :: seed
     real(kind=8) :: pert_sigma
-    !real(kind=8) :: r8_normal_ab
-    !character(len=1) :: ensstr
     real(kind=8) :: recv_random_pert = 0.0
-    integer, parameter :: root1 = 0
-    logical :: mpierr1
 #endif
 
 #ifdef USE_PDAF_CHILE_PERT_RESTART
@@ -175,9 +175,15 @@ program amr2
 #endif
 
 
+
 #ifdef USE_PDAF
     ! Add parallelization
     CALL init_parallel_pdaf(0,2)
+#endif
+#ifdef CHILE_GEN_ENS
+    call mpi_init(mpierr)
+    call mpi_comm_rank(mpi_comm_world, mype_world, mpierr)
+    call mpi_comm_size(mpi_comm_world, dim_ens, mpierr)
 #endif
     ! Open parameter and debug files
     open(dbugunit,file=dbugfile,status='unknown',form='formatted')
@@ -524,10 +530,9 @@ program amr2
         call set_gauges(rest, nvar)       ! Set gauge output
         call set_fgmax()
 
-#ifdef USE_PDAF
-        regrid_assim = .false.
-        !call set_original_regions()
-#endif
+!#ifdef USE_PDAF
+!        regrid_assim = .false.
+!#endif
 
     else
 !This is for setting same level at initial time t=0
@@ -544,7 +549,7 @@ program amr2
         call set_refinement()             ! sets refinement control parameters
         call read_dtopo_settings()        ! specifies file with dtopo from earthquake
 
-#ifdef USE_PDAF_CHILE2
+#ifdef USE_PDAF_CHILE_UNUSED
         !Initial perturbation in topo itself
         pert_sigma = .005D+00
         pert_mu = 0.0D+00
@@ -559,7 +564,7 @@ program amr2
         endif
 
         call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
-        root1, mpi_comm_world, mpierr)
+        root, mpi_comm_world, mpierr)
 
         dtopowork(:) = dtopowork(:)*(1 + recv_random_pert) !dtopo is negative
         !dtopowork(:) = dtopowork(:) + recv_random_pert !dtopo is negative
@@ -616,12 +621,6 @@ program amr2
 
         time = t0
         nstart = 0
-#ifdef USE_PDAF
-        regrid_assim = .false.
-        !if(num_regions /= 0) then 
-        !   call set_original_regions()
-        !endif
-#endif
     endif
 
 
@@ -708,43 +707,48 @@ program amr2
     endif
     close(parmunit)
 
-
+   
 #ifdef USE_PDAF_CHILE_PERT_RESTART
-        pert_sigma = .05D+00
-        pert_mu = 0.0D+00
-        if(mype_world == 0) then
-          !seed = clock
-          seed=123456789
-
-          allocate(rand_pert(n_modeltasks))
-          call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
-          call r8vec_print(n_modeltasks, rand_pert, ' Vector of Normal AB values:')
-        endif
-
-        call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
-        root1, mpi_comm_world, mpierr)
-        call alloc2field(nvar, naux)
-        !temp_field = field + 0.01*mype_world
-        temp_field = field + recv_random_pert
-        where((field > 0.1 .and. field < 0.3) .or. (field > -0.3 .and. field<-0.1))
-            field = temp_field
-        endwhere
-        !field(:) = temp_field(:)
-        call field2alloc(nvar, naux)
-        
-        !regrid_assim = .true.
-        !call extract_regions(t0, regrid_assim)
-        !call regrid(nvar,1,cut,naux,t0)
-        !call setbestsrc()     ! need at every grid change
-        
-        !print *, "lfine intiially = ", lfine
-        if (lfine /=1) then
-          do ii=lfine-1,1
-            call update(ii, nvar, naux)
-          enddo
-          print *, "Update done initially"
-        endif
+    call mpi_barrier(mpi_comm_world, mpierr)
+    call print_num_cells(naux, nvar)
+    call mpi_barrier(mpi_comm_world, mpierr)
 #endif
+!#ifdef USE_PDAF_CHILE_PERT_RESTART
+!        pert_sigma = .05D+00
+!        pert_mu = 0.0D+00
+!        if(mype_world == 0) then
+!          !seed = clock
+!          seed=1234
+!
+!          allocate(rand_pert(n_modeltasks))
+!          call r8vec_normal_ab(n_modeltasks, pert_mu, pert_sigma, seed, rand_pert)
+!          call r8vec_print(n_modeltasks, rand_pert, ' Vector of Normal AB values:')
+!        endif
+!
+!        call mpi_scatter(rand_pert, 1, mpi_real8, recv_random_pert,1, mpi_real8, &
+!        root, mpi_comm_world, mpierr)
+!        call alloc2field(nvar, naux)
+!        !temp_field = field + 0.01*mype_world
+!        temp_field = field + recv_random_pert
+!        where((field > 0.1 .and. field < 0.3) .or. (field > -0.3 .and. field<-0.1))
+!            field = temp_field
+!        endwhere
+!        !field(:) = temp_field(:)
+!        call field2alloc(nvar, naux)
+!        
+!        !regrid_assim = .true.
+!        !call extract_regions(t0, regrid_assim)
+!        !call regrid(nvar,1,cut,naux,t0)
+!        !call setbestsrc()     ! need at every grid change
+!        
+!        !print *, "lfine intiially = ", lfine
+!        if (lfine /=1) then
+!          do ii=lfine-1,1
+!            call update(ii, nvar, naux)
+!          enddo
+!          print *, "Update done initially"
+!        endif
+!#endif
 
 #ifdef USE_PDAF
     total_steps = nstop
@@ -757,43 +761,57 @@ program amr2
     print *, "Initial dim_state_p = ", mype_world, dim_state_p
     !call mpi_barrier(mpi_comm_world, mpierr)
     
-    write(ensstr1, '(i3.1)') mype_world
-    print *, "writing init_ens# file"
-    open(unit=57, file='init_ens'//trim(adjustl(ensstr1)), status='replace')
-    do i=1,size(field) 
-        write(57,*) field(i)
-    enddo
-    close(57)
-    print *, "Done writing init_ens# file"
-    !call mpi_barrier(mpi_comm_world, mpierr)
-    
-    !Gather the initial conditions to root processor
-    print *, "Reading IC, ", mype_world
-    print *, "Allocating space for recv_ic"
-    if (mype_world == 0) allocate(recv_ic(dim_state_p*n_modeltasks))
-    !!PARALLEL_DEBUG
-    print *, "Done allocating space for recv_ic"
-    !call mpi_barrier(mpi_comm_world, mpierr)
-    print *, "Performing initial condition gathering..."
-    call mpi_gather(field, dim_state_p, mpi_real8, recv_ic, dim_state_p,&
-    mpi_real8, root, mpi_comm_world, mpierr) 
-    print *, "Done Performing initial condition gathering..."
-    print *, "dim_state_p, n_modeltasks = ", dim_state_p, n_modeltasks
-    
-    if (mype_world == 0) then
-        if(allocated(reshaped_recv_ic)) deallocate(reshaped_recv_ic)
-        allocate(reshaped_recv_ic(dim_state_p, n_modeltasks))
-        reshaped_recv_ic(:,:) = reshape(recv_ic, (/dim_state_p, n_modeltasks/))
-        !print *, "reshaped_recv_ic = ", reshaped_recv_ic(:,:)
-        deallocate(recv_ic)
-    endif
+!    write(ensstr1, '(i3.1)') mype_world
+!    print *, "writing init_ens# file"
+!    open(unit=57, file='init_ens'//trim(adjustl(ensstr1)), status='replace')
+!    do i=1,size(field) 
+!        write(57,*) field(i)
+!    enddo
+!    close(57)
+!    print *, "Done writing init_ens# file"
+!    !call mpi_barrier(mpi_comm_world, mpierr)
+!    
+!    !Gather the initial conditions to root processor
+!    print *, "Reading IC, ", mype_world
+!    print *, "Allocating space for recv_ic"
+!    if (mype_world == 0) allocate(recv_ic(dim_state_p*n_modeltasks))
+!    !!PARALLEL_DEBUG
+!    print *, "Done allocating space for recv_ic"
+!    !call mpi_barrier(mpi_comm_world, mpierr)
+!    print *, "Performing initial condition gathering..."
+!    call mpi_gather(field, dim_state_p, mpi_real8, recv_ic, dim_state_p,&
+!    mpi_real8, root, mpi_comm_world, mpierr) 
+!    print *, "Done Performing initial condition gathering..."
+!    print *, "dim_state_p, n_modeltasks = ", dim_state_p, n_modeltasks
+!    
+!    if (mype_world == 0) then
+!        if(allocated(reshaped_recv_ic)) deallocate(reshaped_recv_ic)
+!        allocate(reshaped_recv_ic(dim_state_p, n_modeltasks))
+!        reshaped_recv_ic(:,:) = reshape(recv_ic, (/dim_state_p, n_modeltasks/))
+!        !print *, "reshaped_recv_ic = ", reshaped_recv_ic(:,:)
+!        deallocate(recv_ic)
+!    endif
+
 
     if (mype_world==0) then
         WRITE (*, '(1x, a)') 'INITIALIZE GEOCLAW with PDAF'
         WRITE (*, '(10x,a,i4,1x,a1,1x,i4)') 'Grid size:', nx, 'x', ny
         WRITE (*, '(10x,a,i4)') 'Time steps', total_steps
     endif
+    if (mype_world == 0) then
+            open(22, file='before', status='replace')
+            write(22, *) field(:)
+            close(22)
+    endif
     CALL init_pdaf()
+    if (mype_world == 0) then
+            open(22, file='after', status='replace')
+            write(22, *) field(:)
+            close(22)
+    endif
+    call field2alloc(nvar, naux)
+    print *, "size of field after init_pdaf = ", size(field), mype_world
+    call mpi_barrier(mpi_comm_world, mpierr)
 #endif
 
     ! --------------------------------------------------------
@@ -1049,6 +1067,10 @@ program amr2
     close(dbugunit)
 
 #ifdef USE_PDAF
+    call mpi_finalize(mpierr)
+#endif
+
+#ifdef CHILE_GEN_ENS
     call mpi_finalize(mpierr)
 #endif
 

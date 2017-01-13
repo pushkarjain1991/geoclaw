@@ -23,13 +23,14 @@ PLOTDIR = _plots               # Directory for plots
 # Environment variable FC should be set to fortran compiler, e.g. gfortran
 
 # Compiler flags can be specified here or set as an environment variable
-#FFLAGS ?= -cpp -DUSE_PDAF -L$(PDAFLIB) -I$(PDAFLIB) -lpdaf-d -I$(PDAFLIB)/dummympi -lblas -llapack  
 PDAF_BASEDIR_INC=$(CLAW)/geoclaw/examples/tsunami/PDAF-D_V1.12/src/
 
-FFLAGS ?= -cpp -DPKJ_DEBUG -DUSE_PDAF -DUSE_PDAF_CHILE -DUSE_PDAF_CHILE_PERT_RESTART -I$(PDAF_BASEDIR_INC) -L$(PDAFLIB) -I$(PDAFLIB) -lpdaf-d -lblas -llapack 
-#FC=mpifort -O2 -g -check all -fp-stack-check -traceback -heap-arrays -autodouble
-FC=mpif90
+#FFLAGS ?= -cpp -DCHILE_GEN_ENS
+FFLAGS ?= -O2 -g -Wall -pedantic -fbounds-check -ffpe-trap=invalid,overflow,zero -cpp -DPKJ_DEBUG -DUSE_PDAF -DUSE_PDAF_CHILE -DUSE_PDAF_CHILE_PERT_RESTART -I$(PDAF_BASEDIR_INC) -L$(PDAFLIB) -I$(PDAFLIB) -lpdaf-d -lblas -llapack
 #FFLAGS ?= -cpp
+#FFLAGS ?= -cpp -DCHILE_GEN_ENS -g -Wall -pedantic -fbounds-check -ffpe-trap=invalid,overflow,zero
+
+FC=mpif90
 
 # ---------------------------------
 # package sources for this program:
@@ -52,11 +53,20 @@ EXCLUDE_SOURCES = \
 # List of custom sources for this program:
 # ----------------------------------------
 
+MODULES2 = \
+  $(GEOLIB)/pkj_geoclaw/mod_parallel_ens_gen.f90
+  #$(GEOLIB)/pkj_geoclaw/checker_same_column.f90 \
+  #$(GEOLIB)/pkj_geoclaw/common_level.f90
+
 MODULES = \
   $(GEOLIB)/pkj_geoclaw/checker_same_column.f90 \
   $(GEOLIB)/pkj_geoclaw/common_level.f90
 
-
+SOURCES2 = \
+  $(CLAW)/riemann/src/rpn2_geoclaw.f \
+  $(CLAW)/riemann/src/rpt2_geoclaw.f \
+  $(CLAW)/riemann/src/geoclaw_riemann_utils.f \
+  
 SOURCES = \
   $(CLAW)/riemann/src/rpn2_geoclaw.f \
   $(CLAW)/riemann/src/rpt2_geoclaw.f \
@@ -75,8 +85,6 @@ SOURCES = \
   $(GEOLIB)/pkj_geoclaw/put2zero.f90 \
   $(GEOLIB)/pkj_geoclaw/set_global_coordinate_array.f90 \
   $(GEOLIB)/pkj_geoclaw/extract_regions.f90
-  
-  #$(GEOLIB)/pkj_geoclaw/oned_to_twod.f90 \
 
 #-------------------------------------------------------------------
 # Include Makefile containing standard definitions and make options:
@@ -92,4 +100,3 @@ all:
 	$(MAKE) topo
 	$(MAKE) .plots
 	$(MAKE) .htmls
-

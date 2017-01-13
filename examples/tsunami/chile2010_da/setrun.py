@@ -119,8 +119,8 @@ def setrun(claw_pkg='geoclaw'):
     # the OUTDIR indicated in Makefile.
 
     clawdata.restart = True               # True to restart from prior results
-    clawdata.restart_file = 'fort.chk00073'  # File to use for restart data Level2,3
-    #clawdata.restart_file = 'fort.chk00073'  # File to use for restart data Level 1
+    #clawdata.restart_file = 'fort.chk00073'  # File to use for restart data Level2,3
+    clawdata.restart_file = 'fort.chk00074'  # File to use for restart data Level 1
 
     # -------------
     # Output times:
@@ -141,7 +141,9 @@ def setrun(claw_pkg='geoclaw'):
     elif clawdata.output_style == 2:
         # Specify a list of output times.
         #clawdata.output_times = [0.5, 1.0]
-        clawdata.output_times = np.linspace(3.0, 13.0, 21)*3600.0
+        #clawdata.output_times = np.linspace(0.5, 13.0, 26)*3600.0
+        #clawdata.output_times = np.linspace(3.0, 13.0, 21)*3600.0
+        clawdata.output_times = np.linspace(3.0, 13.0, 11)*3600.0
 
     elif clawdata.output_style == 3:
         # Output every iout timesteps with a total of ntot time steps:
@@ -288,7 +290,7 @@ def setrun(claw_pkg='geoclaw'):
     amrdata = rundata.amrdata
 
     # max number of refinement levels:
-    amrdata.amr_levels_max = 2
+    amrdata.amr_levels_max = 1
 
     # List of refinement ratios at each level (length at least mxnest-1)
     amrdata.refinement_ratios_x = [2,2,2,2,2]
@@ -444,11 +446,11 @@ def set_PDAF(rundata):
     #(5) LETKF
     #(6) ESTKF
     #(7) LESTKF
-    rundata.pdaf_data.filtertype = 7
-    rundata.pdaf_data.num_ensembles = 5
-    rundata.pdaf_data.rms_obs = 0.001
+    rundata.pdaf_data.filtertype = 6
+    rundata.pdaf_data.num_ensembles = 32
+    rundata.pdaf_data.rms_obs = 0.005
     rundata.pdaf_data.subtype = 0
-    rundata.pdaf_data.forget = 0.9
+    rundata.pdaf_data.forget = 1.0
     
     rundata.pdaf_data.type_trans = 0
     rundata.pdaf_data.type_forget = 0

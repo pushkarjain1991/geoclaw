@@ -245,4 +245,3 @@ def setplot(plotdata):
     plotdata.latex_makepdf = False           # also run pdflatex?
 
     return plotdata
-

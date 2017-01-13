@@ -180,7 +180,7 @@ function i8_normal_ab ( a, b, seed )
 !
 !    Input, real ( kind = 8 ) B, the standard deviation of the PDF.
 !
-!    Input/output, integer ( kind = 8 ) SEED, a seed for the
+!    Input/output, integer ( kind = 4 ) SEED, a seed for the
 !    random number generator.
 !
 !    Output, integer ( kind = 8 ) I8_NORMAL_AB, a sample of the normal PDF.
@@ -194,7 +194,7 @@ function i8_normal_ab ( a, b, seed )
   real ( kind = 8 ) r2
   real ( kind = 8 ), parameter :: r8_pi = 3.141592653589793D+00
   real ( kind = 8 ) r8_uniform_01
-  integer ( kind = 8 ) seed
+  integer ( kind = 4 ) seed
   real ( kind = 8 ) x
 
   r1 = r8_uniform_01 ( seed )
