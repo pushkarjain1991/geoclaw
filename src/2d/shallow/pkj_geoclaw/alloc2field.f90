@@ -70,9 +70,9 @@ subroutine alloc2field(nvar,naux)
                do i_pkj = nghost+1, mitot-nghost
                    !field(cell_cnt) =&
                    !alloc(iadd(1,i_pkj,j_pkj))
-                 field(cell_cnt) =&
-                 alloc(iadd(1,i_pkj,j_pkj)) +alloc(iaddaux(1,i_pkj, j_pkj))
-                 cell_cnt = cell_cnt + 1
+                   field(cell_cnt) =&
+                   alloc(iadd(1,i_pkj,j_pkj)) +alloc(iaddaux(1,i_pkj, j_pkj))
+                   cell_cnt = cell_cnt + 1
                enddo
              enddo
              mptr = node(levelptr, mptr)
