@@ -35,7 +35,7 @@ def setplot(plotdata=None):
     from clawpack.visclaw import colormaps, geoplot
     from numpy import linspace
 
-    if plotdata is None:
+    if plotdata is None
         from clawpack.visclaw.data import ClawPlotData
         plotdata = ClawPlotData()
 

@@ -484,6 +484,49 @@ class FrictionData(clawpack.clawutil.data.ClawData):
 
 
 
+class PDAFData(clawpack.clawutil.data.ClawData):
+
+    def __init__(self):
+
+        super(PDAFData, self).__init__()
+
+        self.add_attribute('filtertype',2)
+        self.add_attribute('delt_obs', 10)
+        self.add_attribute('rms_obs', 0.01)
+        self.add_attribute('num_ensembles', 5)
+        self.add_attribute("subtype", 0)
+        self.add_attribute("type_trans", 0)
+        self.add_attribute("type_forget", 0)
+        self.add_attribute("forget", 1.0)
+        self.add_attribute("type_sqrt", 0)
+        self.add_attribute("incremental", 0)
+        self.add_attribute("covartype", 1)
+        self.add_attribute("rank_analysis_enkf", 0)
+        self.add_attribute("int_rediag", 1)
+        self.add_attribute("locweight", 0)
+        self.add_attribute("local_range", 1)
+
+
+    def write(self, data_source="setrun.py"):
+        self.open_data_file('pdaf.data', data_source)
+
+        self.data_write("filtertype",description="(Filter type)")
+        self.data_write("delt_obs",description="(Forecast interval)")
+        self.data_write("rms_obs",description="(Avg obs error)")
+        self.data_write("num_ensembles", description="(Number of ensembles)")
+        self.data_write("subtype", description="(Filter subtype)")
+        self.data_write("type_trans", description="(Ensemble transformation type)")
+        self.data_write("type_forget", description="(Type of forgetting factor in SEIK/LSEIK/ETKF/LETKF/ESTKF/LESTKF)")
+        self.data_write("forget", description="(Forgetting factor)")
+        self.data_write("type_sqrt", description="(Type of transform matrix square-root)")
+        self.data_write("incremental", description="(Perform incremental updating, only in SEIK/LSEIK)")
+        self.data_write("covartype", description="(Definition of factor in covar. matrix used in SEIK)")
+        self.data_write("rank_analysis_enkf", description="(Rank to be considered for HPH inversion)")
+        self.data_write("int_rediag", description="(Interval of analysis step to perform)")
+        self.data_write("locweight", description="(Localization weighting type)")
+        self.data_write("local_range", description="(Range in grid points for observation domain)")
+        self.close_data_file()
+
 class MultilayerData(clawpack.clawutil.data.ClawData):
     r"""
     Multilayer SWE data object

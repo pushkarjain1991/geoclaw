@@ -19,6 +19,14 @@
 module topo_module
 
     use amr_module, only: tstart_thisrun
+#ifdef USE_PDAF_CHILE2  
+    use mod_parallel, only: mype_world
+#endif
+
+#ifdef CHILE_GEN_ENS  
+    use mod_parallel_ens_gen, only: mype_world
+#endif
+
     implicit none
 
     logical, private :: module_setup = .false.
@@ -59,6 +67,15 @@ module topo_module
 
     ! File data parameters
     character*150, allocatable :: dtopofname(:)
+#ifdef USE_PDAF_CHILE2
+    character*150, allocatable :: temp_dtopofname(:)
+    character(len=3) :: ensstr
+#endif
+
+#ifdef CHILE_GEN_ENS
+    character*150, allocatable :: temp_dtopofname(:)
+    character(len=3) :: ensstr
+#endif
     real(kind=8), allocatable :: xlowdtopo(:),ylowdtopo(:),xhidtopo(:)
     real(kind=8), allocatable :: yhidtopo(:),t0dtopo(:),tfdtopo(:)
     real(kind=8), allocatable :: dxdtopo(:),dydtopo(:),dtdtopo(:)
@@ -996,6 +1013,13 @@ contains
 
         ! Allocate and read in dtopo info
         allocate(dtopofname(num_dtopo),minleveldtopo(num_dtopo))
+#ifdef USE_PDAF_CHILE2
+        allocate(temp_dtopofname(num_dtopo))
+#endif
+
+#ifdef CHILE_GEN_ENS
+        allocate(temp_dtopofname(num_dtopo))
+#endif
         allocate(maxleveldtopo(num_dtopo),mxdtopo(num_dtopo))
         allocate(mydtopo(num_dtopo),mtdtopo(num_dtopo),mdtopo(num_dtopo))
         allocate(xlowdtopo(num_dtopo),ylowdtopo(num_dtopo),t0dtopo(num_dtopo))
@@ -1009,6 +1033,21 @@ contains
 
         do i=1,num_dtopo
             read(iunit,*) dtopofname(i)
+
+#ifdef USE_PDAF_CHILE2
+            write(ensstr,'(i3.1)') mype_world
+            temp_dtopofname(i) = trim(dtopofname(i))//"_ens_"//trim(adjustl(ensstr))
+            dtopofname(i) = temp_dtopofname(i)
+            print *, "Read dtopo ", dtopofname(i)
+#endif
+
+#ifdef CHILE_GEN_ENS
+            write(ensstr,'(i3.1)') mype_world
+            temp_dtopofname(i) = trim(dtopofname(i))//"_ens_"//trim(adjustl(ensstr))
+            dtopofname(i) = temp_dtopofname(i)
+            print *, "Read dtopo ", dtopofname(i)
+#endif
+
             read(iunit,*) dtopotype(i),minleveldtopo(i), maxleveldtopo(i)
             write(GEO_PARM_UNIT,*) '   fname:',dtopofname(i)
             write(GEO_PARM_UNIT,*) '   topo type:',dtopotype(i)

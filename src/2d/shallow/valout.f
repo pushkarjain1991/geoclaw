@@ -4,8 +4,16 @@ c
       subroutine valout (lst, lend, time, nvar, naux)
 c
       use amr_module
+#ifdef USE_PDAF
+      use mod_assimilation, only: second_valout
+      use mod_parallel, only: mype_world
+#endif
+
+#ifdef CHILE_ENS_GEN
+      use mod_parallel_ens_gen
+#endif
       implicit double precision (a-h,o-z)
-      character*10  fname1, fname2, fname3, fname4, fname5
+      character*10  fname1, fname2, fname3, fname4
 
 c     # GeoClaw specific output....  add eta to q array before printing
 c
@@ -28,17 +36,32 @@ c     # set outaux = .true. to also output the aux arrays to fort.a<iframe>
 c
       call system_clock(clock_start,clock_rate)
 
+#ifdef USE_PDAF
+      if(mype_world == 0) then
+          if(second_valout .eqv. .true.) then
+              matlabu = matlabu - 1
+          endif
+      endif
+#endif
+
+#ifdef CHILE_ENS_GEN
+      if(mype_world == 0) then
+          if(second_valout .eqv. .true.) then
+              matlabu = matlabu - 1
+          endif
+      endif
+#endif
 
       if (nvar /= 3) then
           write(6,*) '*** Error: valout assumes nvar==3 for geoclaw'
           stop
-          endif
+      endif
 
 c     # how many aux components requested?
       output_aux_num = 0
       do i=1,naux
          output_aux_num = output_aux_num + output_aux_components(i)
-         enddo
+      enddo
         
 c     # Currently outputs all aux components if any are requested!
       outaux = ((output_aux_num > 0) .and. 

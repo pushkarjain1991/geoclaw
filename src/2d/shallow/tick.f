@@ -5,6 +5,17 @@ c
      &                rest,dt_max)
 c
       use geoclaw_module
+#ifdef USE_PDAF
+      use mod_parallel, only: mype_world, mpierr, mpi_comm_world
+      use mod_assimilation, only: stepnow_pdaf, assimilate_step,
+     & regrid_assim, second_valout, assimilation_time, 
+     & global_coordinate
+      use mod_model, only: field
+      use common_level, only: regions_assim
+#endif
+#ifdef CHILE_GEN_ENS
+      use mod_parallel_ens_gen
+#endif
       use refinement_module, only: varRefTime
       use amr_module
       use topo_module, only: dt_max_dtopo, num_dtopo, topo_finalized,
@@ -23,6 +34,22 @@ c
       integer tick_clock_start, tick_clock_finish, tick_clock_rate
       character(len=128) :: time_format
       real(kind=8) cpu_start,cpu_finish
+#ifdef USE_PDAF
+      character(len=3) :: stepstr1
+      character(len=2) :: ensstr2
+      logical :: dir_exists
+      real(kind=8), allocatable :: temp_field(:)
+      integer :: curr_tot_step
+      integer :: num_ex = 1
+      integer :: field_size
+      integer :: i
+#endif
+
+#ifdef CHILE_GEN_ENS
+      character(len=2) :: ensstr2
+      logical :: dir_exists
+      integer :: i
+#endif
 
 c
 c :::::::::::::::::::::::::::: TICK :::::::::::::::::::::::::::::
@@ -221,7 +248,17 @@ c
 
           call system_clock(clock_start,clock_rate)
           call cpu_time(cpu_start)
+#ifdef USE_PDAF
+              print *, mype_world, "Regridding non-assimilation.... 
+     &       lbase = ", lbase
+          regrid_assim = .false.
+#endif
           call regrid(nvar,lbase,cut,naux,start_time)
+#ifdef USE_PDAF
+          !call mpi_barrier(mpi_comm_world, mpierr)
+          call print_num_cells(nvar, naux)
+          !call mpi_barrier(mpi_comm_world, mpierr)
+#endif
           call system_clock(clock_finish,clock_rate)
           call cpu_time(cpu_finish)
           timeRegridding = timeRegridding + clock_finish - clock_start
@@ -266,19 +303,43 @@ c
 
 c Output time info
           timenew = tlevel(level)+possk(level)
+#ifdef USE_PDAF
+          time_format = "(' Ens_num ',i1, ' AMRCLAW: level ',i2,' 
+     & CFL = ',e8.3," //"'  dt = ',e10.4,  '  final t = ',e12.6)"
+#elif CHILE_GEN_ENS
+          time_format = "(' Ens_num ',i1, ' AMRCLAW: level ',i2,' 
+     & CFL = ',e8.3," //"'  dt = ',e10.4,  '  final t = ',e12.6)"
+#else
           time_format = "(' AMRCLAW: level ',i2,'  CFL = ',e8.3," //
      &                  "'  dt = ',e10.4,  '  final t = ',e12.6)"
+#endif
           if (display_landfall_time) then
             timenew = (timenew - landfall) / (3.6d3 * 24d0)
             time_format = "(' AMRCLAW: level ',i2,'  CFL = ',e8.3," //
      &                  "'  dt = ',e10.4,  '  final t = ', f5.2)"
           end if
           if (tprint) then
+#ifdef USE_PDAF
+              write(outunit, time_format) mype_world, level, cfl_level, 
+     &                                    possk(level), timenew
+#elif CHILE_GEN_ENS
+              write(outunit, time_format) mype_world, level, cfl_level, 
+     &                                    possk(level), timenew
+#else
               write(outunit, time_format) level, cfl_level, 
      &                                    possk(level), timenew
+#endif
           endif
           if (method(4).ge.level) then
+#ifdef USE_PDAF
+              print time_format, mype_world, level, cfl_level, 
+     & possk(level), timenew
+#elif CHILE_GEN_ENS
+              print time_format, mype_world, level, cfl_level, 
+     & possk(level), timenew
+#else
               print time_format, level, cfl_level, possk(level), timenew
+#endif
           endif
 
 c        # to debug individual grid updates...
@@ -363,7 +424,99 @@ c
           ncycle  = ncycle + 1
           call conck(1,nvar,naux,time,rest)
 
+          print *, "timetime ", time
+#ifdef USE_PDAF
+          assimilation_time = outtime
+          stepnow_pdaf = stepnow_pdaf + 1
+          
+          !Ready for assimilation
+          if (abs(time - assimilation_time) < 1.0D-06) then
+              !Adhoc thingy. Should be replaced
+              stepnow_pdaf = assimilate_step
+          
+              print *, "Assimilating data at time = ", assimilation_time
+              regrid_assim=.true.
 
+              ! Perform regridding with regrid_assim True
+              ! This is to get the ensembles obtain same flagging 
+              ! and hence same patches
+              !call mpi_barrier(mpi_comm_world, mpierr)
+              print *, "Regridding first time ya", mype_world 
+              call print_num_cells(nvar, naux)
+              print *, "yo123"
+              do i = 1, mxnest-1
+                call extract_regions()
+                call regrid(nvar,1,0.7,naux,start_time)
+                call setbestsrc()     ! need at every grid change
+              enddo
+              call print_num_cells(nvar, naux)
+              call check_ensemble_grid()
+              print *, "yo1234"
+              
+          
+!          if (rprint .and. lbase .lt. lfine) then
+!             call outtre(lstart(lbase+1),.false.,nvar,naux)
+!          endif
+
+              if (mxnest <= 3) then
+                if (lfine /=1) then
+                  do ii=lfine-1,1,-1
+                      call update(1, nvar, naux)
+                  enddo
+                  print *, "Update done"
+                endif
+              endif
+
+              ! Put the geoclaw alloc values to PDAF field
+              ! Next step is to use the field for assimilation
+              !call mpi_barrier(mpi_comm_world, mpierr)
+              call alloc2field(nvar,naux)
+              print *, "field size = ", size(field)
+              !call mpi_barrier(mpi_comm_world, mpierr)
+              
+              ! Update dim_state_p and state
+              !call mpi_barrier(mpi_comm_world, mpierr)
+              call update_dim_state_p()
+              !call mpi_barrier(mpi_comm_world, mpierr)
+
+              field_size = size(field)
+              !Set global coordinate - For localization only
+              if(allocated(global_coordinate)) then
+                deallocate(global_coordinate)
+              endif
+              allocate(global_coordinate(2,field_size))
+       call set_global_coordinate_array(field_size, global_coordinate)
+
+          
+          ! Perform assimilation
+          ! 1. alloc2field
+          ! 2. Put state
+          ! 3. Update
+          ! 4. field2alloc
+              print *, "time =" , time
+              call assimilate_pdaf(time)
+              call mpi_barrier(mpi_comm_world, mpierr)
+
+            
+              ! Put the assimilated values from field to alloc
+              call field2alloc(nvar,naux)!not for output purpose
+              print *, "Running field2alloc after assimilation"
+              !call mpi_barrier(mpi_comm_world, mpierr)
+              deallocate(field) 
+
+              !if (mxnest <= 3) then
+               !if (lfine /=1) then
+               !   do ii=lfine -1, 1, -1
+                      call put2zero(nvar,naux)
+                      call update(1,nvar,naux)
+               !   enddo
+               ! endif
+              !endif
+              !call mpi_barrier(mpi_comm_world, mpierr)
+              
+          endif
+          
+#endif
       if ( .not.vtime) goto 201
 
         ! Adjust time steps if variable time step and/or variable
@@ -409,6 +562,132 @@ c             ! use same alg. as when setting refinement when first make new fin
                endif
        endif
 
+#ifdef USE_PDAF
+
+       ! Output state_ana
+       if (mype_world == 0) then
+           if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+               
+               ! Copy original alloc to field
+               call alloc2field(nvar, naux)
+               call update_dim_state_p(nvar, naux)
+               field_size = size(field)
+
+               ! Copy original field to temporary field
+               if(allocated(temp_field)) deallocate(temp_field)
+               allocate(temp_field(field_size))
+               temp_field(:) = field(:)
+
+               ! Read state_step_ana
+               curr_tot_step = num_ex * assimilate_step 
+               num_ex = num_ex + 1
+               write(stepstr1, '(i3.1)') curr_tot_step
+               OPEN(20, file='state_step'//TRIM(ADJUSTL(stepstr1))//
+     &         '_ana.txt', status = 'old')
+               
+               ! Assign state_step_ana to field
+               print *, "field has size = ", field_size
+               if(allocated(field)) deallocate(field)
+               allocate(field(field_size))
+               read(20,"(e26.16)") field(:)
+               close(20)
+
+               ! Perform field to alloc
+               call field2alloc(nvar, naux)
+               
+               ! Perform valout
+               print *, "valout state_ana "
+               call valout(1,lfine,time,nvar,naux)
+               ! Perform gauge output
+               if (printout) call outtre(mstart,.true.,nvar,naux)
+               if (num_gauges .gt. 0) then
+                   do ii = 1, num_gauges
+                       call print_gauges_and_reset_nextLoc(ii)
+                   end do
+               endif
+
+               ! Assign temporary field to field
+               if(allocated(field)) deallocate(field)
+               allocate(field(field_size))
+               field(:) = temp_field(:)
+
+               ! Assign field to alloc
+               call field2alloc(nvar, naux)
+
+               ! Deallocate temp_field
+               deallocate(temp_field)
+               deallocate(field)
+
+           endif
+       endif
+       !call mpi_barrier(mpi_comm_world, mpierr)
+          
+       ! Forecast output for every ensemble  
+       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+           !call mpi_barrier(mpi_comm_world, mpierr)
+           print *, "Analysis valout for ens ", mype_world
+           !call mpi_barrier(mpi_comm_world, mpierr)
+           
+           write(ensstr2, '(i2.1)') mype_world
+           inquire(file="_output_"//trim(adjustl(ensstr2))//"_for", 
+     &     exist=dir_exists)
+           if(dir_exists .eqv. .false.) then
+               call system('mkdir _output_'// 
+     &     trim(adjustl(ensstr2))//"_for")
+           endif
+           call chdir("_output_"//trim(adjustl(ensstr2))//"_for")
+           second_valout = .true.
+           call valout(1,lfine,time,nvar,naux)
+           second_valout = .false.
+           call chdir("../")
+      endif
+
+
+!       ! Analysis output for every ensemble  
+!       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+!           !call mpi_barrier(mpi_comm_world, mpierr)
+!           print *, "Analysis valout for ens ", mype_world
+!           !call mpi_barrier(mpi_comm_world, mpierr)
+!           
+!           write(ensstr2, '(i2.1)') mype_world
+!           inquire(file="_output_"//trim(adjustl(ensstr2))//"_ana", 
+!     &     exist=dir_exists)
+!           if(dir_exists .eqv. .false.) then
+!               call system('mkdir _output_'// 
+!     &         trim(adjustl(ensstr2))//"_ana")
+!           
+!               !call chdir("_output_"//trim(adjustl(ensstr2))//"_ana")
+!               !call set_gauges(rest, nvar, "../gauges.data")
+!               !call chdir("../")
+!           endif
+!           call chdir("_output_"//trim(adjustl(ensstr2))//"_ana")
+!           second_valout = .true.
+!           call valout(1,lfine,time,nvar,naux)
+!           second_valout = .false.
+!           call chdir("../")
+!       endif
+          
+#elif CHILE_GEN_ENS
+       ! Forecast output for every ensemble  
+       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+           !call mpi_barrier(mpi_comm_world, mpierr)
+           print *, "Analysis valout for ens ", mype_world
+           !call mpi_barrier(mpi_comm_world, mpierr)
+           
+           write(ensstr2, '(i2.1)') mype_world
+           inquire(file="_output_"//trim(adjustl(ensstr2))//"_for", 
+     &     exist=dir_exists)
+           if(dir_exists .eqv. .false.) then
+               call system('mkdir _output_'// 
+     &     trim(adjustl(ensstr2))//"_for")
+           endif
+           call chdir("_output_"//trim(adjustl(ensstr2))//"_for")
+           second_valout = .true.
+           call valout(1,lfine,time,nvar,naux)
+           second_valout = .false.
+           call chdir("../")
+      endif
+#else
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
          call valout(1,lfine,time,nvar,naux)
          if (printout) call outtre(mstart,.true.,nvar,naux)
@@ -418,6 +697,19 @@ c             ! use same alg. as when setting refinement when first make new fin
             end do
          endif
        endif
+#endif
+
+#ifdef USE_PDAF
+       !VERY VERY IMPORTANT
+       !if (stepnow_pdaf == assimilate_step) then
+       !if (time == assimilation_time) then
+       if (abs(time - assimilation_time) < 1.0D-06) then
+           stepnow_pdaf = 0
+       endif
+       print *, "reached yo2", mype_world, stepnow_pdaf
+       !call mpi_barrier(mpi_comm_world, mpierr)
+#endif
+
 
       go to 20
 c
@@ -469,11 +761,14 @@ c
          ! check if just did it so dont do it twice
          if (.not. dumpchk) call check(ncycle,time,nvar,naux)
       endif
+
+#ifndef USE_PDAF
       if (num_gauges .gt. 0) then
          do ii = 1, num_gauges
             call print_gauges_and_reset_nextLoc(ii)
          end do
       endif
+#endif
 
       write(6,*) "Done integrating to time ",time
       return
