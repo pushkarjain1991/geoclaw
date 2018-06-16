@@ -1,9 +1,3 @@
-!*************************************************************************
-!   > File Name: alloc2field.f90
-!    > Author: Shawn Lin
-!    > Mail: lin_yuxiang@utexas.edu
-!    > Created Time: Mon 01 Aug 2016 04:04:44 PM CDT
-! ************************************************************************/
 
 subroutine update_dim_state_p()
 
@@ -33,20 +27,5 @@ subroutine update_dim_state_p()
 
          flag=0
          call PDAF_alloc_filters(filterstr, subtype, flag)
-
-!         if(filterpe) then
-!             
-!             if(allocated(state)) deallocate(state)
-!             allocate(state(dim_p))
-!
-!             if(allocated(eofv)) deallocate(eofv)
-!             allocate(eofv(dim_p, dim_ens))
-!         else
-!             if (comm_couple /= mpi_comm_null) then
-!                 if(allocated(eofv)) deallocate(eofv)
-!                 allocate(eofv(dim_p, dim_ens_l))
-!             endif
-!         endif
-!         print *, "updated_dim_state_p = ", dim_p, mype_world
 
 end subroutine update_dim_state_p

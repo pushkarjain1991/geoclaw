@@ -126,14 +126,14 @@ if __name__=="__main__":
     #obs_x = np.arange(-113.7, -69.6, 6.0)
     #obs_y = np.arange(-47.7,-7.7, 6.0)
     # 42 obs
-    #obs_x = np.arange(-113.7, -83.6, 6.0)
-    #obs_y = np.arange(-47.7,-7.7, 6.0)
+    obs_x = np.arange(-113.7, -83.6, 6.0)
+    obs_y = np.arange(-47.7,-7.7, 6.0)
     # 35 obs
     #obs_x = np.arange(-113.7, -89.6, 6.0)
     #obs_y = np.arange(-47.7,-7.7, 6.0)
     # 12 obs
-    obs_x = np.arange(-113.7, -83.6, 12.0)
-    obs_y = np.arange(-47.7,-7.7, 12.0)
+    #obs_x = np.arange(-113.7, -83.6, 12.0)
+    #obs_y = np.arange(-47.7,-7.7, 12.0)
     #4 obs
     #obs_x = np.arange(-113.7, -89.6, 24.0)
     #obs_y = np.arange(-47.7,-7.7, 30.0)

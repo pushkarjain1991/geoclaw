@@ -156,6 +156,7 @@ MODULE mod_assimilation
                                    ! 'eof': Initialize by 2nd-order exact sampling from EOFs
                                   ! 'rnd': Initialize by random sampling from state trajectory
   CHARACTER(len=5) :: assim_dir='chile'
+  !CHARACTER(len=5) :: assim_dir='rbowl'
 
 
 END MODULE mod_assimilation

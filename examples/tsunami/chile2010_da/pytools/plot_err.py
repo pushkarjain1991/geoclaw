@@ -22,7 +22,7 @@ def plot_err(dir1, timestep1, dir2, timestep2, plotting=True):
     df2 = df2[np.isclose(df2.amrlevel,1.0)]
     df2.sort_values(by=['ycoord','xcoord'], ascending=[True, True], inplace=True)
     
-    if 0:
+    if 1:
         mask1 = (df1.xcoord > -76) & (df1.xcoord < -68) & (df1.ycoord > -40) & (df1.ycoord < -32)
         mask2 = (df2.xcoord > -76) & (df2.xcoord < -68) & (df2.ycoord > -40) & (df2.ycoord < -32)
         df1 = df1[~mask1]

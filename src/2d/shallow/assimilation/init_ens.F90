@@ -75,6 +75,8 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
       stop "No type_ensinit specified"
     END IF
   else if(trim(adjustl(assim_dir)) .eq. 'rbowl') then
+      print *, shape(ens_p)
+      print *,shape(reshaped_recv_ic)
     DO member = 1, dim_ens
       ens_p(:, member) = reshaped_recv_ic(:,member)
     enddo

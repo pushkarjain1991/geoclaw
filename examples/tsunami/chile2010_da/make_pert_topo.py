@@ -167,10 +167,10 @@ if __name__=='__main__':
     #usgs_subfault.longitude = -72.668 + pert[7]
     #usgs_subfault.latitude = -35.826 + pert[8]
     
-    mu = 20.0
+    mu = 0.0
     ##mu = np.array([2., 50.e3, 10.e3, 4.e3, 2., 5., 2., -3., 3.])
     #sigma = np.diagflat([var_strike, var_length, var_width, var_depth, var_slip, var_rake, var_dip, var_longitude, var_latitude])
-    sigma = 4.0
+    sigma = 0.5
 
     np.random.seed(45)
     #s = np.random.normal(mu,sigma, dim_ens)
@@ -182,7 +182,8 @@ if __name__=='__main__':
     #        make_dtopo(pert, filename, makeplots=False)
     #        print pert
 
-    perts = np.random.normal(mu, sigma, dim_ens)
+    #perts = np.random.normal(mu, sigma, dim_ens)
+    perts = np.random.lognormal(mu, sigma, dim_ens)
     for ens_num, pert in enumerate(perts):
         filename = "ens_" + str(ens_num)
         make_dtopo(pert, filename, makeplots=False)
@@ -191,6 +192,7 @@ if __name__=='__main__':
 
     # Diagnosis
     print "Sample_mean - mu: ", abs(mu - np.mean(perts))
+    print "Median - mu: ", abs(mu - np.median(perts))
 
     print "sigma - sample_std: ",abs(sigma - np.std(perts, ddof=1))
 

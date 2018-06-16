@@ -7,6 +7,9 @@ c
       use fixedgrids_module
       use topo_module, only: topo_finalized
 
+#ifdef USE_PDAF
+      use mod_parallel, only: mype_world
+#endif
       implicit double precision (a-h,o-z)
 
 
@@ -243,11 +246,23 @@ c     should change the way print_gauges does io - right now is critical section
 c     NOW changed, mjb 2/6/2015.
 c     NOTE that gauge subr called before stepgrid, so never get
 c     the very last gauge time at end of run.
+
+#ifdef USE_PDAF
+      if (mype_world == 0) then
+          if (num_gauges > 0) then
+              call update_gauges(alloc(locnew:locnew+nvar*mitot*mjtot), 
+     .                       alloc(locaux:locnew+nvar*mitot*mjtot),
+     .                       xlow,ylow,nvar,mitot,mjtot,naux,mptr)
+          endif
+      endif
+#else
       if (num_gauges > 0) then
            call update_gauges(alloc(locnew:locnew+nvar*mitot*mjtot), 
      .                       alloc(locaux:locnew+nvar*mitot*mjtot),
      .                       xlow,ylow,nvar,mitot,mjtot,naux,mptr)
            endif
+#endif
+
 
 c
       call stepgrid(alloc(locnew),fm,fp,gm,gp,

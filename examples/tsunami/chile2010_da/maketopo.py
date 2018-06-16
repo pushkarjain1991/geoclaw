@@ -109,7 +109,7 @@ def make_dtopo(makeplots=False):
 
 def make_dtopo_biased(makeplots=False):
     """
-    This is the dtopo for truth model
+    This is the dtopo for biased model
     Create dtopo data file for deformation of sea floor due to earthquake.
     Uses the Okada model with fault parameters and mesh specified below.
     """
@@ -126,7 +126,7 @@ def make_dtopo_biased(makeplots=False):
     usgs_subfault.length = 450.e3
     usgs_subfault.width = 100.e3
     usgs_subfault.depth = 35.e3
-    usgs_subfault.slip = 35.
+    usgs_subfault.slip = 17.0
     usgs_subfault.rake = 104.
     usgs_subfault.dip = 14.
     usgs_subfault.longitude = -72.668

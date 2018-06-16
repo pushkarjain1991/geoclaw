@@ -88,10 +88,10 @@ def setrun(claw_pkg='geoclaw'):
 
 
     # Number of grid cells: Coarsest grid
-    #clawdata.num_cells[0] = 30
-    #clawdata.num_cells[1] = 30
-    clawdata.num_cells[0] = 100
-    clawdata.num_cells[1] = 100
+    clawdata.num_cells[0] = 30
+    clawdata.num_cells[1] = 30
+    #clawdata.num_cells[0] = 100
+    #clawdata.num_cells[1] = 100
 
     # ---------------
     # Size of system:
@@ -122,9 +122,9 @@ def setrun(claw_pkg='geoclaw'):
     # restart_file 'fort.chkNNNNN' specified below should be in 
     # the OUTDIR indicated in Makefile.
 
-    clawdata.restart = True               # True to restart from prior results
-    #clawdata.restart_file = 'fort.chk00073'  # File to use for restart data Level2,3
-    clawdata.restart_file = 'fort.chk00080'  # File to use for restart data Level 1
+    clawdata.restart = False               # True to restart from prior results
+    clawdata.restart_file = 'fort.chk00073'  # File to use for restart data Level2,3
+    #clawdata.restart_file = 'fort.chk00073'  # File to use for restart data Level 1
 
     # -------------
     # Output times:
@@ -145,11 +145,11 @@ def setrun(claw_pkg='geoclaw'):
     elif clawdata.output_style == 2:
         # Specify a list of output times.
         #clawdata.output_times = [0.5, 1.0]
-        #clawdata.output_times = np.linspace(3.0, 13.0, 11)*3600.0
-        clawdata.output_times = np.arange(10800.0, 46800.1, 900.0)
+        clawdata.output_times = np.arange(0.0,46801,900)
 
     elif clawdata.output_style == 3:
         # Output every iout timesteps with a total of ntot time steps:
+        #clawdata.output_step_interval = 60
         clawdata.output_step_interval = 60
         clawdata.total_steps = 780
         clawdata.output_t0 = True
@@ -285,6 +285,7 @@ def setrun(claw_pkg='geoclaw'):
         # and at the final time.
         clawdata.checkpt_interval = 5
 
+
     # ---------------
     # AMR parameters:
     # ---------------
@@ -348,8 +349,8 @@ def setrun(claw_pkg='geoclaw'):
     rundata.regiondata.regions = []
     # to specify regions of refinement append lines of the form
     #  [minlevel,maxlevel,t1,t2,x1,x2,y1,y2]
-    #rundata.regiondata.regions.append([2, 2, 0., 10000., -85,-72,-38,-25])
-    #rundata.regiondata.regions.append([2, 2, 0.0, 1.0e10, -90,-80,-30,-15])
+    rundata.regiondata.regions.append([2, 2, 0., 10000., -85,-72,-38,-25])
+    rundata.regiondata.regions.append([2, 2, 0.0, 1.0e10, -90,-80,-30,-15])
     #rundata.regiondata.regions.append([1, 3, 0., 40000., -100,-85,-25,-15])
 
     # ---------------
@@ -357,9 +358,9 @@ def setrun(claw_pkg='geoclaw'):
     # ---------------
     rundata.gaugedata.gauges = []
     # for gauges append lines of the form  [gaugeno, x, y, t1, t2]
-    #rundata.gaugedata.gauges.append([32412, -86.392, -17.975, 0., 1.e10])
-    #rundata.gaugedata.gauges.append([12, -88.0, -3.975, 0., 1.e10])
-    #rundata.gaugedata.gauges.append([13, -105.0, -20.0, 0., 1.e10])
+    rundata.gaugedata.gauges.append([32412, -86.392, -17.975, 0., 1.e10])
+    rundata.gaugedata.gauges.append([12, -88.0, -3.975, 0., 1.e10])
+    rundata.gaugedata.gauges.append([13, -105.0, -20.0, 0., 1.e10])
     
 
     return rundata
@@ -414,7 +415,7 @@ def setgeo(rundata):
     dtopo_data = rundata.dtopo_data
     # for moving topography, append lines of the form :   (<= 1 allowed for now!)
     #   [topotype, minlevel,maxlevel,fname]
-    dtopo_path = os.path.join(scratch_dir, 'dtopo_usgs100227_biased.tt3')
+    dtopo_path = os.path.join(scratch_dir, 'dtopo_usgs100227.tt3')
     dtopo_data.dtopofiles.append([3,3,3,dtopo_path])
     dtopo_data.dt_max_dtopo = 0.2
 
@@ -447,8 +448,8 @@ def set_PDAF(rundata):
     #(6) ESTKF
     #(7) LESTKF
     rundata.pdaf_data.filtertype = 7
-    rundata.pdaf_data.num_ensembles = 32
-    rundata.pdaf_data.rms_obs = 0.005
+    rundata.pdaf_data.num_ensembles = 5
+    rundata.pdaf_data.rms_obs = 0.001
     rundata.pdaf_data.subtype = 0
     rundata.pdaf_data.forget = 0.9
     

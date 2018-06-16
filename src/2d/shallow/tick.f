@@ -83,7 +83,14 @@ c
 
 
       ncycle         = nstart
+#ifdef USE_PDAF
+      if(mype_world == 0) then
+          call setbestsrc()     ! need at very start of run, including restart
+      endif
+#else
       call setbestsrc()     ! need at very start of run, including restart
+#endif
+
       if (iout .eq. 0) then
 c        # output_style 1 or 2
          iout  = iinfinity
@@ -264,7 +271,14 @@ c
           timeRegridding = timeRegridding + clock_finish - clock_start
           timeRegriddingCPU=timeRegriddingCPU+cpu_finish-cpu_start
 
-          call setbestsrc()     ! need at every grid change
+#ifdef USE_PDAF
+      if(mype_world == 0) then
+          call setbestsrc()     ! need at very start of run, including restart
+      endif
+#else
+      call setbestsrc()     ! need at every grid change
+#endif
+
 c         call conck(1,nvar,naux,time,rest)
 c         call outtre(lstart(lbase+1),.true.,nvar,naux)
 c note negative time to signal regridding output in plots
@@ -447,16 +461,18 @@ c
               do i = 1, mxnest-1
                 call extract_regions()
                 call regrid(nvar,1,0.7,naux,start_time)
-                call setbestsrc()     ! need at every grid change
+                if(mype_world == 0) then
+                    call setbestsrc()     ! need at every grid change
+                endif
               enddo
               call print_num_cells(nvar, naux)
               call check_ensemble_grid()
               print *, "yo1234"
               
           
-!          if (rprint .and. lbase .lt. lfine) then
-!             call outtre(lstart(lbase+1),.false.,nvar,naux)
-!          endif
+          if (rprint .and. lbase .lt. lfine) then
+             call outtre(lstart(lbase+1),.false.,nvar,naux)
+          endif
 
               if (mxnest <= 3) then
                 if (lfine /=1) then
@@ -551,6 +567,7 @@ c             ! use same alg. as when setting refinement when first make new fin
 
       endif
 
+#ifndef USE_PDAF
  201  if ((abs(checkpt_style).eq.3 .and. 
      &      mod(ncycle,checkpt_interval).eq.0) .or. dumpchk) then
                 call check(ncycle,time,nvar,naux)
@@ -561,11 +578,12 @@ c             ! use same alg. as when setting refinement when first make new fin
                   end do
                endif
        endif
+#endif
 
 #ifdef USE_PDAF
 
        ! Output state_ana
-       if (mype_world == 0) then
+201    if (mype_world == 0) then
            if ((mod(ncycle,iout).eq.0) .or. dumpout) then
                
                ! Copy original alloc to field
@@ -622,50 +640,46 @@ c             ! use same alg. as when setting refinement when first make new fin
        endif
        !call mpi_barrier(mpi_comm_world, mpierr)
           
-       ! Forecast output for every ensemble  
+!       ! Forecast output for every ensemble  
+!       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
+!           !call mpi_barrier(mpi_comm_world, mpierr)
+!           print *, "Forecast valout for ens ", mype_world
+!           !call mpi_barrier(mpi_comm_world, mpierr)
+!           
+!           write(ensstr2, '(i2.1)') mype_world
+!           inquire(file="_output_"//trim(adjustl(ensstr2))//"_for", 
+!     &     exist=dir_exists)
+!           if(dir_exists .eqv. .false.) then
+!               call system('mkdir _output_'// 
+!     &     trim(adjustl(ensstr2))//"_for")
+!           endif
+!           call chdir("_output_"//trim(adjustl(ensstr2))//"_for")
+!           second_valout = .true.
+!           call valout(1,lfine,time,nvar,naux)
+!           second_valout = .false.
+!           call chdir("../")
+!      endif
+
+
+       ! Analysis output for every ensemble  
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
            !call mpi_barrier(mpi_comm_world, mpierr)
            print *, "Analysis valout for ens ", mype_world
            !call mpi_barrier(mpi_comm_world, mpierr)
            
            write(ensstr2, '(i2.1)') mype_world
-           inquire(file="_output_"//trim(adjustl(ensstr2))//"_for", 
+           inquire(file="_output_"//trim(adjustl(ensstr2))//"_ana", 
      &     exist=dir_exists)
            if(dir_exists .eqv. .false.) then
                call system('mkdir _output_'// 
-     &     trim(adjustl(ensstr2))//"_for")
+     &         trim(adjustl(ensstr2))//"_ana")
            endif
-           call chdir("_output_"//trim(adjustl(ensstr2))//"_for")
+           call chdir("_output_"//trim(adjustl(ensstr2))//"_ana")
            second_valout = .true.
            call valout(1,lfine,time,nvar,naux)
            second_valout = .false.
            call chdir("../")
-      endif
-
-
-!       ! Analysis output for every ensemble  
-!       if ((mod(ncycle,iout).eq.0) .or. dumpout) then
-!           !call mpi_barrier(mpi_comm_world, mpierr)
-!           print *, "Analysis valout for ens ", mype_world
-!           !call mpi_barrier(mpi_comm_world, mpierr)
-!           
-!           write(ensstr2, '(i2.1)') mype_world
-!           inquire(file="_output_"//trim(adjustl(ensstr2))//"_ana", 
-!     &     exist=dir_exists)
-!           if(dir_exists .eqv. .false.) then
-!               call system('mkdir _output_'// 
-!     &         trim(adjustl(ensstr2))//"_ana")
-!           
-!               !call chdir("_output_"//trim(adjustl(ensstr2))//"_ana")
-!               !call set_gauges(rest, nvar, "../gauges.data")
-!               !call chdir("../")
-!           endif
-!           call chdir("_output_"//trim(adjustl(ensstr2))//"_ana")
-!           second_valout = .true.
-!           call valout(1,lfine,time,nvar,naux)
-!           second_valout = .false.
-!           call chdir("../")
-!       endif
+       endif
           
 #elif CHILE_GEN_ENS
        ! Forecast output for every ensemble  
@@ -687,7 +701,9 @@ c             ! use same alg. as when setting refinement when first make new fin
            second_valout = .false.
            call chdir("../")
       endif
-#else
+#endif
+
+#ifndef USE_PDAF ! CHECK THIS PLEASE IF IT IS NEEDED
        if ((mod(ncycle,iout).eq.0) .or. dumpout) then
          call valout(1,lfine,time,nvar,naux)
          if (printout) call outtre(mstart,.true.,nvar,naux)
@@ -735,6 +751,7 @@ c
               endif
           endif
       
+#ifndef USE_PDAF
       if (dump_final) then
            call valout(1,lfine,time,nvar,naux)
            if (printout) call outtre(mstart,.true.,nvar,naux)
@@ -744,6 +761,7 @@ c
               end do
            endif
       endif
+#endif
 
 c  # checkpoint everything for possible future restart
 c  # (unless we just did it based on dumpchk)
@@ -757,12 +775,12 @@ c
 c  # checkpoint everything for possible future restart
 c  # (unless we just did it based on dumpchk)
 c
+#ifndef USE_PDAF
       if (checkpt_style .ne. 0) then  ! want a chckpt
          ! check if just did it so dont do it twice
          if (.not. dumpchk) call check(ncycle,time,nvar,naux)
       endif
 
-#ifndef USE_PDAF
       if (num_gauges .gt. 0) then
          do ii = 1, num_gauges
             call print_gauges_and_reset_nextLoc(ii)

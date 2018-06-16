@@ -525,7 +525,14 @@ program amr2
         call set_multilayer()             ! Set multilayer SWE parameters
         call set_storm()                  ! Set storm parameters
         call set_regions()                ! Set refinement regions
+
+#ifdef USE_PDAF
+        if(mype_world == 0) then 
+            call set_gauges(rest, nvar, naux) ! Set gauge output
+        endif
+#else
         call set_gauges(rest, nvar, naux) ! Set gauge output
+#endif
 
     else
 

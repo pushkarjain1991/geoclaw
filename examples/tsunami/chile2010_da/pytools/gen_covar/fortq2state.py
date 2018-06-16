@@ -4,7 +4,7 @@ from joblib import Parallel, delayed
 import multiprocessing
 import sys
 sys.path.insert(0,'../')
-import read_amr2
+import read_amr
 
 LARGE_ENS_PATH = "/h2/pkjain/Desktop/Pushkar/clawpack/geoclaw/examples/tsunami/chile2010_da/Pre_ens_gen/_output_100/"
 def fortq2state_temporal(ens_num, time_step_interested):
@@ -13,7 +13,7 @@ def fortq2state_temporal(ens_num, time_step_interested):
         infile = "../../_output/fort.q" + str(timestep).zfill(4)
         #outfile = "../_output/state.q" + str(timestep).zfill(4)
         outfile = "../../_output/state.q" + str(timestep)
-        read_class = read_amr2.ReadAmr2(infile, sort_in_frame=False)
+        read_class = read_amr.ReadAmr(infile, sort_in_frame=False)
         dataframe = read_class.pandas_dataframe
         print "timestep = ", timestep
         dataframe.eta.to_csv(outfile, index=False)
@@ -21,7 +21,7 @@ def fortq2state_temporal(ens_num, time_step_interested):
 def fortq2state_state(ens_num, time_step_interested):
     infile = LARGE_ENS_PATH + "_output_" + str(ens_num) + "_for/fort.q" + str(time_step_interested).zfill(4)
     outfile = LARGE_ENS_PATH + "state.q" + str(ens_num)
-    read_class = read_amr2.ReadAmr2(infile, sort_in_frame=False)
+    read_class = read_amr.ReadAmr(infile, sort_in_frame=False)
     dataframe = read_class.pandas_dataframe
     print "Ens = ", ens_num
 
